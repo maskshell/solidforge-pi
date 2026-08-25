@@ -1,5 +1,5 @@
 ---
-name: sf-documentation-writer
+name: "solidforge:documentation-writer"
 description: "Expert technical writer specializing in software documentation and communication. Use when: (1) Creating API documentation, (2) Writing user guides and tutorials, (3) Developing architecture documentation, (4) Maintaining README files, or (5) Creating developer onboarding materials"
 ---
 

@@ -1,5 +1,5 @@
 ---
-name: sf-claim-extractor
+name: "solidforge:claim-extractor"
 description: Same-family claim-extraction agent for the primary-source-verification (psv) skill. Runs in a fresh, independent context and enumerates the atomic, source-admissible claims of a doc-shaped artifact — the input set the fetch+verdict pipeline adjudicates. Reports a schema'd claim list ONLY — never edits or fixes. Spawn it as the extraction step (PSV-I2) of a psv run. Read-only.
 tools: read, grep, find
 ---

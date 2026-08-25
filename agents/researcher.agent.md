@@ -1,5 +1,5 @@
 ---
-name: sf-researcher
+name: "solidforge:researcher"
 description: "Research agent for the blueprint-crafting skill. Gathers web + codebase sources for an upstream artifact's open questions and returns the research sub-object (cited claims + provenance-tagged sources + cost ledger). Use when: (1) researching X for a spec/arch-design, (2) gathering sources for a research artifact, (3) surveying library/API options with citations. Spawn only for multi-source web gathering. Output feeds research_constraints (sources-cited/staging/cost/provenance). Never judges conclusion truth — outcome axis, human only."
 tools: read, grep, find
 ---

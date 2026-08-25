@@ -42,7 +42,7 @@ SolidForge 是一个 Claude Code 插件（`.claude-plugin/plugin.json` + 自带 
 
 SKILL.md 文本替换项（全量）：
 
-1. **60+ 处** `` `solidforge:<name>` `` spawn 引用 → 具体工具调用指引：`call subagent tool with agent="sf-<name>", task=...`（见 §4.1）
+1. **60+ 处** `` `solidforge:<name>` `` 引用**保留原名**（M0.5 定案，见 §12）——仅改动词句：spawn → `call the subagent tool with agent="solidforge:<name>", task=...`
 2. **16 处** `/solidforge:arm-tools` → `/arm-tools`
 3. `${CLAUDE_PLUGIN_ROOT}` → 技能内相对路径（Pi progressive disclosure 规范：以 skill 目录为基准的相对引用）
 4. `TaskCreate` / `TodoWrite`（parallel-development/SKILL.md 内 **22 处**）→ 见 §5.3 重写方案
@@ -76,7 +76,7 @@ SKILL.md 文本替换项（全量）：
 **Agent 转换规则**（22 个 `.agent.md` → `.md`）：
 
 - frontmatter：`name/description/tools/model` 四字段保留；CC 专属可选字段（`run_in_background` 等）剥除（Pi 忽略但不识别）
-- 重命名：`<name>` → `sf-<name>`（对齐原 `solidforge:` 作用域语义，避免与用户 `~/.pi/agent/agents/` 全局同名冲突——这正是原项目用作用域前缀的原因）
+- 命名：**保留 `solidforge:<name>`**（M0.5 定案——agent 名只是 frontmatter 字符串 + Map 键，全链路无字符集校验；SKILL.md 60+ 处引用零改动；YAML 值加引号）。文件名保留 `<name>.agent.md`（冒号不入文件系统）。用户/项目同名 agent 覆盖包内 agent（后加载者优先）
 - **工具名映射**：`Read→read, Grep→grep, Glob→find, LS→ls, Edit→edit, MultiEdit→edit（多 edits 数组）, Write→write, Bash→bash`
 - description 无需重写：原风格（numbered use cases，50–500 字符）同时满足 CC 与 Pi 最佳实践（agent-crafter 规范对照通过）
 
@@ -203,7 +203,7 @@ solidforge-pi/
 ├── mcp.json                  # playwright-test server 定义（随包分发）
 ├── skills/                   # 5 个技能：原样复制 + §2 文本替换
 ├── prompts/arm-tools.md      # 原 command 转换 + Step3 重写
-├── agents/                   # 22 个转换后 agent（sf- 前缀）——仅存储，由扩展加载
+├── agents/                   # 22 个转换后 agent（solidforge: 命名，.agent.md 文件名）——仅存储，由扩展加载
 └── extensions/
     ├── sf-subagents/index.ts # 官方示例裁剪：包内 agents 发现 + 并发上调 + (可选 sf_task)
     ├── sf-hooks/index.ts     # tool_call/tool_result → CC hook 协议 shim（§4.2）
@@ -248,7 +248,7 @@ solidforge-pi/
 | 1. TaskCreate 层 | **方案二**：Python tasks.json 状态文件（`loop_state.py` 家族管理 `task add/claim/conflict-check`） | 冲突检测是收敛环正确性部件，应在确定性层（可测试、可 golden）；M3 执行 |
 | 2. playwright proxy vs directTools | **proxy**（adapter v2.27.0 源码实测：directTools 命名单下划线，与 CC 不一致，免改假设不成立） | 见 §6 |
 | 3. providers 路径 A/B | **路径 B**（registerProvider 扩展），已实现于 `extensions/sf-providers`，DeepSeek 连通已验证 | 一体安装体验 |
-| 4. agent 前缀 | **`sf-`**，已实施（22 个 agent 已转换落盘 `agents/`） | 对齐原 solidforge: 作用域语义 |
+| 4. agent 前缀 | **修订（M0.5）：保留 `solidforge:<name>`**，废弃 M0 的 `sf-` 决策 | 见 §12：命令链源码验证 + 双冒烟通过；`sf-` 改名收益归零（SKILL.md 引用零改动 > 潜在同名冲突，后者由加载优先级兼底） |
 
 ---
 
@@ -261,3 +261,28 @@ solidforge-pi/
 | DeepSeek 连通性（sf-providers + `.env.solidforge` 自加载） | ✅ `--model deepseek/deepseek-v4-flash` 返回正常 |
 | 已落盘资产 | `package.json`（pi manifest）、`agents/sf-*.md` ×22（5 个带 M3 TODO 旗标）、`extensions/sf-subagents/`、`extensions/sf-providers/`、`tools/convert_agents.py`（可重跑） |
 | 遗留 → M1 | ① MiniMax 连通（同机制复制）② sf-providers 模型规格（contextWindow/maxTokens/costs）按 provider 文档校准 ③ reasoning 标志确认 ④ agent 正文 prose 工具名清洗（非反引号处） |
+
+---
+
+## 12. M0.5：`solidforge:` 前缀保留定案（2026-08-23）
+
+**问题**：能否保留 CC 风格的 `solidforge:` 作用域前缀？附带键入 `/solidforge:` 后的自动补全是否可用？
+
+**结论：可行，已定案采用。** 两类对象分开看：
+
+| 对象 | 前缀 | 依据 |
+|---|---|---|
+| **agent 名**（subagent 工具参数） | ✅ 保留 `solidforge:<name>` | agent 名只是 frontmatter 字符串 + `discoverAgents()` 的 Map 键，全链路无字符集校验；不进 CLI 参数（系统提示走临时文件）；冒烟通过（`solidforge:doc-reviewer` 抓到植入矛盾） |
+| **命令**（`/solidforge:arm-tools`） | ✅ 保留 | 源码级验证 + `-p` 模式执行路径冒烟通过 |
+| **技能名**（skills） | ❌ 保持现状无前缀 | Agent Skills 标准强制小写连字符，冒号违规；技能名本就全称唯一（cross-source-review 等） |
+
+**`/solidforge:` 自动补全链路（pi 0.84.2 源码逐层验证）**：
+
+1. 命令注册（extensions/loader.js L249）：name 原样入 Map，**无字符集校验**
+2. 命令解析（agent-session.js L930）：`slice(1, spaceIndex)` 到首个空格，**冒号零特殊处理**
+3. 冲突后缀（extensions/runner.js L402–429）：仅在完全同名时追加 `:N`，不会遮蔽带命名空间的名
+4. 补全触发（pi-tui autocomplete.js L205）：行首 `/` 且无空格 → 命令列表模式
+5. 补全过滤（fuzzy.js L81–84）：查询按 `[\s/]+` 分词——**斜杠/空白是分隔符，冒号是普通字符**；键入 `/solidforge:` 即 fuzzy 匹配到 `solidforge:arm-tools`，无脚本/补丁
+6. prompt template（prompt-templates.js L85）：name = 文件名去 `.md` 无清洗；冒号文件名在 POSIX/APFS/git/npm 均合法（仅 macOS Finder 显示不佳）
+
+**已实施**：`convert_agents.py` 改为保留 `solidforge:` 名（YAML 加引号）+ 文件名保留源形式 `<name>.agent.md`；`prompts/solidforge:arm-tools.md` 占位模板已验证展开与 `$ARGUMENTS` 替换。上轮一次失败的 edit 调用导致的静默半途编辑（并发上限/接口字段未改）已在本轮补齐。

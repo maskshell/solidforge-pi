@@ -1,5 +1,5 @@
 ---
-name: sf-playwright-test-healer
+name: "solidforge:playwright-test-healer"
 description: "Expert in debugging and fixing failing Playwright tests. Use when: (1) Tests are failing due to selector changes, (2) Tests have timing or synchronization issues, (3) Assertions need to be updated, (4) Test reliability needs improvement, or (5) Debugging CI/CD test failures"
 tools: find, grep, read, ls, edit, write
 ---

@@ -1,5 +1,5 @@
 ---
-name: sf-playwright-test-planner
+name: "solidforge:playwright-test-planner"
 description: "Expert in creating comprehensive test plans for web applications. Use when: (1) Designing test scenarios for new features, (2) Mapping user journeys and critical paths, (3) Identifying edge cases and error conditions, (4) Planning E2E test coverage, or (5) Creating QA documentation"
 tools: find, grep, read, ls
 ---

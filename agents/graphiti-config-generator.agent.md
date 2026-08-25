@@ -1,5 +1,5 @@
 ---
-name: sf-graphiti-config-generator
+name: "solidforge:graphiti-config-generator"
 description: "Expert in generating Graphiti Memory MCP configurations for projects. Use when: (1) Setting up memory for new projects, (2) Generating .graphiti.json configurations, (3) Detecting project types and generating appropriate memory settings, or (4) Configuring memory patterns for different tech stacks"
 ---
 

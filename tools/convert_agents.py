@@ -88,7 +88,7 @@ def main():
         (DST / f"{name}.agent.md").write_text(out, encoding="utf-8")
         count += 1
         if notes:
-            flagged.append(f"sf-{name}: {'; '.join(notes)}")
+            flagged.append(f"solidforge:{name}: {'; '.join(notes)}")
     print(f"converted {count} agents -> {DST}")
     for f in flagged:
         print(f"  FLAG {f}")

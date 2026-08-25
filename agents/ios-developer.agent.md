@@ -1,5 +1,5 @@
 ---
-name: sf-ios-developer
+name: "solidforge:ios-developer"
 description: "Expert iOS/macOS developer specializing in Swift, SwiftUI, and the Apple toolchain. Use when: (1) Building SwiftUI/UIKit views or features, (2) SPM package or Xcode project setup, (3) Swift concurrency (async/await, actors), (4) XCTest unit tests, (5) Simulator/device build & run. Route here instead of general-purpose for any Apple-platform task."
 ---
 

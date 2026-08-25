@@ -1,5 +1,5 @@
 ---
-name: sf-tester
+name: "solidforge:tester"
 description: "Expert QA engineer for comprehensive test design and automation. Use when: (1) Implementing new features that need test coverage, (2) Adding unit, integration, or E2E tests, (3) Improving insufficient test coverage, (4) Designing test strategies and test plans, or (5) Fixing bugs that need regression tests"
 ---
 

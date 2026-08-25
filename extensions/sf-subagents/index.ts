@@ -30,8 +30,8 @@ import { Container, Markdown, Spacer, Text } from "@earendil-works/pi-tui";
 import { Type } from "typebox";
 import { type AgentConfig, type AgentScope, discoverAgents } from "./agents.ts";
 
-const MAX_PARALLEL_TASKS = 8;
-const MAX_CONCURRENCY = 4;
+const MAX_PARALLEL_TASKS = Number(process.env.SF_SUBAGENT_MAX_TASKS ?? 16);
+const MAX_CONCURRENCY = Number(process.env.SF_SUBAGENT_MAX_CONCURRENCY ?? 8);
 const COLLAPSED_ITEM_COUNT = 10;
 const PER_TASK_OUTPUT_CAP = 50 * 1024;
 
@@ -148,7 +148,7 @@ interface UsageStats {
 
 interface SingleResult {
 	agent: string;
-	agentSource: "user" | "project" | "unknown";
+	agentSource: "user" | "project" | "package" | "unknown";
 	task: string;
 	exitCode: number;
 	messages: Message[];
@@ -164,6 +164,7 @@ interface SubagentDetails {
 	mode: "single" | "parallel" | "chain";
 	agentScope: AgentScope;
 	projectAgentsDir: string | null;
+	packageAgentsDir: string | null;
 	results: SingleResult[];
 }
 
@@ -473,10 +474,11 @@ export default function (pi: ExtensionAPI) {
 		name: "subagent",
 		label: "Subagent",
 		description: [
-			"Delegate tasks to specialized subagents with isolated context.",
+			"Delegate tasks to specialized subagents with isolated context (SolidForge agents bundled as 'solidforge:<name>' from the package).",
 			"Modes: single (agent + task), parallel (tasks array), chain (sequential with {previous} placeholder).",
-			`Default agent scope is "user" (from ${path.join(getAgentDir(), "agents")}).`,
-			`To enable project-local agents in ${CONFIG_DIR_NAME}/agents, set agentScope: "both" (or "project").`,
+			"Bundled package agents (solidforge:*) always load from the package agents/ directory.",
+			`User agents load from ${path.join(getAgentDir(), "agents")} (default scope "user").`,
+			`To also use project-local agents in ${CONFIG_DIR_NAME}/agents, set agentScope: "both" (or "project").`,
 		].join(" "),
 		parameters: SubagentParams,
 

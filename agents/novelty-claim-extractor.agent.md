@@ -1,5 +1,5 @@
 ---
-name: sf-novelty-claim-extractor
+name: "solidforge:novelty-claim-extractor"
 description: Same-family novelty-claim-extraction agent for the prior-art-search skill. Runs in a fresh, independent context and enumerates the atomic novelty claims of a doc-shaped artifact — the "X is new / first / has no prior art" assertions the search+collision pipeline hunts for uncited prior art against. Distinguishes novelty claims from factual/citation claims (psv's domain) and interpretive claims (escalate to human). Reports a schema'd claim list ONLY — never edits or fixes. Spawn it as the extraction step (NC-I2) of a prior-art-search run. Read-only.
 tools: read, grep, find
 ---

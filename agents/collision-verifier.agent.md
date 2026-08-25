@@ -1,5 +1,5 @@
 ---
-name: sf-collision-verifier
+name: "solidforge:collision-verifier"
 description: Same-family per-claim collision comparator for the prior-art-search skill. Given ONE atomic novelty claim AND the found prior-art candidates (with their fetched abstracts/text), returns a collision verdict (collision / uncited-relevant / clear-under-search / inconclusive) grounded in a fetched QUOTE of the found prior-art text. Fresh, independent context; never edits or fixes. Spawn it per-claim as the verdict step (NC-I3) of a prior-art-search run. The found prior-art TEXT is the oracle — not model recall, and not a bare search snippet.
 tools: read, grep, find
 ---

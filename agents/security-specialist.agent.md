@@ -1,5 +1,5 @@
 ---
-name: sf-security-specialist
+name: "solidforge:security-specialist"
 description: "Expert security engineer for vulnerability assessment and secure coding. Use when: (1) Security review before production, (2) OWASP Top 10 / auth/authz review, (3) Secret + dependency-vuln scanning (semgrep/trivy), (4) IaC security (checkov), (5) Threat modeling. Read-only — reports findings, does not fix. Route here (not code-reviewer) for dedicated security review."
 tools: read, grep, find, bash
 ---
@@ -37,7 +37,7 @@ The convergence loop already runs **inner-ring deterministic security gates** th
 
 ## Scope deferral (vs code-reviewer)
 
-`sf-code-reviewer` covers incidental security within general code review (OWASP mentions, best practices). Route to `security-specialist` for **dedicated** security review (pre-production security pass, auth/authz design review, threat model, secret audit, IaC security). For general code-quality review, use `code-reviewer`.
+`solidforge:code-reviewer` covers incidental security within general code review (OWASP mentions, best practices). Route to `security-specialist` for **dedicated** security review (pre-production security pass, auth/authz design review, threat model, secret audit, IaC security). For general code-quality review, use `code-reviewer`.
 
 ## Memory Protocol
 

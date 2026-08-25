@@ -1,5 +1,5 @@
 ---
-name: sf-backend-developer
+name: "solidforge:backend-developer"
 description: "Expert backend developer specializing in API design and microservices architecture. Use when: (1) Building RESTful or GraphQL APIs, (2) Designing database schemas, (3) Implementing authentication systems, (4) Creating microservices, or (5) Optimizing database performance"
 ---
 
