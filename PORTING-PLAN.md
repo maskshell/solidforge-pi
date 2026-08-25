@@ -222,7 +222,7 @@ solidforge-pi/
 | **M1 csr** ✅（2026-08-25） | skills/cross-source-review 移植：hetero_doc_review.py spawn 层 pi 化（`pi --mode json -p -e sf-providers`）+ guard 测试重写（8 检查）+ SKILL.md/install.md/divergence.md 适配 | **实弹**：bigmodel(GLM-5.2) 抓到植入矛盾（blocker+双行引文）；qwen3 401 被 `hetero-api-error` 如实披露；离线 6/6 测试全绿（含 budget/turns 熔断 degrade） |
 | **M2 psv/pas** ✅（2026-08-25） | 两个 outcome-axis 技能（无 hooks 依赖，最快） | psv e2e：BERT 误归属被 **refuted**（带抓取引文），覆盖记录 1V/1R/0W/0K of 2；pas e2e：3 新颖性声明全 clear-under-search（含诚实盲区披露）；两技能离线 14/14 绿 |
 | **M3 pd** ✅（2026-08-25） | sf-hooks shim（三 deny/block 路径实弹验证）+ hetero_review spawn 层 pi 化（复用 csr 模式）+ TaskCreate 方案二（loop_state task-* 子命令族，冲突检测确定性层）+ SKILL.md/references 改写 + playwright 三件套 adapter-proxy 化 + plugin_layout 适配 pi manifest + **补漏 blueprint-crafting**（里程碑漏项，开箱全绿） | pd 异源腿实弹：13 轮工具调用、$0.0102 cost、wall-clock 熔断诚实 malform、run-record 落盘；task 注册表冲突阻断 exit 3 验证；pd 38/38 + bc 全绿 |
-| **M4 arm + 收尾** | arm-tools 命令 + arm.py AGENTS.md 补丁 + plugin_layout.py 更新 + README（含 adapter 前置声明、CI trust 说明） | 全新项目 arm → converge 全流程 |
+| **M4 arm + 收尾** ✅（2026-08-25） | arm-tools 命令全量移植（LSP 段改二进制推荐、`${CLAUDE_PLUGIN_ROOT}`→`<skill-dir>`）+ arm.py `_context_md_path` AGENTS.md 优先补丁（双路径实弹验证）+ tasks.json 入 gitignore + README（安装/adapter 前置/路由表/CI trust） | 沙盒 arm 双路径验证（写 CLAUDE.md vs 追加 AGENTS.md）；**全包终验 52/52 门禁绿** |
 
 ---
 
@@ -309,3 +309,15 @@ solidforge-pi/
 - **playwright 三件套**：M0 TODO 旗标落地为「Browser automation surface (PI PORT)」节——`mcp({search})`/`mcp({tool,args})` proxy 指引 + adapter 缺席时 Playwright CLI 兜底（诚实声明交互式会话不可用，不编造）。
 - **plugin_layout 适配**：root 发现 `.claude-plugin/plugin.json` → `package.json`（pi manifest）；manifest 断言 → pi-package keyword + pi.extensions/skills/prompts；hooks.json 断言 → sf-hooks 扩展接线断言；arm-tools 路径 → prompts/；agent 名适配 `solidforge:` 命名空间。**bc（blueprint-crafting）补漏复制**——原里程碑表漏列（M1-M4 无 bc 行），其确定性管线开箱全绿，SKILL.md 仅 3 处 spawn 措辞适配。
 - 其余：`.markdownlint.json` 随包复制（lint_self 需要）；pd profiles 同步 csr 路由集；model-routing/convergent-loop/hooks-reference 三个可执行 reference 更新为 pi substrate（design-decisions.md 是 ADR 历史档案，保留 CC 叙述）。
+
+
+---
+
+## 14. M4 实施记录 + 移植收官（2026-08-25）
+
+- **arm-tools**：CC 命令全量移植为 `prompts/solidforge:arm-tools.md`（description/argument-hint 原样，冒烟占位替换为真实内容）；Step 3 从 claude-plugins-official LSP 插件推荐改写为 language-server 二进制推荐（pi 无 LSP 插件生态；确定性 CLI 门禁为底线）；`${CLAUDE_PLUGIN_ROOT}` → `<skill-dir>`（与 csr 同款措辞）；AGENTS.md/CLAUDE.md 双读语义在命令头部说明。
+- **arm.py**：新增 `_context_md_path()` helper（项目根有 AGENTS.md 优先，否则 CLAUDE.md——§3.1 决策落地），`append_constitution`/`write_toolchain_note`/revert 报告三处接入；`.claude/parallel-dev/tasks.json` 入 GITIGNORE_ENTRIES（M3 新状态文件）。沙盒双路径实弹：无 AGENTS.md → 写 CLAUDE.md ✅；有 AGENTS.md → 追加且不创建 CLAUDE.md ✅。
+- **README**：安装、python3/pi-mcp-adapter 前置声明（playwright/graphiti 依赖面）、arm 双层说明、五路由凭据表（含 qwen-bailian 自注册与 cost 为 0 的诚实说明）、CI 非交互 trust 三选项、目录树、PORTING-PLAN 链接。
+- **终验**：5 技能 52/52 离线门禁全绿；实弹链路全数通过（subagent 双跳、四异源路由、sf-hooks 三路径、task 注册表、pd 异源腿含 run-record、psv/pas e2e、arm 双路径）。
+
+**收官状态**：五技能全部在位且门禁绿；四个 CC 外壳件（agents/hooks/command/substrate）全部按 pi 模型重建；方案文档与 divergence 日志全程同步。后续可选：npm 发布（pi-package keyword 已就位）、M0.5 agent prose 工具名残留清洗、sf-providers 模型规格进一步校准。

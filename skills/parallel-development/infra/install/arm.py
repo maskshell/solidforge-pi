@@ -111,8 +111,16 @@ def copy_tree_filtered(src, dst, label):
     print(f"  + copied {label} -> {dst}")
 
 
+def _context_md_path(project_dir):
+    """PI PORT: the project context file pi loads — AGENTS.md when the project
+    already has one, else CLAUDE.md (pi reads either at startup, same layering;
+    AGENTS.override.md would displace both, but we never create it)."""
+    agents = os.path.join(project_dir, "AGENTS.md")
+    return agents if os.path.exists(agents) else os.path.join(project_dir, "CLAUDE.md")
+
+
 def append_constitution(project_dir):
-    cmd = os.path.join(project_dir, "CLAUDE.md")
+    cmd = _context_md_path(project_dir)
     try:
         with open(CONSTITUTION_SRC, "r", encoding="utf-8") as fh:
             section = fh.read()
@@ -361,7 +369,7 @@ def _toolchain_note_lines(project_dir, lang=None):
 
 def write_toolchain_note(project_dir, lang=None):
     """Append a checked-in Gate Toolchain note to CLAUDE.md so a new machine / CI contributor knows how to arm the gates. Project-portable tools restore via the lockfile; system tools need a per-machine install. Append-once (idempotent). Written only under --with-tools (documents the deps just added). `lang` restricts the note to the armed ecosystem (mirrors prepare_tools' --lang filter)."""
-    cmd = os.path.join(project_dir, "CLAUDE.md")
+    cmd = _context_md_path(project_dir)
     existing = ""
     if os.path.exists(cmd):
         with open(cmd, "r", encoding="utf-8") as fh:
@@ -383,6 +391,7 @@ def write_toolchain_note(project_dir, lang=None):
 GITIGNORE_ENTRIES = [
     ".claude/parallel-dev/loop-state.json",
     ".claude/parallel-dev/runs/",
+    ".claude/parallel-dev/tasks.json",
     # different-family secrets: .env (the user's app env) + .env.solidforge (the Solid Forge
     # secrets file) hold provider tokens, never committed. The negations below
     # un-ignore the committed placeholders (no real tokens) — defensive against
@@ -1105,7 +1114,7 @@ def uninstall_external_configs(project_dir, apply):
 
 
 def uninstall_claude_md_sections(project_dir, apply):
-    cmd_path = os.path.join(project_dir, "CLAUDE.md")
+    cmd_path = _context_md_path(project_dir)
     if not os.path.exists(cmd_path):
         print("  CLAUDE.md: not present")
         return
