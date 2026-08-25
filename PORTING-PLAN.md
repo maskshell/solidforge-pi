@@ -220,8 +220,8 @@ solidforge-pi/
 |---|---|---|
 | **M0 spike** ✅ | sf-subagents 扩展跑通 + directTools 命名实测 + models.json/registerProvider 对 DeepSeek 端点连通性 | `subagent` 工具调 `solidforge:doc-reviewer` 返回结构化结果 |
 | **M1 csr** ✅（2026-08-25） | skills/cross-source-review 移植：hetero_doc_review.py spawn 层 pi 化（`pi --mode json -p -e sf-providers`）+ guard 测试重写（8 检查）+ SKILL.md/install.md/divergence.md 适配 | **实弹**：bigmodel(GLM-5.2) 抓到植入矛盾（blocker+双行引文）；qwen3 401 被 `hetero-api-error` 如实披露；离线 6/6 测试全绿（含 budget/turns 熔断 degrade） |
-| **M2 psv/pas** | 两个 outcome-axis 技能（无 hooks 依赖，最快） | psv 覆盖记录 + pas 撞车记录各一份 |
-| **M3 pd** | parallel-development：TaskCreate 拍板与实现（§5.3）+ fast_gate 接线 + playwright adapter 接入 | 双环收敛（内环 gates + 外环 review）全绿 |
+| **M2 psv/pas** ✅（2026-08-25） | 两个 outcome-axis 技能（无 hooks 依赖，最快） | psv e2e：BERT 误归属被 **refuted**（带抓取引文），覆盖记录 1V/1R/0W/0K of 2；pas e2e：3 新颖性声明全 clear-under-search（含诚实盲区披露）；两技能离线 14/14 绿 |
+| **M3 pd** ✅（2026-08-25） | sf-hooks shim（三 deny/block 路径实弹验证）+ hetero_review spawn 层 pi 化（复用 csr 模式）+ TaskCreate 方案二（loop_state task-* 子命令族，冲突检测确定性层）+ SKILL.md/references 改写 + playwright 三件套 adapter-proxy 化 + plugin_layout 适配 pi manifest + **补漏 blueprint-crafting**（里程碑漏项，开箱全绿） | pd 异源腿实弹：13 轮工具调用、$0.0102 cost、wall-clock 熔断诚实 malform、run-record 落盘；task 注册表冲突阻断 exit 3 验证；pd 38/38 + bc 全绿 |
 | **M4 arm + 收尾** | arm-tools 命令 + arm.py AGENTS.md 补丁 + plugin_layout.py 更新 + README（含 adapter 前置声明、CI trust 说明） | 全新项目 arm → converge 全流程 |
 
 ---
@@ -296,3 +296,16 @@ solidforge-pi/
 **已实施**：`convert_agents.py` 改为保留 `solidforge:` 名（YAML 加引号）+ 文件名保留源形式 `<name>.agent.md`；`prompts/solidforge:arm-tools.md` 占位模板已验证展开与 `$ARGUMENTS` 替换。上轮一次失败的 edit 调用导致的静默半途编辑（并发上限/接口字段未改）已在本轮补齐。
 
 **附带验证：argument-hint（CC 同名同渲染）**。prompt template 的 frontmatter `argument-hint` 在补全列表内渲染为 `${hint} — ${desc}`（autocomplete.js L209-214，与 CC 一致）；`/solidforge:arm-tools` 保留 CC 原版 hint。注意分档：扩展命令（registerCommand）**无** argumentHint 字段（types.d.ts RegisteredCommand），只有空格后的动态参数候选（getArgumentCompletions → AutocompleteItem{value,label,description}）——因此 arm-tools 保持 template 路线，不转扩展命令（两者不能同名共存，会触发 :1/:2 冲突后缀）。
+
+
+---
+
+## 13. M3 实施记录（2026-08-25）
+
+- **sf-hooks 扩展**（§4.2 落地）：`tool_call`(edit|write) → blueprint_guard.py + counters.py pre（5s），deny ⇒ `{block:true, reason}`；`tool_result` → fast_gate.py（20s），`decision:block` ⇒ isError + FAST-GATE 反馈。env 桥 `CLAUDE_PROJECT_DIR=ctx.cwd`；工具名映射 edit/write→Edit/Write（MultiEdit 并入 edit）、`input.path`→`tool_input.file_path`。**实弹三路径**：suspended 断路器 deny、frozen blueprint deny、ruff lint 反馈自纠。
+- **hetero_review.py pi 化**：重放 csr 模式（manifest/_load_profile/_pi_argv/_run_streamed/_run_claude_once/_parse_pi_stream/main）；pd 特有 `_run_loop_state` 生命周期记账原样保留（本地 subprocess，harness 无关）；wiring 测试适配（envelope parser 断言 → wrapper-cap 映射断言；_materialize → _load_profile 路由组合断言）。
+- **M3 实弹排障三连**（全部真 bug，全修复）：① pd `--allowed-tools` 默认仍是 CC 空格大写名（Stage D 漏项）→ 子进程无工具，deepseek 退化吐 DSML 原文一轮即停；② `_extract_text` 只取第一个 text part → 工具前导 prose 后的 JSON 被漏（csr/pd 双修：拼接全部 text parts）；③ **子进程继承 wrapper stdin（非 TTY 不关）→ `pi -p` 阻塞读 stdin**（手动跑通、wrapper 挂起的根因）→ `stdin=DEVNULL`（双 wrapper 同修，load-bearing 注释入档）。
+- **TaskCreate 方案二**：loop_state.py 新增 `task-add/list/claim/conflict/complete` 子命令族，状态文件 `.claude/parallel-dev/tasks.json`；冲突检测 = files_touched 与 **in_progress** 任务交集（pending 为 advisory）；claim 冲突 exit 3 + conflicts[]，`--force` 编排者裁决。SKILL.md 调度环与 20 个示例行全部改写为 CLI 形式。
+- **playwright 三件套**：M0 TODO 旗标落地为「Browser automation surface (PI PORT)」节——`mcp({search})`/`mcp({tool,args})` proxy 指引 + adapter 缺席时 Playwright CLI 兜底（诚实声明交互式会话不可用，不编造）。
+- **plugin_layout 适配**：root 发现 `.claude-plugin/plugin.json` → `package.json`（pi manifest）；manifest 断言 → pi-package keyword + pi.extensions/skills/prompts；hooks.json 断言 → sf-hooks 扩展接线断言；arm-tools 路径 → prompts/；agent 名适配 `solidforge:` 命名空间。**bc（blueprint-crafting）补漏复制**——原里程碑表漏列（M1-M4 无 bc 行），其确定性管线开箱全绿，SKILL.md 仅 3 处 spawn 措辞适配。
+- 其余：`.markdownlint.json` 随包复制（lint_self 需要）；pd profiles 同步 csr 路由集；model-routing/convergent-loop/hooks-reference 三个可执行 reference 更新为 pi substrate（design-decisions.md 是 ADR 历史档案，保留 CC 叙述）。

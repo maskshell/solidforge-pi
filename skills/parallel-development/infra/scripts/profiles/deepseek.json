@@ -1,0 +1,7 @@
+{
+  "_comment": "PI hetero profile — DeepSeek family via pi's BUILT-IN catalog route deepseek (baseUrl https://api.deepseek.com, openai-completions, thinkingFormat deepseek). FILENAME=ROUTE. _family = MODEL LINEAGE (deepseek). Catalog-inherited facts: deepseek-v4-flash ctx 1M reasoning, $0.14/$0.28 per Mtok — wrapper cost telemetry works on this route. Credential: DEEPSEEK_API_KEY (pi-ai convention), bridged from the CC-convention DEEPSEEK_ANTHROPIC_AUTH_TOKEN by sf-providers (same account key serves both endpoints).",
+  "_provider": "deepseek",
+  "model": "deepseek-v4-flash",
+  "_family": "deepseek",
+  "_token_env": "DEEPSEEK_ANTHROPIC_AUTH_TOKEN"
+}

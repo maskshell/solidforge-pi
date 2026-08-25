@@ -1,0 +1,89 @@
+{
+  "plan_model_version": "v1",
+  "artifact_type": "arch-design",
+  "authority_chain": [
+    "d3-gates-arch-design.md",
+    "docs/design-pattern-review-value.md",
+    "CLAUDE.md"
+  ],
+  "conflict_rule": "within the two gates' design scope, authority_chain[0] (this arch-design) is master; on any conflict with workspace CLAUDE.md rules (the maintenance floor), CLAUDE.md wins",
+  "anchors": {
+    "positioning": {"present": true, "ref": "d3-gates-arch-design.md#1-positioning"},
+    "what-it-does-not-do": {"present": true, "ref": "d3-gates-arch-design.md#2-what-it-does-not-do"},
+    "layering": {"present": true, "ref": "d3-gates-arch-design.md#3-layering"},
+    "key-decisions-rationale": {"present": true, "ref": "d3-gates-arch-design.md#4-key-decisions--rationale"},
+    "cross-boundary-contracts": {"present": true, "ref": "d3-gates-arch-design.md#5-cross-boundary-contracts"},
+    "parallel-boundaries": {"present": true, "ref": "d3-gates-arch-design.md#6-parallel-boundaries-files_touched--rule-5-ripple"},
+    "failure-modes": {"present": true, "ref": "d3-gates-arch-design.md#7-failure-modes--degradation"},
+    "version-strategy": {"present": true, "ref": "d3-gates-arch-design.md#8-version-strategy"}
+  },
+  "anchors_meta": {"source": "author-supplied"},
+  "subset_tags": {
+    "executable": ["item_id", "seq", "depends_on", "dod_ref"],
+    "upstream_only": ["title", "scope", "source_location", "complexity", "risk", "odp_status", "constraints_profile", "parallel_group"],
+    "downstream_only": ["blueprint_subset"]
+  },
+  "items": [
+    {
+      "item_id": "drift-check-gate",
+      "seq": 0,
+      "depends_on": [],
+      "dod_ref": "d3-gates-arch-design.md#1-positioning",
+      "title": "drift_check.py self-gate",
+      "scope": "Self-contained drift-detection gate over rule-7 duplicated boilerplate — a SUBSET of {run/have/emit/find_marker_dirs} present per-helper across arch_contract_*.py and *_adapter.py (emit family-wide; have/run/find_marker_dirs partial — verified by grep). The registry enumerates the verified per-helper sibling sets, not an idealized convention. Emits advisory warnings only, exits 0 (rule 4).",
+      "source_location": "d3-gates-arch-design.md §1, §2, §4(D1,D2), §7",
+      "complexity": "M",
+      "risk": "False-positive rate must stay low; the registry must name drift sites precisely or the gate is noise. Advisory severity (rule 4) bounds the blast radius of a false positive.",
+      "odp_status": [
+        {
+          "id": "ODP-1",
+          "kind": "resolve-now",
+          "resolution": "Sibling file infra/test/drift_registry.json, holding DRIFT SITES ONLY (not adapter-family membership — that is glob-derived per arch-design §4 D5). Keeps platforms.json single-purpose: per-language decision-point routing is a different axis from drift-site enumeration."
+        },
+        {
+          "id": "ODP-2",
+          "kind": "resolve-now",
+          "resolution": "Normalized-text diff: strip comments and whitespace, then compare. AST diff is over-engineering for boilerplate that is text-level duplication by definition."
+        },
+        {
+          "id": "ODP-3",
+          "kind": "deferred",
+          "resolution": "Self-dogfood (compare the gate against its own future siblings) applies in principle once a second sibling exists; a one-member family has nothing to drift against."
+        }
+      ],
+      "constraints_profile": "arch-design",
+      "parallel_group": "gates",
+      "blueprint_subset": []
+    },
+    {
+      "item_id": "adapter-shape-check-gate",
+      "seq": 1,
+      "depends_on": [],
+      "dod_ref": "d3-gates-arch-design.md#4-key-decisions--rationale",
+      "title": "adapter_shape_check.py contract test",
+      "scope": "Deterministic shape contract over the 7 *_adapter.py (membership glob-derived per arch-design D5, NOT registry): each must emit a violation-log.schema.json-valid object (top-level gate/passed/coverage/findings[] + per-finding severity/rule/file/line/detail/suggestion). Blocker + non-zero exit on violation (codifiable, so rule 4 permits Blocker). The shape check does NOT read drift_registry.json.",
+      "source_location": "d3-gates-arch-design.md §1, §4(D1), §5(vs violation-log schema), §7",
+      "complexity": "S",
+      "risk": "Low — crisp structural contract. Semantic correctness of adapter output stays outcome axis (host arch-contract gates catch downstream effects); stated as a coverage note.",
+      "odp_status": [],
+      "constraints_profile": "arch-design",
+      "parallel_group": "gates",
+      "blueprint_subset": []
+    },
+    {
+      "item_id": "rule5-doc-audit",
+      "seq": 2,
+      "depends_on": ["drift-check-gate", "adapter-shape-check-gate"],
+      "dod_ref": "d3-gates-arch-design.md#6-parallel-boundaries-files_touched--rule-5-ripple",
+      "title": "rule-5 doc audit across the 9 self-gate enumerations",
+      "scope": "Grep BOTH gate names (drift_check, adapter_shape_check) AND count-words ('four deterministic', '4 deterministic', 'self-gate') across CLAUDE.md §1, extending.md, install.md (Self-checks list ~line 136, NOT the host-gate 'What each gate does' table ~line 86), maturity.md, golden-paths.md, role-agent-mapping.md, arch-contracts.md, platforms.json, disconnect_check.py. Fix stale counts too (e.g. extending.md:149 'four' -> post-ripple total), not only gate-name mentions. The self-gate roster is 10 in CLAUDE.md §1, 10 in install.md Self-checks (a different set), 4 in extending.md:138-141; union = 13 distinct pre-ripple, 15 post-ripple (grep-driven, not count-driven); update each enumeration that lists self-gates; record a coverage note for each that does not.",
+      "source_location": "d3-gates-arch-design.md §6 (the ripple list)",
+      "complexity": "M",
+      "risk": "A missed enumeration = a gate the loading-chain cannot reach (rule 8); the doc-audit pass is a required step, not an afterthought.",
+      "odp_status": [],
+      "constraints_profile": "arch-design",
+      "parallel_group": null,
+      "blueprint_subset": []
+    }
+  ]
+}

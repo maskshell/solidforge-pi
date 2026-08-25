@@ -1,0 +1,26 @@
+{
+  "artifact_type": "arch-design",
+  "process_converged": true,
+  "rightness": "human_confirm_required",
+  "inner_ring": {
+    "passed": true,
+    "blockers": 0,
+    "findings": 0,
+    "profile": ""
+  },
+  "outer_ring": {
+    "passed": true,
+    "blockers": 0,
+    "findings": 4
+  },
+  "coverage": [
+    "v5 outer-ring review: all four story-lines (registry-holds-drift-sites-only / adapter-family-via-glob; adapter_shape_check NO-TOOL isolated-dynamic not static; emit() prints+sys.exits captured via redirect_stdout; ODP inventory matches §9) uniform across §1/§2/§4/§5/§6/§7/§8/§9 + plan-model.",
+    "Verified adapter count = 7; 5 adapters spot-checked confirm emit() prints + sys.exit (D5 mechanic correct).",
+    "Verified smoke_gates.py early-returns (skip) for all 7 adapters when tool absent; adapter_shape_check 'always runs' justification empirically valid.",
+    "Verified rule-4 split, extending.md citations (138-141/145/149), violation-log.schema.json required fields.",
+    "4 advisory warnings (dangling cross-ref / authority-chain missing rule 2 / shape-summary imprecision / self-gate count) — all addressed by the primary in v6 (polish; no-blocker status unchanged per rule 4)."
+  ],
+  "caveats": [
+    "rightness is human_confirm_required by design (outcome axis); a green process_converged is NOT outcome-axis success — do not misread the two (field isolation, arch-design §5)"
+  ]
+}

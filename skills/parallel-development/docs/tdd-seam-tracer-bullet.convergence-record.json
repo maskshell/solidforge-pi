@@ -1,0 +1,949 @@
+{
+ "artifact": "skills/parallel-development/docs/tdd-seam-tracer-bullet.proposal.md",
+ "rounds": [
+  {
+   "round": 1,
+   "same_source_findings": 5,
+   "hetero_findings": 9,
+   "hetero_degraded": false,
+   "blockers": 2,
+   "verdict": "rewrite",
+   "findings": [
+    {
+     "defect_id": "r1-auth-1",
+     "severity": "blocker",
+     "kind": "authority-chain-break",
+     "location": "proposal 'Validation notes' section, first bullet",
+     "evidence": "The refactor-removal claim cites the wiki mattpocock-skills page, but the vendored snapshot does not contain it (chain + failure-mode sections checked in full: no refactor removal, no 2026-06 date, no 'agents essentially never performed it').",
+     "suggestion": "Drop or re-source the claim."
+    },
+    {
+     "defect_id": "r1-contra-1",
+     "severity": "warning",
+     "kind": "contradiction",
+     "location": "proposal P7-a step 1 vs P7-b + Non-goals",
+     "evidence": "P7-a instructs the RED-phase agent to identify (derive) the seam at RED time; P7-b states the seam is frozen at blueprint freeze and RED consumes it. The identify-at-RED instruction re-opens the upstream-anchored negotiation P7-b forbids.",
+     "suggestion": "Reword P7-a to consume the blueprint seam; identify only if absent."
+    },
+    {
+     "defect_id": "r1-auth-2",
+     "severity": "warning",
+     "kind": "authority-chain-break",
+     "location": "proposal P7-a step 1, seam-types sentence",
+     "evidence": "The 'out of test scope' gloss on the preprocessing seam is presented as part of the Feathers/wiki-cited content, but the wiki page lists all three types as instances of the same idea with no test-scope exclusion.",
+     "suggestion": "Separate the proposal's own scoping judgment from the citation."
+    },
+    {
+     "defect_id": "r1-cite-2",
+     "severity": "coverage",
+     "kind": "citation-error",
+     "location": "proposal 'Validation notes' second bullet",
+     "evidence": "The verbatim quote 'if nothing is closed, the frontier never visibly unlocks' does not appear in the vendored wiki snapshot; the FACT (implement does not close work units) is supported by the wiki summary. The quote's verbatim accuracy could not be verified.",
+     "suggestion": "Paraphrase and cite the wiki summary, or verify the quote against implement.md."
+    },
+    {
+     "defect_id": "r1-cov-1",
+     "severity": "coverage",
+     "kind": "authority-chain-break",
+     "location": "proposal 'Validation notes' second bullet + 'Sources'",
+     "evidence": "frontier-delta-progress-invariant is cited as the invariant plan_queue.py complete + the invariant 'is exactly the fix', but the page was not vendored and its content could not be verified; repo grep matches only this proposal.",
+     "suggestion": "Vendor the page or soften the claim."
+    },
+    {
+     "defect_id": "r2-gap-1",
+     "severity": "blocker",
+     "kind": "structural-gap",
+     "location": "proposal P7-c (\"convergent-loop.md test-quality line (line 67), append two checks + one root-gap note\") vs convergent-loop.md §Reviewer subagent prompt template (lines 187-206)",
+     "evidence": "convergent-loop.md carries TWO test-quality enumerations. Line 67 is the flow description (\"Test-quality line (same-family): are the tests real AC checks or placeholders?...\"); the operative prompt the spawned reviewer actually receives is the separate \"Reviewer subagent prompt template\" section, whose item 3 enumerates the checklist as \"(a) coverage gaps on the AC's observable outcomes (happy-path-only), (b) assertions weakened to pass — loosened tolerance, commented-out asserts, swallowed exceptions, overfit fixtures, (c) any test named in the blueprint's AC→test mapping that the diff removes or renames\" — with NO tautological, implementation-coupled, or root-gap item. P7-c pins the edit to \"line 67\" only, and the rule-5 enumeration lists convergent-loop.md generically. Implemented as written, the two new checks + root-gap note live only in the descriptive prose and never enter the reviewer subagent's prompt — the stated purpose of P7-c (\"reviewer-prompt dimensions\") is defeated. This is exactly the decision-point-reachability defect class the proposal's own workspace rule 8 targets.",
+     "suggestion": "Extend P7-c to also amend template item 3 (add items (d) tautological assertion, (e) implementation-coupled, (f) no-independent-truth-source), and name the template section explicitly in the rule-5 enumeration."
+    },
+    {
+     "defect_id": "r2-contra-1",
+     "severity": "warning",
+     "kind": "contradiction",
+     "location": "proposal P9 paragraph (\"blind-spot crossing is the 异源 leg's job (convergent-loop.md:78-104)\")",
+     "evidence": "The cited section self-scopes the mechanism as conditional: \"### different-family (different-family) adversarial review — opt-in additive outer ring (ADR #40)\", \"For HIGH-STAKES items — ADR-level decisions, security- or correctness-sensitive diffs, or a same-family verdict that is partially-satisfied / low-confidence — the orchestrator MAY add an different-family second opinion\", and \"Default items pay zero added cost (different-family does not run); the trigger is a human-judged classifier, not automated\". The proposal's P9 deferral rationale presents this opt-in, human-triggered, high-stakes-only mechanism as the standing substitute for mattpocock's always-on axis separation (\"two existing mechanisms already cover most of the benefit\"), overstating default coverage — for a default item the blind-spot-crossing benefit it counts on does not run at all.",
+     "suggestion": "Qualify the P9 rationale: blind-spot crossing is covered only on opt-in/high-stakes items; the ODP trigger should include a masking incident on a default (non-异源) item."
+    },
+    {
+     "defect_id": "r2-gap-2",
+     "severity": "warning",
+     "kind": "structural-gap",
+     "location": "proposal P7-b + Non-goals third bullet, vs intent-blueprint.md §Rich path (lines 33-45) and plan-driven-mode.md chaining-loop step 3 (line 150)",
+     "evidence": "P7-b anchors the seam \"at Phase 0 freeze\" and treats \"Absent seam → name-only degrade\" as the exception. But the rich path derives blueprints from bc specs: \"spec `acceptance-criteria` → Blueprint AC, refined into BDD Given/When/Then\" (intent-blueprint.md:37) and \"Rich path: if `plan_queue.detect_producer` reports `blueprint-crafting`, seed the Phase-0 anchor from bc's spec in the `authority_chain` (derive, don't re-imagine)\" (plan-driven-mode.md:150). The proposal's own Non-goal — \"blueprint-crafting authoring-side changes are out of scope\" — guarantees bc specs carry no seam field, so on the rich path (the path P8-a itself targets) every mini-blueprint's AC line systematically lacks a seam and the degrade becomes the norm. That is precisely the failure the proposal quotes against in P7-b: \"若上游没有发生协商，守卫的前置条件从不触发，运行静默退化为'直接写代码'\" (wiki test-seam §上游冻结). The proposal never says whether the Planner should synthesize seams during rich-path derivation or accept systematic mid-RED identification (P7-a's fallback).",
+     "suggestion": "State the rich-path seam source explicitly: either the Planner derives a seam at seeding (making the upstream anchor real), or the proposal concedes the degrade is systematic for bc-seeded plans and records that honestly."
+    },
+    {
+     "defect_id": "r2-gap-3",
+     "severity": "warning",
+     "kind": "structural-gap",
+     "location": "proposal P8-b (\"Migrate: batch call-site migration by package/dir, each batch one unit, all blocked by expand\") vs refactoring.md Phase 3 (lines 47-72)",
+     "evidence": "P8-b's expand-contract is expressed in unit/dependency terms — \"each batch one unit, all blocked by expand\", \"Contract: ... blocked by all migrate batches\" — but blocking edges between work units exist only in plan-driven mode's queue machinery (plan_queue.py `depends_on`, next-item deps check). refactoring.md Phase 3 (\"Refactoring (Parallel when safe)\") is a prose workflow whose only dispatch pattern is \"For independent files/modules: Task(...): Refactor module A (keep tests green)\" with no dependency graph and no unit concept. The proposal does not say whether a standalone wide refactor must route through plan-driven mode to obtain the blocking semantics, or how Phase 3 expresses \"all blocked by expand\" without queue machinery — the carve-out's core safety property (CI stays green because sequencing is enforced) has no carrier at its stated edit point.",
+     "suggestion": "Either state that wide refactors decompose only in plan-driven mode (P8-a's queue) with refactoring.md Phase 3 carrying a pointer, or specify how the expand→migrate→contract ordering is enforced within a plain Phase-3 run."
+    },
+    {
+     "defect_id": "r2-covgap-1",
+     "severity": "warning",
+     "kind": "coverage-gap",
+     "location": "proposal P8-a placement + Consistency notes rule-5 enumeration, vs feature-dev.md Phase 1 (line 33) / Phase 5",
+     "evidence": "P8-a lands the tracer-bullet doctrine solely in plan-driven-mode.md Phase −1 (plan interpretation), and the rule-5 enumeration lists feature-dev.md only for P7-a. But the default (non-plan-driven) feature lifecycle performs its own decomposition at feature-dev.md Phase 1 — \"Break down into subtasks\" (line 33) — feeding Phase 5's parallel dispatch. For a plain \"implement feature X end-to-end\" request, the decomposition decision point never sees the thin-slice-first doctrine; per the workspace's own rule 8 (\"a file existing somewhere is not enough\"), the P8 capability is unreachable where default-mode decomposition happens. The proposal scopes P8 to \"plan interpretation\" without stating why feature-dev's decomposition is excluded, though the borrowed article's claim is about decomposition generally.",
+     "suggestion": "Add the one-sentence tracer-bullet cross-ref to feature-dev.md Phase 1 (and enumerate it in rule 5), or record an explicit non-goal excluding default-mode decomposition with the reason."
+    },
+    {
+     "defect_id": "r2-covgap-2",
+     "severity": "warning",
+     "kind": "coverage-gap",
+     "location": "proposal P7 (a/b/c) vs fetched mattpocock docs/engineering/tdd.md §The loop, and the seam it runs at",
+     "evidence": "The fetched primary source (verified 2026-08-24, raw.githubusercontent.com/mattpocock/skills/main/docs/engineering/tdd.md) states the pre-agreed-seam rule as a TWO-sided mechanism: \"In the full chain the seams are agreed earlier, during to-spec: '/tdd is told to only work at pre-agreed test seams, /code-review checks that only agreed-upon test seams were used.'\" The proposal translates only the upstream half (P7-b freeze, P7-a consumption). P7-c's reviewer additions — tautological assertion, implementation-coupled test, no-independent-truth-source — do not include a seam-conformance check (\"did the tests actually sit at the blueprint-declared seam rather than an internal helper?\"). The implementation-coupled check is adjacent (breaks on internal rename) but does not verify against the DECLARED seam, so a Coder testing a different boundary than the frozen one has no review-side detection.",
+     "suggestion": "Add a fourth P7-c reviewer check: tests target the seam declared on the blueprint AC line (drift → finding), mirroring mattpocock's code-review half."
+    },
+    {
+     "defect_id": "r2-gap-4",
+     "severity": "warning",
+     "kind": "structural-gap",
+     "location": "proposal P7-b (\"Absent seam → name-only degrade with an honest coverage note (rule 3)\")",
+     "evidence": "\"name-only degrade\" is a load-bearing but undefined term: nothing in the proposal or the touched files says what is name-only, or what operationally degrades. The nearest existing pattern uses different words — intent-blueprint.md:23: \"Absent mapping → the gate degrades to an **inactive coverage note** (no name comparison runs...)\". An implementer cannot tell whether \"name-only\" refers to the AC line carrying only its name, the gate comparing names only, or something else. This also contradicts the proposal's own Consistency note: \"Rule 10 terminology: one term per concept\" — a new compound term is introduced without a gloss, the exact drift rule 10 forbids.",
+     "suggestion": "Define the degrade concretely at first use (e.g. \"the AC line carries no seam field; RED identifies one and records it as a coverage note\"), reusing the existing 'inactive coverage note' idiom."
+    },
+    {
+     "defect_id": "r2-gap-5",
+     "severity": "warning",
+     "kind": "structural-gap",
+     "location": "proposal P8-a per-item shape rules vs plan-driven-mode.md Phase −1 capabilities 1 and the extraction-mode table (lines 49-57)",
+     "evidence": "Phase −1's extraction doctrine says upstream decomposition structure is trusted: \"Cursor `todos[]` frontmatter; iteration-plan tables; decomposition tables → **Latch** (structural — high confidence)\" and capability 1 \"**Plan-native grain.** Do NOT canonicalize grain.\" P8-a's new rule — \"Validation question: 'what can be demoed when this item completes?' No answer → it is a horizontal slice, split it\" — licenses the normalizer to second-guess and re-split exactly those latched items. The proposal states no precedence rule between a latched upstream decomposition (e.g. bc's iteration-plan Coder-L/M/E/G) and the split doctrine, leaving the normalizer to choose between two conflicting instructions at the same decision point.",
+     "suggestion": "State the precedence: e.g. the shape rules apply to semantically-inferred decompositions and as a checkpoint-flagged advisory on latched ones (revision channel), never a silent re-split of latched grain."
+    },
+    {
+     "defect_id": "r2-cite-1",
+     "severity": "coverage",
+     "kind": "citation-error",
+     "location": "proposal Sources (\"docs/engineering/tdd.md (fetched 2026-08-24 — the refactor-drop statement at :31 + the good-test list at :81-84)\")",
+     "evidence": "Content verified verbatim against the fetched source: the refactor-drop sentence (\"it was dropped in June 2026 because agents essentially never performed it, and because review and implementation work better as separate sessions. Refactoring belongs to code-review.\") and the four good-test traits (\"Test names read as capabilities... Expected values in assertions are literals you can trace to the spec... Renaming an internal function breaks nothing... Mocks appear only at external boundaries\") both exist in docs/engineering/tdd.md, and CHANGELOG.md v1.1.0 PR #464 (\"Reshape **`tdd`** into a reference-only skill\") checks out. However, the exact LINE anchors :31 and :81-84 could not be confirmed — the fetch returns reflowed markdown, so line-position correspondence is unverified (the traits sit in the 'It's working if' section near the end, which makes :81-84 plausible but unconfirmed).",
+     "suggestion": "Re-verify the two line anchors against the raw file with line numbers preserved, or cite by section heading (§The loop / §It's working if) instead of line numbers."
+    }
+   ],
+   "dispositions": [
+    {
+     "defect_id": "r1-auth-1",
+     "action": "fixed",
+     "note": "fixed — re-sourced to mattpocock docs/engineering/tdd.md:31 (quote verified verbatim via raw fetch 2026-08-24; the wiki snapshot omits this finding); citation fixed, claim kept"
+    },
+    {
+     "defect_id": "r1-contra-1",
+     "action": "fixed",
+     "note": "fixed — P7-a step 1 reworded to consume the blueprint seam; mid-RED identification only as the absent-seam fallback"
+    },
+    {
+     "defect_id": "r1-auth-2",
+     "action": "fixed",
+     "note": "fixed — preprocessing-scope gloss separated as this proposal's own judgment, not wiki-cited content"
+    },
+    {
+     "defect_id": "r1-cite-2",
+     "action": "fixed",
+     "note": "fixed — verbatim quote replaced by paraphrase; fact cited to the wiki summary which does support it"
+    },
+    {
+     "defect_id": "r1-cov-1",
+     "action": "fixed",
+     "note": "fixed — frontier-delta-progress-invariant page vendored (authority/5th snapshot) + cited by section"
+    },
+    {
+     "defect_id": "r2-gap-1",
+     "action": "fixed",
+     "note": "fixed — P7-c now amends BOTH enumerations incl. the Reviewer subagent prompt template item 3 ((d)(e)(f)(g)); rule-5 enumeration names the template section (verified: template at convergent-loop.md:187-206 lists only (a)(b)(c))"
+    },
+    {
+     "defect_id": "r2-contra-1",
+     "action": "fixed",
+     "note": "fixed — P9 rationale qualified: the 异源 leg is opt-in/high-stakes-only (convergent-loop.md:78-104); ODP trigger now includes masking on a default item"
+    },
+    {
+     "defect_id": "r2-gap-2",
+     "action": "fixed",
+     "note": "fixed — P7-b gains the rich-path rule: the pd Planner derives the seam at Phase-0 derivation from the AC's Given/When/Then boundary (pd-side act; bc non-goal intact)"
+    },
+    {
+     "defect_id": "r2-gap-3",
+     "action": "fixed",
+     "note": "fixed — P8-b states wide refactors decompose ONLY via plan-driven mode (queue depends_on carries the blocking edges); refactoring.md Phase 3 gains a routing pointer"
+    },
+    {
+     "defect_id": "r2-covgap-1",
+     "action": "fixed",
+     "note": "fixed — feature-dev.md Phase 1 \"Break down into subtasks\" (verified line 33) gains a one-sentence cross-ref; enumerated in rule 5"
+    },
+    {
+     "defect_id": "r2-covgap-2",
+     "action": "fixed",
+     "note": "fixed — seam-conformance check added as template item (g) (mattpocock code-review half of the pre-agreed-seam mechanism)"
+    },
+    {
+     "defect_id": "r2-gap-4",
+     "action": "fixed",
+     "note": "fixed — \"name-only degrade\" replaced by the existing \"inactive coverage note\" idiom (intent-blueprint.md:23) with the RED fallback stated"
+    },
+    {
+     "defect_id": "r2-gap-5",
+     "action": "fixed",
+     "note": "fixed — precedence rule added: shape rules bind semantic-infer decompositions; latched ones get checkpoint-flagged advisories via the revision channel, never a silent re-split"
+    },
+    {
+     "defect_id": "r2-cite-1",
+     "action": "fixed",
+     "note": "fixed — anchors verified accurate via raw curl+grep -n (31 = refactor-drop under §The loop; 81-84 = good-test list under §It's working if); Sources now cite section+line so future readers can re-verify"
+    }
+   ]
+  },
+  {
+   "round": 2,
+   "same_source_findings": 5,
+   "hetero_findings": 4,
+   "hetero_degraded": false,
+   "blockers": 2,
+   "verdict": "rewrite",
+   "findings": [
+    {
+     "defect_id": "r3-same-1",
+     "severity": "warning",
+     "kind": "structural-gap",
+     "location": "Fix P8-b routing pointer vs plan-driven-mode.md 'When it triggers' + SKILL.md Scope Guard",
+     "evidence": "P8-b routes wide refactors ONLY via plan-driven mode, but plan-driven mode triggers only on a @-referenced plan document; a plain conversational wide-refactor request has no plan @ref, so the routing destination cannot trigger — the carve-out's CI-green guarantee has no reachable entry path for its most common input.",
+     "suggestion": "State the queue-creation path for non-plan requests or concede the degrade honestly."
+    },
+    {
+     "defect_id": "r3-same-2",
+     "severity": "warning",
+     "kind": "contradiction",
+     "location": "Consistency notes psv bullet vs Validation notes + Sources",
+     "evidence": "The psv-skip rationale says 'citations are local' but the doc cites an external fetched primary source (tdd.md) with load-bearing verbatim claims — the class that produced the round-1 blocker.",
+     "suggestion": "Reword to 'predominantly local; the single external fetched claim verified in-csr'."
+    },
+    {
+     "defect_id": "r3-same-3",
+     "severity": "warning",
+     "kind": "structural-gap",
+     "location": "Fix P7-b absent-seam fallback",
+     "evidence": "'The gate degrades to inactive coverage note' is a mis-borrow: no gate reads AC-line seams (parse_ac_test_map reads the mapping section only), and the frozen blueprint is read-only so mid-phase seam identification has no stated record carrier.",
+     "suggestion": "State: absent seam = advisory, no gate consequence; record carrier = coverage note/run record, never the frozen blueprint."
+    },
+    {
+     "defect_id": "r3-same-4",
+     "severity": "warning",
+     "kind": "authority-chain-break",
+     "location": "Fix P7-a step 2",
+     "evidence": "tdd.md:81-84 lists positive good-test criteria, but the doc labels them 'the same anti-pattern set' — an implementer checking 81-84 for anti-patterns finds the opposite framing.",
+     "suggestion": "Reword to 'the good-test mirror of the same concerns as positive criteria'."
+    },
+    {
+     "defect_id": "r3-same-5",
+     "severity": "coverage",
+     "kind": "citation-error",
+     "location": "Validation notes / P7-a step 2 / P7-c (g) / Sources",
+     "evidence": "This leg has no web fetch; the external tdd.md verbatim claims could not be independently re-verified (prior verification was round-1 raw fetch + grep -n).",
+     "suggestion": "Vendor the fetched tdd.md into the authority directory."
+    },
+    {
+     "defect_id": "novel-1",
+     "severity": "blocker",
+     "kind": "coverage-gap",
+     "location": "Context coverage table + line 7 claim 'the rest solidforge already covers' + P7-a step 2 (anti-pattern import list)",
+     "evidence": "P7-a step 2 cites \"(wiki `test-seam` §三种测试反模式 ...)\" — 'THREE test anti-patterns' — but imports only two (implementation-coupled, tautological). The authority enumerates a third: authority/test-seam.md: '**三种测试反模式**…水平切片：一批测试先于任何实现落地，验证的是想象的行为与实现形状，而非用户实际行为'; vendored mattpocock-tdd.md:33: 'The opposite is horizontal slicing: all the tests first, then all the code.' That third anti-pattern names the exact ordering of the phase P7-a edits — feature-dev.md:72 (inside the cited `feature-dev.md:70-103` anchor): 'All test files are written in this phase before any implementation begins in Phase 5.' The doc has no table row for it, imports none of it, and gives no reject-with-rationale (unlike the preprocessing-seam scoping-out, which IS disclosed as 'this proposal's own judgment'). P8's 'horizontal' doctrine is the by-layer sense (tracer-bullet.md 竖切/横切), a different concept. So the doc's completeness claim 'the borrowable substance is two mechanisms plus one deferred idea; the rest solidforge already covers' is contradicted by a source the doc itself cites: this concept is neither borrowed nor covered nor deferred — it silently indicts the host phase.",
+     "suggestion": "Add a verdict row for the test-batch horizontal-slicing anti-pattern and either import it or explicitly accept/reject it for Phase 4's all-tests-first ordering (the parallel-agent contract argument at feature-dev.md:72), mirroring the preprocessing-seam disclosure pattern."
+    },
+    {
+     "defect_id": "novel-2",
+     "severity": "blocker",
+     "kind": "contradiction",
+     "location": "Validation notes, first bullet (line 88): 'REFACTOR phase → convergence loop, not the per-test cycle'",
+     "evidence": "Doc claims solidforge already has the review/implementation separation as '(REFACTOR phase → convergence loop, not the per-test cycle)'. The cited in-repo anchors say the opposite: SKILL.md:13-15 '### TDD Default / 1. RED - Write tests first (expect failure) / 2. GREEN - Implement minimum code (make tests pass) / 3. REFACTOR - Improve while tests pass' — REFACTOR IS step 3 of the per-task cycle; feature-dev.md:187 'REFACTOR Phase (optional): After tests pass, refactor code while keeping tests green.' sits at the tail of Phase 7 (Documentation), AFTER the Phase 6 convergence loop; and convergent-loop.md contains zero REFACTOR occurrences (grep-verified — the loop reviews, it does not carry a refactor phase). The sentence is the stated basis for 'An external project's practice data confirms our architecture judgment (record in the ADR entry)' — a false premise slated for the ADR log.",
+     "suggestion": "Restate where solidforge's refactor actually lives (per-task TDD Default step 3, optional Phase 7 tail, refactoring.md workflow) and re-derive or drop the separation-validation claim."
+    },
+    {
+     "defect_id": "novel-3",
+     "severity": "warning",
+     "kind": "authority-chain-break",
+     "location": "P9 (line 80): 'mattpocock's standards axis is largely already deterministic here'",
+     "evidence": "Doc: 'deterministic standards (lint/fmt/arch contracts) live in the inner ring, so mattpocock's standards axis is largely already deterministic here.' The cited authority review-axis-separation.md §标准轴的来源层级 says the opposite layering: 'linter 已强制的内容两轴都跳过——确定性检查与判断性审查分层' (what the linter already enforces, BOTH axes skip) and '仓库自身文档是标准轴的主来源…基线是 smell 清单（Fowler…作标注式启发而非硬违规）' — per the source, the standards axis is by construction the judgmental residue (repo-doc conventions + annotated smells), not the deterministic part. Claiming the axis is 'largely already deterministic' inverts the source and overstates the first of the two crutches carrying the P9 deferral.",
+     "suggestion": "Reword: the codable share of standards is inner-ring deterministic; the axis's judgmental residue stays in the single-agent semantic line — part of the residual masking risk the ODP trigger watches."
+    },
+    {
+     "defect_id": "novel-4",
+     "severity": "warning",
+     "kind": "citation-error",
+     "location": "Context (lines 7, 22) verbatim article quotes + Non-goals line 106 vs Sources section",
+     "evidence": "The doc quotes the article verbatim — 'packages three mechanisms as a \"三位一体\"' and 'The article's core premise — \"tests must accurately validate requirements or red-green is meaningless\"' — and the Non-goals reject 'the \"三位一体\" packaging'. Grep of all six vendored authority files finds neither '三位一体' nor the premise quote; Sources lists NO article entry (no URL, no date beyond the wiki snapshots' downstream source line '卡颂《大部分人的 TDD 其实用错了》(X, 2026-08) — 概念大众化转述'). A load-bearing verbatim quote driving the doc's premise-to-tdd-improvement-proposals linkage is therefore unverifiable by any reader; the nearest authority (test-seam.md §与 TDD 的关系: '测试若不放在能校验需求的位置，循环只是在验证错误的东西') phrases it differently, so fidelity to the article cannot be checked.",
+     "suggestion": "Add the article to Sources with a URL/date, or reframe the quotes as paraphrase-by-way-of-the-wiki if the X post is unfetchable."
+    }
+   ],
+   "dispositions": [
+    {
+     "defect_id": "r3-same-1",
+     "action": "fixed",
+     "note": "fixed — P8-b now states the entry path for BOTH cases: plan @ref (or user-approved minimal queue at the checkpoint) carries the CI-green guarantee; plain conversational request degrades to an unsequenced Phase-3 advisory note (guarantee LOST, honest coverage note) with the plan-driven option surfaced to the user"
+    },
+    {
+     "defect_id": "r3-same-2",
+     "action": "fixed",
+     "note": "fixed — psv-skip rationale reworded: PREDOMINANTLY local (ODP-5); the single external fetched claim (tdd.md) verified in-csr against the raw fetch; a gate would re-fetch one already-verified source"
+    },
+    {
+     "defect_id": "r3-same-3",
+     "action": "fixed",
+     "note": "fixed — absent-seam fallback restated concretely: no gate consequence (advisory; the name-set gate reads the mapping section only), record carrier = run-record coverage note, never written into the frozen blueprint (blueprint_guard denies edits)"
+    },
+    {
+     "defect_id": "r3-same-4",
+     "action": "fixed",
+     "note": "fixed — tdd.md:81-84 re-labeled as the good-test mirror (positive criteria), not the anti-pattern set"
+    },
+    {
+     "defect_id": "r3-same-5",
+     "action": "fixed",
+     "note": "fixed — the full raw tdd.md vendored at authority/mattpocock-tdd.md (94 lines; :31 and :81 anchors re-confirmed)"
+    },
+    {
+     "defect_id": "novel-1",
+     "action": "fixed",
+     "note": "fixed — third wiki anti-pattern (test-batch horizontal slicing) now has a Context-table row + P7-a step-2 explicit disposition: DELIBERATE Phase-4 exception, rejected with the parallel-contract rationale (feature-dev.md:72), recorded in the ADR entry (d) — not silent (verified: feature-dev.md:72 IS all-tests-first)"
+    },
+    {
+     "defect_id": "novel-2",
+     "action": "fixed",
+     "note": "fixed — validation note restated with the verified facts: TDD Default nominally lists REFACTOR as step 3 (SKILL.md:13-15), operationally an optional post-convergence phase (feature-dev.md Phase 7 tail), convergent-loop.md carries 0 REFACTOR occurrences; mattpocock validates the operational half + exposes the nominal-vs-operational tension; ADR entry (e) carries the open question (demote step 3?)"
+    },
+    {
+     "defect_id": "novel-3",
+     "action": "fixed",
+     "note": "fixed — P9 reworded: only the codable share of standards is inner-ring deterministic; the axis's judgmental residue (repo conventions + smells) is its actual subject per the wiki and stays in the single-agent semantic line (part of the residual masking risk the ODP watches)"
+    },
+    {
+     "defect_id": "novel-4",
+     "action": "fixed",
+     "note": "fixed — article premise quote converted to paraphrase routed through the wiki's verified phrasing (test-seam §与 TDD 的关系); the article added to Sources (title/X/2026-08, fetched by the wiki research)"
+    }
+   ]
+  },
+  {
+   "round": 3,
+   "same_source_findings": 6,
+   "hetero_findings": 5,
+   "hetero_degraded": false,
+   "blockers": 1,
+   "verdict": "rewrite",
+   "findings": [
+    {
+     "defect_id": "r4-same-1",
+     "severity": "warning",
+     "kind": "structural-gap",
+     "location": "Fix P7-b absent-seam fallback record carrier",
+     "evidence": "The 'coverage note in the run record' carrier does not exist: run-record.schema.json has no notes field (grep zero matches, additionalProperties false); build_run_record drops event notes; the only free-form carrier (record-outer --notes) requires an outer review that does not exist at RED mid-phase.",
+     "suggestion": "Name a real carrier or drop the claim."
+    },
+    {
+     "defect_id": "r4-same-2",
+     "severity": "warning",
+     "kind": "contradiction",
+     "location": "Fix P7-a step 1 seam-type enumeration vs doctrine scope",
+     "evidence": "'Pick by language' lists three pickable types, then the next sentence scopes the third out — for a preprocessing-primary language the pick lands on a scoped-out type.",
+     "suggestion": "Split: enumerate three; pick among object and link only; scope out preprocessing."
+    },
+    {
+     "defect_id": "r4-same-3",
+     "severity": "warning",
+     "kind": "coverage-gap",
+     "location": "P7-a step 2 + P7-c (e) implementation-coupled import",
+     "evidence": "The import drops the fourth tell the wiki enumerates (db-query-as-verification, test-seam §三种测试反模式 + mattpocock-tdd.md:41), while the doc discloses every other scoping-out.",
+     "suggestion": "Add the db-query tell or note its scoping-out."
+    },
+    {
+     "defect_id": "r4-same-4",
+     "severity": "warning",
+     "kind": "coverage-gap",
+     "location": "P7-b edit set + rule-5 enumeration",
+     "evidence": "infra/templates/intent-blueprint.template.md (template line 23) is the canonical AC-line carrier (intent-blueprint.md:7), but the edit set omits it — newly authored blueprints would default to the absent-seam degrade.",
+     "suggestion": "Add the template to the P7-b edit set + rule-5 enumeration."
+    },
+    {
+     "defect_id": "r4-same-5",
+     "severity": "warning",
+     "kind": "citation-error",
+     "location": "Context line 7 + Non-goals ('三位一体' verbatim quote)",
+     "evidence": "The quoted term has zero matches in the six vendored authority files and the Sources entry itself says the X post is not vendored — the quote is unverifiable in-workspace.",
+     "suggestion": "Vendor the article text or remove the quotes."
+    },
+    {
+     "defect_id": "r4-cov-1",
+     "severity": "coverage",
+     "kind": "citation-error",
+     "location": "Sources (CHANGELOG.md v1.1.0 PR #464 attribution)",
+     "evidence": "The CHANGELOG is not vendored and no fetch was available; the specific PR-number attribution could not be independently checked from vendored/in-repo sources.",
+     "suggestion": "Vendor the CHANGELOG excerpt or drop the PR-number attribution."
+    },
+    {
+     "defect_id": "r1-diff-1",
+     "severity": "blocker",
+     "kind": "contradiction",
+     "location": "Fix P7-b, absent-seam degrade carrier sentence",
+     "evidence": "Doc: \"RED identifies the seam mid-phase per P7-a; the identification travels in the Coder's folded inner summary (the only free-form channel — the run-record schema has no notes field and additionalProperties: false, so no schema'd carrier exists)\". The named carrier is neither free-form nor available at RED. (1) infra/scripts/loop_state.py:194-207 `summary()` is a deterministic f-string template — `f\"Inner status={state.get('status')}, iteration {inner.get('iteration', 0)}/{inner.get('cap_M', DEFAULT_CAP_M)}, last_snapshot={inner.get('last_snapshot')}. Fingerprints: {fp_part}.\"` — composed only of status, iteration count, snapshot ref, and top-3 fingerprint counts; there is NO input by which an agent can place a seam name in it. convergent-loop.md:162 confirms: \"`loop_state.py summary` emits one folded sentence from the fingerprint log + status\" — an emission, not a channel. (2) Role/phase mismatch: P7-a places the identification in Phase 4 RED, whose Role is Test Engineer → solidforge:tester (feature-dev.md:74); the folded inner summary is produced by the GREEN-phase Coder (convergent-loop.md:14: \"Coder (per-task subagent)... returns the final Diff + a one-sentence folded inner summary\") at inner convergence — a later phase, a different agent. The degrade path's auditability claim (rule-3 honesty) rests on a carrier that cannot carry.",
+     "suggestion": "Pick a carrier that exists at RED: e.g. the AC→test mapping bullet's test name, a TaskCreate metadata field, or amend loop_state with an explicit seam field — or honestly state NO carrier exists and the degrade is unverifiable."
+    },
+    {
+     "defect_id": "r1-diff-2",
+     "severity": "warning",
+     "kind": "structural-gap",
+     "location": "Fix P8-b, entry-path sentence (\"or a user-approved minimal expand-contract queue at the mandatory checkpoint\")",
+     "evidence": "Doc: \"with a plan @ref (or a user-approved minimal expand-contract queue at the mandatory checkpoint), plan-driven mode carries the CI-green guarantee\". The middle case has no way to reach its own checkpoint: plan-driven-mode.md \"When it triggers\" requires ALL of \"The request @-references a plan document\" + code deliverable + multi-item — and the mandatory upfront checkpoint lives INSIDE plan-driven mode (\"after Phase −1 the skill MUST surface the frozen queue and get user confirmation\", plan-driven-mode.md:188), i.e. downstream of a @ref-triggered entry. With no plan @ref the mode is never entered, so no checkpoint exists at which a synthesized expand-contract queue could be user-approved. The P8-b edit set (a Phase-3 routing pointer only) adds no mode-entry rule, and the Non-goals list none either — the entry mechanism for this case is a missing step.",
+     "suggestion": "Either route the middle case through an explicit step (orchestrator drafts the minimal queue as a plan doc the user then @refs) or drop the middle case and state the binary: @ref → plan-driven; no plan → advisory."
+    },
+    {
+     "defect_id": "r1-diff-3",
+     "severity": "warning",
+     "kind": "structural-gap",
+     "location": "Fix P7-c, template item 3 new check (g)",
+     "evidence": "Doc (g): \"seam conformance — do the tests sit at the seam declared on the blueprint AC line; testing a different boundary than the frozen one is a finding\". P7-b makes the absent seam a LEGAL degrade: \"Absent seam on the AC line → no gate consequence (advisory doctrine...) — RED identifies the seam mid-phase per P7-a\". In that legal case (g) has no referent — there is no declared seam to conform to — and the doc never says what the reviewer does: flag the absent declaration itself, skip (g), or check against any public boundary. The degrade path is specified for the producer (RED identifies) and for the record carrier, but not for the consumer of the declaration (reviewer check g), which is the check P7-c exists to add.",
+     "suggestion": "Add one clause to (g): 'no seam declared on the AC line → check the tests sit at a public boundary and flag the absent declaration as its own finding'."
+    },
+    {
+     "defect_id": "r1-diff-4",
+     "severity": "warning",
+     "kind": "authority-chain-break",
+     "location": "Context mapping table, row \"Test cadence (regular single-file runs, full suite at end)\"",
+     "evidence": "Doc row (under column header \"Article / mattpocock concept\"): \"Test cadence (regular single-file runs, full suite at end) | Self-run the relevant test each GREEN + convergence gate | already covered\". Grep across ALL eight vendored authority files (article-kasong-tdd.md, test-seam.md, tracer-bullet.md, review-axis-separation.md, mattpocock-skills.md, frontier-delta-progress-invariant.md, mattpocock-tdd.md, mattpocock-changelog-tdd-entry.md) for cadence / single-file / full suite / 全量 / 整套 / 每次修改: zero matches. Neither the article (which discusses when to apply TDD, Seam, Tracer Bullet) nor any mattpocock source in the doc's own Sources section states a 'regular single-file runs, full suite at end' doctrine. The middle column (solidforge state) is accurate; the attributed concept is not in any cited source.",
+     "suggestion": "Cite the actual source of the cadence concept (if any — possibly mattpocock's implement doc, not vendored) or strike the row's left-column attribution."
+    },
+    {
+     "defect_id": "r1-diff-5",
+     "severity": "coverage",
+     "kind": "citation-error",
+     "location": "Sources, first bullet (wiki cross-ref claim)",
+     "evidence": "Doc: \"`ai-assisted-code-quality` + `two-axis-evaluation-separation` cross-ref-updated\" — a claim about the LIVE fedaot-wiki state of two pages that are NOT among the five vendored snapshots in workspace/csr-seam-tracer-proposal/authority/ (only test-seam, tracer-bullet, review-axis-separation, mattpocock-skills, frontier-delta-progress-invariant are vendored). No in-workspace source can adjudicate it; the wiki MCP was not queried for this review. Naming it per rule 3 rather than silencing.",
+     "suggestion": "Vendor the two cross-ref'd pages' relevant lines, or drop the cross-ref-updated claim from Sources."
+    }
+   ],
+   "dispositions": [
+    {
+     "defect_id": "r4-same-1",
+     "action": "fixed",
+     "note": "fixed — carrier restated honestly: the identification travels in the Coder's folded inner summary (the only free-form channel); the run-record schema has no notes field (additionalProperties false) — no schema'd carrier is claimed"
+    },
+    {
+     "defect_id": "r4-same-2",
+     "action": "fixed",
+     "note": "fixed — sentence split: Feathers enumerates three types; the doctrine picks among object and link seams ONLY; preprocessing scoped out; preprocessing-only languages (C/C++) outside doctrine coverage, stated honestly"
+    },
+    {
+     "defect_id": "r4-same-3",
+     "action": "fixed",
+     "note": "fixed — the db-query-as-verification tell added to P7-a step 2 and P7-c (e)"
+    },
+    {
+     "defect_id": "r4-same-4",
+     "action": "fixed",
+     "note": "fixed — infra/templates/intent-blueprint.template.md (template line 23, verified) added to the P7-b edit set + rule-5 enumeration"
+    },
+    {
+     "defect_id": "r4-same-5",
+     "action": "fixed",
+     "note": "fixed — the article text (user-provided 2026-08-24) vendored at authority/article-kasong-tdd.md; the 三位一体 quotes now resolve to the vendored text"
+    },
+    {
+     "defect_id": "r4-cov-1",
+     "action": "fixed",
+     "note": "fixed — the CHANGELOG v1.1.0 PR #464 entry excerpt fetched + vendored at authority/mattpocock-changelog-tdd-entry.md; Sources cites it"
+    },
+    {
+     "defect_id": "r1-diff-1",
+     "action": "fixed",
+     "note": "fixed — carrier claim retracted honestly: NO schema'd record carrier exists for the mid-RED identification (run-record schema closed; loop_state summary() is a deterministic f-string; the folded summary is produced by the GREEN-phase Coder, not the RED-phase tester — all verified against source); the degrade is unverifiable at the producer end, stated as such; the consumer end closes via reviewer check (g)"
+    },
+    {
+     "defect_id": "r1-diff-2",
+     "action": "fixed",
+     "note": "fixed — entry path made binary: plan @ref (bc-authored or user-provided) → plan-driven mode; no plan → Phase-3 advisory, guarantee LOST, bc-authoring option surfaced; the orchestrator does NOT self-author the plan (Scope Guard)"
+    },
+    {
+     "defect_id": "r1-diff-3",
+     "action": "fixed",
+     "note": "fixed — check (g) gains the absent-seam clause: no declared seam → tests must sit at a public boundary + the absent declaration flagged as its own finding"
+    },
+    {
+     "defect_id": "r1-diff-4",
+     "action": "fixed",
+     "note": "fixed — cadence attribution sourced: implement.md §A run is five beats (fetched 2026-08-24, excerpt vendored at authority/mattpocock-implement-cadence-excerpt.md); table row + Sources updated"
+    },
+    {
+     "defect_id": "r1-diff-5",
+     "action": "fixed",
+     "note": "fixed — cross-ref-updated claim verified against the live wiki via MCP (2026-08-24: ai-assisted-code-quality now carries the test-seam/tracer-bullet cross-refs); Sources notes the verification channel"
+    }
+   ]
+  },
+  {
+   "round": 4,
+   "same_source_findings": 4,
+   "hetero_findings": 7,
+   "hetero_degraded": false,
+   "blockers": 1,
+   "verdict": "rewrite",
+   "findings": [
+    {
+     "defect_id": "r5-same-1",
+     "severity": "warning",
+     "kind": "contradiction",
+     "location": "Consistency notes rule-10 bullet vs P7-a landing text",
+     "evidence": "The rule-10 note claims the seam types are rendered as a table, but the P7-a landing text renders them as inline prose — implementers following note vs draft would produce different text.",
+     "suggestion": "Convert the enumeration to a table or reword the note."
+    },
+    {
+     "defect_id": "r5-same-2",
+     "severity": "warning",
+     "kind": "contradiction",
+     "location": "P7-a step 1 preprocessing scoping sentence",
+     "evidence": "'(C/C++ conditional compilation)' as a language exemplar is factually wrong: C has link seams and C++ has object seams per the doc's own cited taxonomy — neither is preprocessing-only; the misread could misroute C++ out of the doctrine's coverage.",
+     "suggestion": "Name the mechanism only, not the languages."
+    },
+    {
+     "defect_id": "r5-same-3",
+     "severity": "coverage",
+     "kind": "citation-error",
+     "location": "Sources first bullet (live-wiki cross-ref claim)",
+     "evidence": "The claim concerns the LIVE wiki state of two non-vendored pages; no wiki MCP available in this review session, so the r1-diff-5 fix could not be re-confirmed independently.",
+     "suggestion": "Vendor the cross-ref'd lines for in-workspace adjudicability."
+    },
+    {
+     "defect_id": "r5-same-4",
+     "severity": "coverage",
+     "kind": "citation-error",
+     "location": "Sources implement.md excerpt bullet",
+     "evidence": "The vendored excerpt has no provenance header (unlike the changelog excerpt); file/section attribution asserted only in the proposal's Sources text.",
+     "suggestion": "Add a provenance header matching the changelog excerpt's convention."
+    },
+    {
+     "defect_id": "diff-1",
+     "severity": "blocker",
+     "kind": "contradiction",
+     "location": "P7-a step 1 (landing text for feature-dev.md Phase 4) — the seam-definition sentence vs the seam-type table and its cited source",
+     "evidence": "Doc: \"The seam is the AC's external call boundary — the public interface the caller actually uses (public fn / endpoint / UI event), never an internal helper\", immediately followed by \"Feathers enumerates three seam types (wiki `test-seam` §定义与机制, verified)\" and \"The doctrine picks by language among object and link seams ONLY\". The cited section defines a seam oppositely — not as a boundary but as a variation point: \"seam 是 'a place where you can alter behavior in your program without editing in that place'\"; the public-boundary idea is a separate claim in a different section (§为什么在接缝处测试: \"测试观察公开边界（调用者实际使用的接口）而非内部 helper\" — TESTING observes the public boundary; the seam is what lets behavior vary behind it). Under the doc's identity, a link seam (\"module/link-time substitution | linker substitution\") is not a public fn/endpoint/UI event and cannot be named in the doctrine's own carrier format `seam: <public-boundary-name>` (P7-b), so \"picks by language among object and link seams\" is unexecutable for the link case; and \"The test exercises the seam via its enabling point\" inverts the cited model, where the enabling point selects the variant (\"使能点回答'谁来换'\"), not the thing the test exercises.",
+     "suggestion": "Split the two concepts in the landing text: the seam is the substitution mechanism (Feathers variation point, per §定义与机制); the test observes the AC's public boundary through it — then define what a link seam contributes as a `<public-boundary-name>` or scope the doctrine to object seams."
+    },
+    {
+     "defect_id": "diff-2",
+     "severity": "warning",
+     "kind": "structural-gap",
+     "location": "P9 (skill-level ODP) — trigger observability + missing carrier",
+     "evidence": "Doc: \"trigger for re-evaluation = an observed masking incident (a converged item whose one axis failed while the verdict passed)\" and \"Recorded in the ADR entry (below), not in plan queues — it is a skill-level ODP, not a plan-level one\", plus \"part of the residual masking risk the ODP trigger watches\". Two undefined links: (1) no observation source is named — the current single-agent merged verdict (convergent-loop.md:63-68, template 187-206) emits no per-axis signal, so the masked axis failure is by construction absent from the converged record; who observes it, from what artifact, is unstated. (2) No skill-level ODP carrier exists: design-decisions.md contains zero \"ODP\" occurrences (grep-verified), and the repo's ODP machinery is plan-queue-level with re-surfacing (SKILL.md:61 \"deferred ODPs re-surface at tail re-validation\"; plan_queue.py:477 `resolve-odp`) — an ADR entry has no analogous re-surface point, so the deferral's safety valve can silently never fire.",
+     "suggestion": "Name the incident feed (e.g. 异源-leg disagreements on high-stakes items the same-family verdict passed, human post-mortems) and state where a skill-level ODP re-surfaces (e.g. a watched-ODP list or a review-checklist hook into design-decisions.md)."
+    },
+    {
+     "defect_id": "diff-3",
+     "severity": "warning",
+     "kind": "coverage-gap",
+     "location": "P7-b seam field + P7-c reviewer check (g) vs the REFACTORING workflow (refactoring.md Phase 0 / shared reviewer template)",
+     "evidence": "P7-c (g) will live in the shared reviewer prompt (convergent-loop.md §Reviewer subagent prompt template) and commands: \"No seam declared on the AC line (the legal absent-seam degrade) → check the tests sit at a public boundary and flag the absent declaration as its own finding.\" But refactoring runs freeze a blueprint whose ACs are existing tests, not behavior specs — refactoring.md:23: \"the acceptance criteria = the existing tests that lock current behavior (Phase 2 produces them)\" — and refactoring.md:81 shows refactoring uses the same outer-ring reviewer. The proposal never addresses whether refactoring blueprints carry seams; as written, every refactoring run structurally trips the absent-seam finding (systematic noise) or refactoring Phase 0 needs its own seam rule (unstated). The rule-5 doc-audit enumeration touches refactoring.md only for the P8-b routing pointer.",
+     "suggestion": "Add one line: refactoring Phase 0 either derives the seam from the locked tests' boundary or is exempt from the absent-seam finding, and scope check (g) accordingly."
+    },
+    {
+     "defect_id": "diff-4",
+     "severity": "warning",
+     "kind": "citation-error",
+     "location": "Five wiki `test-seam` §-anchors across the doc: Context table row 5, core-premise paragraph, P7-a step 2, P7-b closing paragraph, P7-c check (f)",
+     "evidence": "Doc cites \"wiki `test-seam` §三种测试反模式\" (×2), \"§与 TDD 的关系\", \"§上游冻结\", \"§根缺口\" as sections. In the vendored authority snapshot (authority/test-seam.md) none is a heading — they are bold bullets nested under \"## AI 编码中的接缝纪律\" (三种测试反模式, 上游冻结) and \"## 为什么在接缝处测试\" (与 TDD 的关系) and \"## 权衡与局限\" (根缺口——独立真值源缺失); the page's real headings are 定义与机制 / 为什么在接缝处测试 / AI 编码中的接缝纪律 / 权衡与局限 / 来源. Every other §-citation in the doc (tracer-bullet ×3, review-axis-separation ×2, mattpocock-skills, frontier-delta) points at a real `##` heading, so the doc's own convention makes § mean section — 5 of its 6 test-seam citations break it.",
+     "suggestion": "Cite the containing section plus the bullet name (e.g. \"wiki test-seam §AI 编码中的接缝纪律 · 三种测试反模式\") or promote to real anchors at wiki-ingest time."
+    },
+    {
+     "defect_id": "diff-5",
+     "severity": "warning",
+     "kind": "citation-error",
+     "location": "Sources first bullet (cross-ref-updated claim) ↔ authority/wiki-crossref-verification.md",
+     "evidence": "Doc: \"`ai-assisted-code-quality` + `two-axis-evaluation-separation` cross-ref-updated — live wiki state, verified via the wiki MCP 2026-08-24, snapshot vendored at `workspace/csr-seam-tracer-proposal/authority/wiki-crossref-verification.md`\". The vendored snapshot covers only one of the two claimed pages — its entire body is a single \"## ai-assisted-code-quality (excerpt)\" section, and its header overstates: \"The ai-assisted-code-quality page carries the cross-refs named in the proposal's Sources bullet\" — but the bullet names TWO pages, and no two-axis-evaluation-separation excerpt exists anywhere in the authority directory (ls-verified). So the vendored evidence chain supports half of what the Sources bullet asserts, and the snapshot's own header claim is inconsistent with the bullet it cites.",
+     "suggestion": "Vendor the two-axis-evaluation-separation cross-ref lines into the snapshot (or narrow the Sources bullet to the covered page)."
+    },
+    {
+     "defect_id": "diff-6",
+     "severity": "warning",
+     "kind": "structural-gap",
+     "location": "P7-b — the no-record-carrier audit parenthetical",
+     "evidence": "Doc: \"NO schema'd record carrier exists for that identification (the run-record schema has no notes field and `additionalProperties: false`; `loop_state.py summary()` is a deterministic f-string with no free-text input ...)\". Both sub-claims verify against run-record.schema.json and loop_state.py:194-207, but the audit omits the one existing free-text carrier in the same tooling: `loop_state.py record-outer --notes S` (loop_state.py:523, stored into the events[] log at the record-outer handler; documented at convergent-loop.md:133). It is excluded only implicitly — it is an outer-review anchor that bumps outer.iterations, so calling it at RED would corrupt DoD accounting — and that exclusion reason is exactly what the honest-degrade argument needs to state; as written, an implementer reconciling P7-b with convergent-loop.md:133 hits an unexplained counterexample to \"NO ... carrier exists\".",
+     "suggestion": "Add the rejection to the parenthetical: \"record-outer --notes exists but is an outer-review anchor (bumps outer.iterations), unusable at RED\"."
+    },
+    {
+     "defect_id": "diff-7",
+     "severity": "warning",
+     "kind": "citation-error",
+     "location": "P9 first paragraph — \"which mattpocock lacks entirely\"",
+     "evidence": "Doc: \"and blind-spot crossing is the 异源 leg's job (`convergent-loop.md:78-104` ...), which mattpocock lacks entirely.\" The convergent-loop citation supports only solidforge's side. The mattpocock side is a universal negative with no citation, and the one artifact that would adjudicate it — mattpocock's docs/engineering/code-review.md — is NOT in the vendored authority set (authority/ holds only mattpocock-tdd.md, the implement cadence excerpt, and the CHANGELOG entry; ls-verified). The wiki's code-review-derived page (review-axis-separation.md) describes two same-session axes and is silent on model families, which supports the claim indirectly but cannot ground \"entirely\".",
+     "suggestion": "Soften to what the vendored record shows (\"no cross-family mechanism appears in the vendored mattpocock materials or the wiki summaries\") or vendor code-review.md."
+    }
+   ],
+   "dispositions": [
+    {
+     "defect_id": "r5-same-1",
+     "action": "fixed",
+     "note": "fixed — P7-a seam-type enumeration converted to a 3-column table (type | mechanism | examples), matching the rule-10 note"
+    },
+    {
+     "defect_id": "r5-same-2",
+     "action": "fixed",
+     "note": "fixed — language exemplar dropped; the sentence now names the mechanism only (conditional-compilation-style preprocessing)"
+    },
+    {
+     "defect_id": "r5-same-3",
+     "action": "fixed",
+     "note": "fixed — the MCP-verified cross-ref line vendored at authority/wiki-crossref-verification.md with provenance; Sources cites it"
+    },
+    {
+     "defect_id": "r5-same-4",
+     "action": "fixed",
+     "note": "fixed — provenance header added to the implement.md excerpt (source file + section + fetch date), matching the changelog excerpt convention"
+    },
+    {
+     "defect_id": "diff-1",
+     "action": "fixed",
+     "note": "fixed — seam/boundary concepts split per the cited source: the seam is the substitution point (Feathers variation point, §定义与机制); the test observes the public boundary THROUGH the seam (§为什么在接缝处测试); the enabling point selects the variant and the TEST SETS it (not exercises it); the link-seam carrier works because the boundary the test observes is the module's public API"
+    },
+    {
+     "defect_id": "diff-2",
+     "action": "fixed",
+     "note": "fixed — incident feed named (异源-leg disagreements on high-stakes items the same-family verdict passed + human post-mortems; the merged verdict emits no per-axis signal — stated honestly) + carrier stated (the ADR entry; design-decisions.md has no ODP machinery, no automated re-surface — stated honestly)"
+    },
+    {
+     "defect_id": "diff-3",
+     "action": "fixed",
+     "note": "fixed — refactoring carve-out added to P7-b rich-path paragraph: refactoring blueprints' ACs are the existing behavior-locking tests; the seam derives from the locked tests' observed boundary — no absent-seam trip, check (g) does not produce systematic noise"
+    },
+    {
+     "defect_id": "diff-4",
+     "action": "fixed",
+     "note": "fixed — all five test-seam §-citations corrected to real headings + bullet names (§AI 编码中的接缝纪律 · 三种测试反模式/上游冻结; §为什么在接缝处测试 · 与 TDD 的关系; §权衡与局限 · 根缺口); §定义与机制 was already a real heading"
+    },
+    {
+     "defect_id": "diff-5",
+     "action": "fixed",
+     "note": "fixed — the two-axis-evaluation-separation cross-ref line (review-axis-separation link, verified via the wiki MCP) appended to the snapshot; header now names both pages"
+    },
+    {
+     "defect_id": "diff-6",
+     "action": "fixed",
+     "note": "fixed — record-outer --notes (loop_state.py:523) named and explicitly excluded: an outer-review anchor that bumps outer.iterations, unusable at RED (DoD corruption)"
+    },
+    {
+     "defect_id": "diff-7",
+     "action": "fixed",
+     "note": "fixed — the universal negative bounded: no cross-family mechanism appears in the vendored mattpocock materials or the wiki summaries; code-review.md not vendored — stated honestly"
+    }
+   ]
+  },
+  {
+   "round": 5,
+   "same_source_findings": 6,
+   "hetero_findings": 4,
+   "hetero_degraded": false,
+   "blockers": 0,
+   "verdict": "pass",
+   "findings": [
+    {
+     "defect_id": "r6-same-1",
+     "severity": "warning",
+     "kind": "structural-gap",
+     "location": "P7-b refactoring carve-out vs P7-c check (g)",
+     "evidence": "The carve-out states the seam is DERIVED for refactoring but omits the write-step (the bc rich path two sentences earlier says 'writes it into the derived blueprint'); check (g)'s literal fallback would still flag the absent declaration on every refactoring run.",
+     "suggestion": "Add the write-step to the carve-out or exempt refactoring in (g)'s literal text."
+    },
+    {
+     "defect_id": "r6-same-2",
+     "severity": "warning",
+     "kind": "structural-gap",
+     "location": "P7-b absent-seam degrade + P7-c check (g) vs DoD zero-issue bar",
+     "evidence": "Check (g) mandates flagging the absent declaration, but DoD requires zero issues and the producer end has no remediation carrier — the legal degrade has no stated terminal path.",
+     "suggestion": "State the flag's severity disposition (advisory, never blocks) or add absent-seam to the revision-channel triggers."
+    },
+    {
+     "defect_id": "r6-same-3",
+     "severity": "warning",
+     "kind": "contradiction",
+     "location": "Consistency rule-10 note vs P7-a/P7-b landing text",
+     "evidence": "The note claims no load-bearing em-dash chains; the landing text carries paired em-dashes around the boundary definition and a load-bearing em-dash clause inside the record-outer parenthetical — same class as r5-same-1.",
+     "suggestion": "Restructure the em-dash constructions or reword the note as a compliance target."
+    },
+    {
+     "defect_id": "r6-same-4",
+     "severity": "warning",
+     "kind": "citation-error",
+     "location": "Status header vs Sources first bullet",
+     "evidence": "The status header enumerates 4 wiki pages; Sources enumerates 5 (frontier-delta-progress-invariant omitted from the header) — a 4-vs-5 enumeration mismatch while the body cites the fifth page.",
+     "suggestion": "Add the fifth page to the status-line enumeration."
+    },
+    {
+     "defect_id": "r6-same-5",
+     "severity": "coverage",
+     "kind": "citation-error",
+     "location": "Sources first bullet / wiki-crossref-verification.md provenance",
+     "evidence": "The live-wiki-state half of the cross-ref claim could not be re-verified (no wiki MCP in this review session); the vendored snapshot half is correct.",
+     "suggestion": "None needed beyond the existing vendored snapshot."
+    },
+    {
+     "defect_id": "r6-same-6",
+     "severity": "coverage",
+     "kind": "citation-error",
+     "location": "Status header + Sources bullets (ingest-process claims)",
+     "evidence": "'strict purity, lint clean' and the fetch-process claims are self-reported historical process attributes with no in-workspace adjudicating artifact; content-level citations all verified.",
+     "suggestion": "None — process claims accepted as self-reported."
+    },
+    {
+     "defect_id": "r5-diff-1",
+     "severity": "warning",
+     "kind": "structural-gap",
+     "location": "P7-b rich path, refactoring carve-out (\"Refactoring runs freeze blueprints whose ACs are the existing behavior-locking tests…\") vs refactoring.md Phase 0/Phase 2 sequencing",
+     "evidence": "Doc: \"the seam derives from the locked tests' observed boundary (the tests themselves are the seam evidence) AND refactoring Phase 0 writes the derived seam onto the AC lines at freeze — the declaration is present\". But refactoring.md Phase 0 states the AC tests are \"the existing tests that lock current behavior (Phase 2 produces them)\" and Phase 2 adds \"Refactoring requires existing tests. If tests are missing, write them first (TDD)\" — i.e., the source workflow contemplates runs where the seam's stated evidence does not exist until AFTER the freeze. In that case the unconditional \"the declaration is present\" cannot hold, and unlike the authored-blueprint path the carve-out names no absent-seam degrade for it. (Distinct from r6-same-1, which read the write-step as absent — it is present; the defect here is that the write-step's input arrives after its deadline in the missing-tests case the source itself defines.)",
+     "suggestion": "Add the missing-tests branch to the carve-out: tests absent at freeze → seam declared from the boundary the Phase-2 tests will lock (or the absent-seam degrade), instead of asserting the declaration is always present."
+    },
+    {
+     "defect_id": "r5-diff-2",
+     "severity": "warning",
+     "kind": "structural-gap",
+     "location": "P8-a Tracer-bullet first bullet (\"the first wave (`parallel_group` wave-1) is a thin vertical slice\")",
+     "evidence": "Doc operationalizes the wiki's ordering rule — wiki `tracer-bullet` §在 AI 编码中的操作化: \"排序：首个 wave 是贯通全层的曳光弹，后续切片在其骨架上延伸\" — into plan-queue vocabulary but drops the constraint that makes wave-1 a tracer bullet: nothing states wave-1 must be exactly one item, or that multiple wave-1 items must COLLECTIVELY constitute one minimal end-to-end slice. The per-item shape rules (\"applied at normalization\") govern item shape, not wave composition, so the normalizer may legally place an unrelated independent item beside the slice in wave-1; such an item runs concurrently with — not \"extends on\" — \"that skeleton\", contradicting the doctrine's own \"Later items extend on that skeleton\".",
+     "suggestion": "State the wave-1 composition constraint explicitly (wave-1 = the single tracer-bullet item, or items jointly forming one thin slice; nothing else rides wave-1)."
+    },
+    {
+     "defect_id": "r5-diff-3",
+     "severity": "warning",
+     "kind": "coverage-gap",
+     "location": "P7-b/P7-c seam landing (Planner derivation + checks (d)–(g)) vs wiki `test-seam` §权衡与局限 first bullet",
+     "evidence": "The wiki names TWO limitations of the seam discipline: (1) 接缝选择摩擦 — \"只列出候选接缝名称而不说明每个接缝能抓到/漏掉什么，等于让用户在标签间盲选。缓解方式是要求先给出权衡\"; (2) 根缺口 (independent-truth-source). The proposal imports (2) as reviewer check (f) (\"wiki test-seam §权衡与局限 · 根缺口\") but is silent on (1): the P7-b Planner rule lands only a seam NAME (\"derives the seam AT Phase-0 derivation from the AC's Given/When/Then boundary… and writes it into the derived blueprint\") with no what-it-catches/misses carrier, and no check in (d)–(g) tests the trade-off. The doc's own discipline for dropped source content is \"rejected with rationale, recorded in the ADR entry — not imported, not silent (rule 3)\" (said of the horizontal-slicing anti-pattern); the friction limitation got neither treatment.",
+     "suggestion": "Either add the trade-off requirement to the seam declaration (what this boundary catches/misses) or record its rejection with rationale in the ADR entry."
+    },
+    {
+     "defect_id": "r5-diff-4",
+     "severity": "coverage",
+     "kind": "citation-error",
+     "location": "Sources — Feathers (2004 ch.4) / Hunt & Thomas (1999) book claims and the 卡颂 X-original",
+     "evidence": "The outermost links of two citation chains could not be verified in this session: (a) the Feathers seam definition/types and the tracer-bullet/prototype distinction are cited through the wiki snapshots (doc → vendored wiki verified verbatim against the live wiki for `test-seam` on my side, including the \"a place where you can alter behavior in your program without editing in that place\" quote); the wiki → book link is the wiki research's own sourcing, and the books are not fetchable/vendored. (b) article-kasong-tdd.md is the user-provided text (\"the X post itself is not vendiced\" — the doc itself says \"the X post itself is not vendored\"; the fetch-of-the-original claim is the research's self-report). Both inner links verify; the unfetchable outermost links are disclosed, not silenced.",
+     "suggestion": "None needed — the vendored chain is adequate for a proposal; book-level verification would only matter if the doctrine text ever quotes the books directly."
+    }
+   ],
+   "dispositions": [
+    {
+     "defect_id": "r6-same-1",
+     "action": "fixed",
+     "note": "fixed — the carve-out now states refactoring Phase 0 WRITES the derived seam onto the AC lines at freeze; the declaration is present, so check (g)'s conformance path applies (no systematic absent-seam noise)"
+    },
+    {
+     "defect_id": "r6-same-2",
+     "action": "fixed",
+     "note": "fixed — terminal path stated: the absent-declaration flag is warning-severity, consistent with the prompt template's item-3 severity line, so it never blocks convergence by itself (rule 4; no DoD conflict); tests sitting at a public boundary is the conformance-relevant check"
+    },
+    {
+     "defect_id": "r6-same-3",
+     "action": "fixed",
+     "note": "fixed — the two load-bearing em-dash constructions restructured into separate sentences; the note reworded to scope the no-em-dash-chain target to the landing text"
+    },
+    {
+     "defect_id": "r6-same-4",
+     "action": "fixed",
+     "note": "fixed — frontier-delta-progress-invariant added to the status-header enumeration (5 pages now, matching Sources)"
+    },
+    {
+     "defect_id": "r6-same-5",
+     "action": "rejected",
+     "note": "rejected — no artifact change needed: the live-state claim carries its dated MCP verification (2026-08-24) + the vendored two-page snapshot; live re-verification is bounded by the next wiki-MCP-enabled session (the reviewer's own suggestion says none needed)"
+    },
+    {
+     "defect_id": "r6-same-6",
+     "action": "rejected",
+     "note": "rejected — no artifact change needed: ingest/fetch process attributes are self-reported provenance metadata; all content-level citations are verified against the vendored snapshots (the reviewer's own suggestion says none)"
+    },
+    {
+     "defect_id": "r5-diff-1",
+     "action": "fixed",
+     "note": "fixed — missing-tests branch added to the refactoring carve-out: when the locking tests do not exist at freeze (Phase 2 produces them, possibly after freeze — verified against refactoring.md Phase 0/Phase 2), the seam is declared from the boundary the Phase-2 tests will lock"
+    },
+    {
+     "defect_id": "r5-diff-2",
+     "action": "fixed",
+     "note": "fixed — wave-1 composition constraint added: wave-1 is the single tracer-bullet item or items jointly forming one thin slice; nothing else rides wave-1 (per-item shape rules govern items, not wave composition)"
+    },
+    {
+     "defect_id": "r5-diff-3",
+     "action": "fixed",
+     "note": "fixed — the seam declaration now carries the one-clause catch/miss note (wiki test-seam §权衡与局限 · 接缝选择摩擦, imported not rejected — a bare name is label-blind-picking)"
+    },
+    {
+     "defect_id": "r5-diff-4",
+     "action": "rejected",
+     "note": "rejected — no artifact change needed: the unfetchable outermost citation links (books, X original) are already disclosed in Sources; the vendored wiki chain is adequate for a proposal (the reviewer's own suggestion: none needed)"
+    }
+   ]
+  },
+  {
+   "round": 6,
+   "same_source_findings": 4,
+   "hetero_findings": 6,
+   "hetero_degraded": false,
+   "blockers": 0,
+   "verdict": "pass",
+   "findings": [
+    {
+     "defect_id": "r7-same-1",
+     "severity": "warning",
+     "kind": "contradiction",
+     "location": "Validation notes second bullet (frontier-advancement claim)",
+     "evidence": "'the machine-observable frontier never advances from the implement step' overstates: the vendored implement excerpt's beat 5 commits to the branch, and the invariant's own 机制 definition counts landed artifacts as frontier deltas; what is human-mediated is the work-unit CLOSURE state.",
+     "suggestion": "Narrow to the closure/status delta."
+    },
+    {
+     "defect_id": "r7-same-2",
+     "severity": "warning",
+     "kind": "coverage-gap",
+     "location": "P7-c template item 3 check (f)",
+     "evidence": "(f) imports the root-gap flag but drops the wiki's isomorphism half (the gap's resolution ties to the 异源-oracle result-axis constraint) without the not-silent treatment the proposal itself applies elsewhere.",
+     "suggestion": "Add the isomorphism clause or record the drop in the ADR entry."
+    },
+    {
+     "defect_id": "r7-same-3",
+     "severity": "coverage",
+     "kind": "citation-error",
+     "location": "Core claim 8 vs Validation notes first bullet",
+     "evidence": "The claim-set wording 'both per the wiki mattpocock-skills page' is over-broad; the ARTIFACT's attribution is correct (refactor-drop per tdd.md:31, not the wiki — verified).",
+     "suggestion": "None for the artifact; claim-set wording note only."
+    },
+    {
+     "defect_id": "r7-same-4",
+     "severity": "coverage",
+     "kind": "citation-error",
+     "location": "Sources + status header (live-wiki / book-level / ingest-process claims)",
+     "evidence": "Live-wiki state, book-level outermost links, and ingest-process claims unverifiable in this session (no wiki MCP; books unfetchable); vendored snapshot halves all verify.",
+     "suggestion": "None needed beyond existing dated verification + vendored snapshots."
+    },
+    {
+     "defect_id": "r6-diff-1",
+     "severity": "warning",
+     "kind": "contradiction",
+     "location": "P7-b, consumer-end sentence (\"at warning severity ... the DoD's zero-issue bar is not in conflict\")",
+     "evidence": "Doc asserts: \"at warning severity, consistent with the prompt template's item-3 severity line, so the flag never blocks convergence by itself (rule 4; the DoD's zero-issue bar is not in conflict)\". The repo's only DoD definition carries no severity carve-out — SKILL.md:29: \"Work is complete when the Convergent Fix Loop converges — both the automated validation tier and the code review tier pass with zero issues.\" Under that plain wording a warning-severity finding is still an issue; and the existing verdict dispatch routes even warning-tier findings to a non-pass disposition (convergent-loop.md:75, visual drift \"Severity: warning\" → advisory rewrite, not pass). So \"never blocks convergence by itself\" is asserted, not derived — if warnings count against the zero-issue bar, the absent-seam flag de-facto gates convergence whenever a blueprint lacks a seam, contradicting the proposal's own \"advisory, never a new gate (rule 4)\" framing. The parenthetical claims non-conflict without citing any source that defines the warning-vs-zero-issue interaction.",
+     "suggestion": "Cite or add the repo semantics for how warning-severity findings interact with the zero-issue bar (or scope the DoD wording) before relying on \"never blocks\"."
+    },
+    {
+     "defect_id": "r6-diff-2",
+     "severity": "warning",
+     "kind": "structural-gap",
+     "location": "P7-b, no-carrier enumeration (\"NO schema'd record carrier exists for that identification ... NEVER written into the frozen blueprint\")",
+     "evidence": "The doc enumerates candidate carriers (run-record schema, loop_state summary(), folded summary, record-outer --notes, frozen blueprint) and concludes \"The degrade is therefore unverifiable at the producer end\". But the same paragraph relies on a RED-phase-produced record that DOES live in the blueprint: the AC→test mapping is \"Declared at RED phase\" (infra/templates/intent-blueprint.template.md:34; intent-blueprint.md:14,20) — post-freeze, Phase 4. blueprint_guard.py (verified: wholesale deny on status: frozen, no mapping-section allowlist) makes that write path unreconciled in the repo, and the Revision Channel is scoped to blueprint DEFECTS (\"unreachable / self-contradictory / AC unsatisfiable\", intent-blueprint.md), not routine RED additions. The doc never explains how the neighboring RED-declared field coexists with the wholesale deny it cites — and that unexamined precedent is exactly what determines whether a seam-identification carrier is possible. The \"no carrier exists\" absolutism rests on an enumeration that skips the nearest counterexample it itself references (\"it reads the mapping section only\").",
+     "suggestion": "Reconcile: state how the RED-declared mapping enters the frozen blueprint, and why the same path cannot (or deliberately does not) carry the seam identification."
+    },
+    {
+     "defect_id": "r6-diff-3",
+     "severity": "warning",
+     "kind": "authority-chain-break",
+     "location": "Context, first paragraph (\"The wiki research verified: the concepts are classic ..., the packaging is new\")",
+     "evidence": "Doc: \"The wiki research verified: the concepts are classic (Feathers 2004, Hunt & Thomas 1999), the packaging is new.\" No vendored wiki page verifies the packaging's novelty: test-seam.md 来源 calls the article \"概念大众化转述\" and tracer-bullet.md 来源 likewise — neither says the packaging is new. And mattpocock-skills.md describes mattpocock/skills as ALREADY orchestrating the three mechanisms (\"把 [[test-seam]]、[[tracer-bullet]]、[[review-axis-separation]] 三个机制编排成一条各阶段职责互不重叠的链\"), with the vendored article itself saying mattpocock's workflow \"就遵循上述 三位一体开发流程\" (article-kasong-tdd.md, final section). Whether the packaging is in fact new is outcome-axis (not judged); the defect is attributing that verification to the wiki research when the vendored record contains no such finding.",
+     "suggestion": "Re-attribute \"the packaging is new\" to the article's own claim or mark it unverified — do not credit it to the wiki research."
+    },
+    {
+     "defect_id": "r6-diff-4",
+     "severity": "warning",
+     "kind": "citation-error",
+     "location": "P7-a, seam-type table (Examples column)",
+     "evidence": "The table is introduced under \"Feathers enumerates three seam types (wiki `test-seam` §定义与机制, verified):\" — but the wiki section lists only the three type names with one-line mechanisms (\"预处理接缝（条件编译替换）、链接接缝（链接期替换实现）、对象接缝（多态/接口替换）\"). The Examples column (\"Rust traits, Java interfaces, Python protocols\" / \"linker substitution\" / \"conditional compilation\") appears nowhere in the wiki snapshot, and \"DI\" in the Mechanism column is an addition beyond 多态/接口替换. The unverified column rides a \"verified\" citation tag with no separate attribution — in a doc that is scrupulous about this distinction one sentence later (\"The scoping-out is this proposal's own judgment, not a wiki claim\").",
+     "suggestion": "Attribute the Examples column explicitly (own instantiation or Feathers book) so the \"verified\" tag covers only what the wiki carries."
+    },
+    {
+     "defect_id": "r6-diff-5",
+     "severity": "warning",
+     "kind": "contradiction",
+     "location": "Consistency notes, rule-10 bullet (\"Seam types are a 2-attribute mapping → rendered as a table\")",
+     "evidence": "The consistency note self-describes the P7-a table as a \"2-attribute mapping\", but the table it points to renders three attributes — the header row is \"| Seam type | Mechanism | Examples |\". Minor, but the note exists precisely to document rule-10 compliance (\"Prefer a table when each item has two or more attributes\"), and it miscounts its own artifact.",
+     "suggestion": "Correct to a 3-attribute row or drop the count."
+    },
+    {
+     "defect_id": "r6-diff-6",
+     "severity": "coverage",
+     "kind": "citation-error",
+     "location": "P7-c template item 3 check (f) — verification disclosure on prior finding r7-same-2",
+     "evidence": "Re-verified (f) against wiki test-seam §权衡与局限 · 根缺口 and found the current text DOES carry the so-called missing half: \"(wiki `test-seam` §权衡与局限 · 根缺口 — the wiki ties this gap's RESOLUTION to the 异源-oracle result-axis constraint, isomorphic to two-axis-evaluation-separation; this check is the same-family tripwire only, not the resolution)\" — matching the wiki's \"这与 [[two-axis-evaluation-separation]] 要求结果轴由异源 oracle 裁决的约束同构\". r7-same-2's evidence premise (\"(f) imports the root-gap flag but drops the wiki's isomorphism half\") therefore does not match the artifact under review; dispatching its suggested fix would edit text that already exists. Naming this so the convergence loop does not act on a stale finding; no doc defect found at this location.",
+     "suggestion": "Re-check r7-same-2 against the current revision before sending a fix round."
+    }
+   ],
+   "dispositions": [
+    {
+     "defect_id": "r7-same-1",
+     "action": "fixed",
+     "note": "fixed — claim narrowed to the work-unit CLOSURE state (human-mediated); the implement run itself lands code (beat 5 commits), which IS a frontier delta per the invariant's 机制 definition; the contrast with plan_queue.py complete is the closure/status delta, not artifact landing"
+    },
+    {
+     "defect_id": "r7-same-2",
+     "action": "fixed",
+     "note": "fixed — (f) gains the isomorphism clause: the wiki ties the root gap's RESOLUTION to the 异源-oracle result-axis constraint; this check is the same-family tripwire only, not the resolution"
+    },
+    {
+     "defect_id": "r7-same-3",
+     "action": "rejected",
+     "note": "rejected — no artifact change: the artifact's attribution is correct (the reviewer states so); the core-claim wording is frozen at framing and the artifact text is the authority"
+    },
+    {
+     "defect_id": "r7-same-4",
+     "action": "rejected",
+     "note": "rejected — no artifact change: the unverifiable halves are already disclosed in Sources (dated MCP verification + vendored snapshots; the reviewer's own suggestion: none needed)"
+    },
+    {
+     "defect_id": "r6-diff-1",
+     "action": "fixed",
+     "note": "fixed — the non-conflict source is now named: workspace rule 4 (warning = advisory, never Blocker); the implementation makes the interaction explicit in the template's verdict line (warning-only findings do not change a pass verdict)"
+    },
+    {
+     "defect_id": "r6-diff-2",
+     "action": "fixed",
+     "note": "fixed — the skipped precedent now named: the seam is declared PRE-freeze precisely to avoid the AC→test mapping's unreconciled post-freeze write path (mapping declared at RED vs blueprint_guard wholesale deny — verified: guard line 17); the mapping-vs-guard tension recorded as an implementation-time open question, not this proposal's to solve"
+    },
+    {
+     "defect_id": "r6-diff-3",
+     "action": "fixed",
+     "note": "fixed — re-attributed: the wiki verified the concepts' classic provenance; the 三位一体 packaging is the article's own framing, its novelty NOT verified by the wiki (mattpocock also orchestrates the three mechanisms); the term is kept only as the article's label"
+    },
+    {
+     "defect_id": "r6-diff-4",
+     "action": "fixed",
+     "note": "fixed — the Examples column now attributed as this proposal's own instantiation (type names + mechanisms are the wiki's), so the \"verified\" tag covers only the wiki-carried content"
+    },
+    {
+     "defect_id": "r6-diff-5",
+     "action": "fixed",
+     "note": "fixed — the rule-10 note corrected to a 3-attribute table (type / mechanism / examples)"
+    },
+    {
+     "defect_id": "r6-diff-6",
+     "action": "rejected",
+     "note": "rejected — stale-finding disclosure, no artifact change: r7-same-2's fix already landed in the R6 same-family reconciliation before this leg ran (the leg itself confirms the current text carries the isomorphism clause)"
+    }
+   ]
+  }
+ ],
+ "substantive_converged": true,
+ "coverage": [
+  "core-claims-coverage: 10/10",
+  "cap=7, rounds=6",
+  "rounds 1-2 different-family: qwen3 provider malformed (hetero-stream-no-result, zero findings both rounds); bigmodel (glm-5.3) contributed",
+  "rounds 3-6 different-family: bigmodel-only leg (qwen3 excluded — known malformation, zero findings in rounds 1-2)",
+  "round 3 different-family required three attempts: two background runs killed by Claude Code process exits between turns (0-byte outputs)",
+  "round 5 different-family finding ids renamed r1-diff-* to r5-diff-* (wrapper-reused ids collided with round 3; the engine de-dups new blockers by defect_id across the whole run — a collision would silently under-count)",
+  "relocated 2026-08-24: artifact + record live in skills/parallel-development/docs/; authority snapshots vendored at workspace/csr-seam-tracer-proposal/authority/ (gitignored)"
+ ],
+ "stalemate": false,
+ "rightness": "human_confirm_required",
+ "cap": 7,
+ "core_claims": [
+  "The proposal's gap table is accurate: solidforge already covers TDD-selective carving (SKILL.md:17), AC→test mapping + name-set gate (SKILL.md:23-25), test cadence; the true gaps are seam boundary-selection, tautological-assertion anti-pattern, tracer-bullet-first decomposition, expand-contract, and the deferred review-axis separation.",
+  "P7-a's edit point is correct: feature-dev.md Phase 4 RED (lines 70-103) is the test-writing phase, and the seam rule content matches Feathers ch.4 as verified (three seam types, enabling point) per the wiki test-seam page.",
+  "P7-b keeps parse_ac_test_map untouched: the seam goes on the AC line, not the AC→test mapping line, because the mapping heading is regex-matched (intent-blueprint.md:18) and the mapping lines are parsed by the gate.",
+  "P7-c's test-quality line additions (tautological assertion, implementation-coupled, no-independent-truth-source note) stay within the same-family ceiling (ADR #38) — no claim of crossing it.",
+  "P8-a fits plan-driven-mode.md Phase −1 as normalization doctrine, checkpoint-surfaced, not a gate; the per-item size bound maps to the Coder fresh-subagent architecture (convergent-loop.md:14).",
+  "P8-b expand-contract is absent from refactoring.md and belongs in Phase 3.",
+  "P9's deferral rationale is sound: inner-ring determinism + the 异源 leg cover most of the two-axis benefit, and the fan-out cost is real (wiki review-axis-separation).",
+  "The two validation findings are accurately attributed: mattpocock removed refactor from its TDD loop (2026-06) and its implement does not close tickets — both per the wiki mattpocock-skills page, both correctly mapped onto solidforge's existing architecture.",
+  "The consistency-note rule claims are accurate: all additions are advisory (rule 4), no checker edit (rule 2), the psv-gate skip rationale matches the ODP-5 discriminator (rule 13).",
+  "All in-repo citation anchors in the proposal are accurate (SKILL.md:17,23-25; feature-dev.md:70-103; intent-blueprint.md:14,16-23; convergent-loop.md:55-68,78-104; plan-driven-mode.md Phase −1; refactoring.md Phase 3; tdd-improvement-proposals.md)."
+ ],
+ "authority_ref": "fedaot-wiki common snapshots (test-seam, tracer-bullet, review-axis-separation, mattpocock-skills, 2026-08-24) vendored at workspace/csr-seam-tracer-proposal/authority/ + in-repo anchors (SKILL.md, feature-dev.md, intent-blueprint.md, convergent-loop.md, plan-driven-mode.md, refactoring.md, tdd-improvement-proposals.md); Feathers WELC 2004 ch.4; Hunt & Thomas 1999",
+ "size_tier": "long"
+}

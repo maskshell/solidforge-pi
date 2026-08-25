@@ -574,8 +574,16 @@ def _run_streamed(
     started = time.monotonic()
     state = {"last_line_at": started}
 
+    # stdin=DEVNULL is LOAD-BEARING (found live, 2026-08-25): pi -p with an
+    # inherited non-TTY stdin that never reaches EOF BLOCKS reading prompts
+    # from it — the child hung mid-review after session start. DEVNULL gives
+    # it an immediately-closed stdin; the prompt rides the positional argv.
     proc = subprocess.Popen(
-        argv, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+        argv,
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
     )
 
     def stdout_reader():
@@ -854,12 +862,20 @@ def _parse_pi_stream(raw):
 
 
 def _extract_text(content):
+    """PI PORT: one assistant message may carry MULTIPLE text parts (prose
+    preamble before tool calls + the final structured answer in a later part).
+    Concatenate ALL text parts — taking only the first lost the JSON when the
+    model prefaced its tool use (found live in the pd smoke, 2026-08-25)."""
     if isinstance(content, str):
         return content
     if isinstance(content, list):
-        for part in content:
-            if isinstance(part, dict) and part.get("type") == "text":
-                return part.get("text", "")
+        parts = [
+            part.get("text", "")
+            for part in content
+            if isinstance(part, dict) and part.get("type") == "text"
+        ]
+        parts = [p for p in parts if p and p.strip()]
+        return "\n\n".join(parts) if parts else None
     return None
 
 

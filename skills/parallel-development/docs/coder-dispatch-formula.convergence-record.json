@@ -1,0 +1,887 @@
+{
+  "artifact": "skills/parallel-development/docs/coder-dispatch-formula.proposal.md",
+  "rounds": [
+    {
+      "round": 1,
+      "same_source_findings": 3,
+      "hetero_findings": 2,
+      "hetero_degraded": false,
+      "blockers": 1,
+      "verdict": "rewrite",
+      "findings": [
+        {
+          "defect_id": "F1",
+          "severity": "warning",
+          "kind": "contradiction",
+          "location": "proposal.md step-4 mapping table row 4",
+          "evidence": "Test row lacked the role table's iOS carve-out (role-agent-mapping.md:332: tester is Web/Backend; iOS test -> ios-developer/ios-tester) and gave no row-precedence rule.",
+          "suggestion": "Add the iOS carve-out and a matching rule."
+        },
+        {
+          "defect_id": "F2",
+          "severity": "warning",
+          "kind": "citation-error",
+          "location": "proposal.md Context + rule-5 audit",
+          "evidence": "Exclusivity claim 'lives only in role-agent-mapping.md + per-platform pattern docs' was false: extending.md:48 and parallel-patterns.md agent_type convention also carry the formula; the audit missed parallel-patterns.md.",
+          "suggestion": "Reword to 'not present in plan-driven-mode.md'; add parallel-patterns.md to the audit surface."
+        },
+        {
+          "defect_id": "F3",
+          "severity": "coverage",
+          "kind": "coverage-gap",
+          "location": "proposal.md Measured evidence",
+          "evidence": "Exact counts (22/94 general-purpose, drift dates, zero tester) not fully re-derivable by the reviewer from the transcript tree (hidden .claude dir); sampling corroborated the shape only.",
+          "suggestion": "Pin the session UUID and counting rule in the ADR entry."
+        },
+        {
+          "defect_id": "R1-DF1",
+          "severity": "blocker",
+          "kind": "contradiction",
+          "location": "proposal.md step-4 row-precedence clause",
+          "evidence": "Precedence clause 'platform row wins' misrouted Rust/Go/Java/Python test items to backend-developer, contradicting the Test Engineer auto-detection table.",
+          "suggestion": "Restructure: test row names its platforms; matching rule 'DoD-shape rows win'."
+        },
+        {
+          "defect_id": "R1-DF2",
+          "severity": "warning",
+          "kind": "structural-gap",
+          "location": "proposal.md step-4 field-wins clause",
+          "evidence": "agent_type field-wins clause referenced a field the plan-driven Queue Format does not carry; dead text.",
+          "suggestion": "Drop the clause."
+        }
+      ],
+      "dispositions": [
+        {
+          "defect_id": "F1",
+          "action": "fixed",
+          "note": "Adopted: test row split into per-platform routing rules incl. iOS carve-out."
+        },
+        {
+          "defect_id": "F2",
+          "action": "fixed",
+          "note": "Adopted: exclusivity claim corrected (extending.md + parallel-patterns.md named); audit surface extended."
+        },
+        {
+          "defect_id": "F3",
+          "action": "fixed",
+          "note": "Coverage disclosure carried; actionable part adopted — ADR entry pins session UUID + counting rule (subagents/*.meta.json agentType)."
+        },
+        {
+          "defect_id": "R1-DF1",
+          "action": "fixed",
+          "note": "Different-family-only in origin; orchestrator verified the contradiction against role-agent-mapping.md:330-346 before adopting. Precedence clause replaced by explicit DoD-shape-wins rule."
+        },
+        {
+          "defect_id": "R1-DF2",
+          "action": "fixed",
+          "note": "Adopted option (b): clause dropped; queue-format schema extension explicitly out of scope."
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "same_source_findings": 8,
+      "hetero_findings": 3,
+      "hetero_degraded": false,
+      "blockers": 2,
+      "verdict": "rewrite",
+      "findings": [
+        {
+          "defect_id": "R2-F1",
+          "severity": "warning",
+          "kind": "contradiction",
+          "location": "proposal.md step-4 trailing sentence",
+          "evidence": "The 'no precedence rule needed' sentence was itself a precedence rule and resolved only Rust, not Go/Java/Python.",
+          "suggestion": "Explicit one-line shape-over-platform matching rule."
+        },
+        {
+          "defect_id": "R2-F2",
+          "severity": "warning",
+          "kind": "coverage-gap",
+          "location": "proposal.md dispatch table row 1",
+          "evidence": "Node.js/TypeScript backend and Kotlin omitted from the backend row; web-backend items could misroute to frontend-developer or general-purpose.",
+          "suggestion": "Add Node.js/TypeScript and Kotlin to the backend row."
+        },
+        {
+          "defect_id": "R2-F3",
+          "severity": "warning",
+          "kind": "authority-chain-break",
+          "location": "proposal.md step-5 carve-out",
+          "evidence": "WAF/crypto/evasion exemplars absent from the Security Specialist row text; WAF porting is implementation-shaped and could read as a Coder dispatch.",
+          "suggestion": "Row-grounded exemplars only: auth/authz, pre-production security, threat model."
+        },
+        {
+          "defect_id": "R2-F4",
+          "severity": "warning",
+          "kind": "contradiction",
+          "location": "proposal.md test-row cell + consistency note",
+          "evidence": "One-joiner-convention claim false for its own text; test-row cell packed 3 routing rules into one mixed-joiner cell (rule 10).",
+          "suggestion": "One routing rule per table row; correct the consistency note."
+        },
+        {
+          "defect_id": "R2-F5",
+          "severity": "warning",
+          "kind": "structural-gap",
+          "location": "proposal.md step-5 carve-out placement",
+          "evidence": "Carve-out nested a load-bearing em-dash parenthetical inside the REFUSES parenthetical (rule 10).",
+          "suggestion": "Move the carve-out into its own sentence after the step-5 text."
+        },
+        {
+          "defect_id": "R2-F6",
+          "severity": "warning",
+          "kind": "coverage-gap",
+          "location": "proposal.md dispatch table",
+          "evidence": "No DevOps row although the proposal's own evidence cites devops-engineer dispatches; CI/CD items would fall back to general-purpose.",
+          "suggestion": "Add a CI/CD, deploy, infra row -> solidforge:devops-engineer."
+        },
+        {
+          "defect_id": "R2-C1",
+          "severity": "coverage",
+          "kind": "coverage-gap",
+          "location": "proposal.md measured-evidence paragraph",
+          "evidence": "Session-transcript statistics live under ~/.claude/ (outside the repo); the reviewer could not re-derive 22/94, dates, zero-tester from inside the repo.",
+          "suggestion": "Orchestrator re-derive the counts from the pinned session before the ADR entry is committed."
+        },
+        {
+          "defect_id": "R2-C2",
+          "severity": "coverage",
+          "kind": "coverage-gap",
+          "location": "proposal.md agent-name citations",
+          "evidence": "No plugin.json found under skills/parallel-development; agent names verified only indirectly via plugin_layout.py EXPECTED_AGENTS + role table.",
+          "suggestion": "Confirm the prefixed names against the live manifest when one is located."
+        },
+        {
+          "defect_id": "AD-F1",
+          "severity": "blocker",
+          "kind": "citation-error",
+          "location": "proposal.md dispatch table Browser E2E row",
+          "evidence": "role-agent-mapping.md E2E row prints the three playwright agents BARE while its iOS siblings carry the solidforge: prefix; the 'per E2E row' citation does not literally support the prefixed names the table asserts.",
+          "suggestion": "Fix the role table's 4 bare occurrences, or drop the prefix claim."
+        },
+        {
+          "defect_id": "AD-F2",
+          "severity": "blocker",
+          "kind": "structural-gap",
+          "location": "proposal.md step-5 carve-out sentence",
+          "evidence": "The carve-out replaces code-reviewer with security-specialist but does not state who drives loop_state.py record-outer --verdict <v>; the REFUSES gate enforces the dual-ring DoD and needs an explicit answer.",
+          "suggestion": "State that record-outer is unchanged."
+        },
+        {
+          "defect_id": "AD-F3",
+          "severity": "warning",
+          "kind": "coverage-gap",
+          "location": "proposal.md dispatch table test row",
+          "evidence": "'eval harness' and 'perf matrix' appear nowhere in the Test Engineer row (triggers/auto-detection); the cell claims role-table authorization the row does not give.",
+          "suggestion": "Narrow the cell to row-grounded DoD shapes (unit/integration test, test coverage, test corpus)."
+        }
+      ],
+      "dispositions": [
+        {
+          "defect_id": "R2-F1",
+          "action": "fixed",
+          "note": "Adopted: explicit one-line matching rule 'DoD-shape rows win over platform rows'."
+        },
+        {
+          "defect_id": "R2-F2",
+          "action": "fixed",
+          "note": "Adopted: backend row now reads Rust, Go, Java/Kotlin, Python, Node.js/TypeScript (verified role table detection row)."
+        },
+        {
+          "defect_id": "R2-F3",
+          "action": "fixed",
+          "note": "Adopted: carve-out exemplars narrowed to row-grounded auth/authz, pre-production security, threat model."
+        },
+        {
+          "defect_id": "R2-F4",
+          "action": "fixed",
+          "note": "Adopted: one routing rule per table row; consistency note corrected (joiner claim removed)."
+        },
+        {
+          "defect_id": "R2-F5",
+          "action": "fixed",
+          "note": "Adopted: carve-out moved to its own sentence after the step-5 text; no nesting."
+        },
+        {
+          "defect_id": "R2-F6",
+          "action": "fixed",
+          "note": "Adopted: CI/CD, deploy, infra row -> solidforge:devops-engineer added."
+        },
+        {
+          "defect_id": "R2-C1",
+          "action": "fixed",
+          "note": "Coverage disclosure carried. Counts were extracted directly by the orchestrator pre-run (94 metas, 22 general-purpose, timestamps); ADR entry pins session UUID + counting rule."
+        },
+        {
+          "defect_id": "R2-C2",
+          "action": "fixed",
+          "note": "Coverage disclosure carried. Names cross-verified against plugin_layout.py EXPECTED_AGENTS + role table + the live agent registry listing; manifest file check deferred to the implementation step."
+        },
+        {
+          "defect_id": "AD-F1",
+          "action": "fixed",
+          "note": "Adopted: fix scope extended — role-agent-mapping.md E2E row's 4 bare occurrences get the solidforge: prefix (its own step-2 line already prefixes the iOS siblings); dispatch row stays prefixed."
+        },
+        {
+          "defect_id": "AD-F2",
+          "action": "fixed",
+          "note": "Adopted: carve-out now ends 'The loop_state.py record-outer --verdict <v> step is unchanged.'"
+        },
+        {
+          "defect_id": "AD-F3",
+          "action": "fixed",
+          "note": "Adopted: cell narrowed to 'Test corpus, unit/integration tests, test coverage' (row-grounded vocabulary)."
+        }
+      ]
+    },
+    {
+      "round": 3,
+      "same_source_findings": 8,
+      "hetero_findings": 8,
+      "hetero_degraded": false,
+      "blockers": 1,
+      "verdict": "rewrite",
+      "findings": [
+        {
+          "defect_id": "R3-F1",
+          "severity": "warning",
+          "kind": "contradiction",
+          "location": "E2E-row fix subsection",
+          "evidence": "'4 occurrences' wrong: 6 bare playwright instances + 1 bare tester = 7 instances; unexecutable as written.",
+          "suggestion": "State counts as instances across lines."
+        },
+        {
+          "defect_id": "R3-F2",
+          "severity": "warning",
+          "kind": "coverage-gap",
+          "location": "E2E-row fix subsection",
+          "evidence": "Bare `tester` on the fallback line missed; 'self-consistent' claim false.",
+          "suggestion": "Include the bare tester."
+        },
+        {
+          "defect_id": "R3-F3",
+          "severity": "warning",
+          "kind": "structural-gap",
+          "location": "step-4 replacement instruction",
+          "evidence": "Unclear whether the lifecycle sentence duplicates and whether the Rich path sentence survives.",
+          "suggestion": "Explicit: lifecycle absorbed into preamble; Rich path preserved unchanged."
+        },
+        {
+          "defect_id": "R3-F4",
+          "severity": "warning",
+          "kind": "structural-gap",
+          "location": "step-5 carve-out anchor",
+          "evidence": "Two conflicting anchors ('after step-5 text' vs 'after REFUSES parenthetical').",
+          "suggestion": "Single anchor: end of the step-5 bullet."
+        },
+        {
+          "defect_id": "R3-F5",
+          "severity": "warning",
+          "kind": "coverage-gap",
+          "location": "rule-5 audit surface",
+          "evidence": "e2e-testing.md (9 bare) and repo-root docs/subagent-review-plan.md omitted; plugin_layout.py bare by checker convention.",
+          "suggestion": "e2e-testing.md in scope; repo-root doc + checker listed with dispositions."
+        },
+        {
+          "defect_id": "R3-F6",
+          "severity": "warning",
+          "kind": "contradiction",
+          "location": "non-goal justification",
+          "evidence": "'doctrine already correct' contradicted by role rows' 'write tests' example tasks vs DoD-shape-wins rule.",
+          "suggestion": "Soften: trigger-based doctrine correct; example tasks are role descriptions."
+        },
+        {
+          "defect_id": "R3-F7",
+          "severity": "warning",
+          "kind": "coverage-gap",
+          "location": "dispatch table shape set",
+          "evidence": "Closed shape set misrouted Apple-architecture items to ios-developer.",
+          "suggestion": "Deferral or architecture rows."
+        },
+        {
+          "defect_id": "R3-C1",
+          "severity": "coverage",
+          "kind": "coverage-gap",
+          "location": "measured-evidence paragraph",
+          "evidence": "Counts not re-derivable from inside the repo; leg verified the pinning is real (session + meta.json agentType shape).",
+          "suggestion": "Future pass re-tally meta.json agentType values."
+        },
+        {
+          "defect_id": "design-fork-structural-gap",
+          "severity": "warning",
+          "kind": "structural-gap",
+          "location": "step-4 deferral sentence",
+          "evidence": "Deferral named only Apple Platform Architect of the role table's design rows; the fork is under-specified.",
+          "suggestion": "Enumerate all design rows."
+        },
+        {
+          "defect_id": "detection-mechanism-structural-gap",
+          "severity": "warning",
+          "kind": "structural-gap",
+          "location": "step-4 preamble",
+          "evidence": "'derive from the item's platform' conflates mapping with the role table's file-based auto-detection.",
+          "suggestion": "Distinguish detection (file-based) from mapping (role rows)."
+        },
+        {
+          "defect_id": "test-engineer-citation-incomplete",
+          "severity": "warning",
+          "kind": "citation-error",
+          "location": "Context bullet 2",
+          "evidence": "Citation dropped the Test Engineer row's iOS carve-out, misleading about tester scope.",
+          "suggestion": "Complete the citation."
+        },
+        {
+          "defect_id": "frontend-node-overlap-structural-gap",
+          "severity": "warning",
+          "kind": "structural-gap",
+          "location": "dispatch table rows 1-2",
+          "evidence": "Node.js/TypeScript projects match both the backend row and the Web frontend row.",
+          "suggestion": "State backend-vs-frontend resolution by DoD."
+        },
+        {
+          "defect_id": "repo-facade-coverage-disclosure",
+          "severity": "coverage",
+          "kind": "coverage-gap",
+          "location": "rule-5 audit",
+          "evidence": "Facade-doc audit (README/USER_GUIDE/GitHub About) is a required rule-5 step; proposal omitted it.",
+          "suggestion": "Run the facade grep and record the disposition."
+        },
+        {
+          "defect_id": "DF1-deferral-enumeration",
+          "severity": "coverage",
+          "kind": "coverage-gap",
+          "location": "step-4 deferral sentence",
+          "evidence": "Deferral names 1 of 3 design rows (Architect / Detailed Designer->Plan / Apple Platform Architect) + Requirements Analyst.",
+          "suggestion": "Enumerate all four design routes."
+        },
+        {
+          "defect_id": "DF2-prefix-scope-undercount",
+          "severity": "blocker",
+          "kind": "citation-error",
+          "location": "prefix-fix subsection",
+          "evidence": "'prefix all 16 instances' under-scopes: e2e-testing.md also has bare tester (line 21), frontend-developer/backend-developer (line 106), Task(frontend-developer) (line 207). Verified: 9+13=22 instances.",
+          "suggestion": "Criterion-scoped fix: prefix every bare instance of the table-cited agents in both files."
+        },
+        {
+          "defect_id": "DF3-subagent-review-count",
+          "severity": "warning",
+          "kind": "citation-error",
+          "location": "rule-5 agent-name audit",
+          "evidence": "'2 bare roster mentions' undercounts: line 20 alone lists 13 bare names; 2 lines carry 15+.",
+          "suggestion": "Recount or qualify the disposition."
+        }
+      ],
+      "dispositions": [
+        {
+          "defect_id": "R3-F1",
+          "action": "fixed",
+          "note": "Adopted: counts restated as instances; scope moved to a criterion (see DF2)."
+        },
+        {
+          "defect_id": "R3-F2",
+          "action": "fixed",
+          "note": "Adopted: bare tester included in the fix criterion."
+        },
+        {
+          "defect_id": "R3-F3",
+          "action": "fixed",
+          "note": "Adopted: instruction now explicit (lifecycle absorbed; Rich path preserved)."
+        },
+        {
+          "defect_id": "R3-F4",
+          "action": "fixed",
+          "note": "Adopted: single anchor (end of step-5 bullet) stated in both places."
+        },
+        {
+          "defect_id": "R3-F5",
+          "action": "fixed",
+          "note": "Adopted: e2e-testing.md in scope; repo-root doc + checker listed with dispositions."
+        },
+        {
+          "defect_id": "R3-F6",
+          "action": "fixed",
+          "note": "Adopted: non-goal softened (trigger-based doctrine; example tasks are role descriptions)."
+        },
+        {
+          "defect_id": "R3-F7",
+          "action": "fixed",
+          "note": "Adopted: design-shape rows added to the table (architect / Plan / requirements-manager)."
+        },
+        {
+          "defect_id": "R3-C1",
+          "action": "fixed",
+          "note": "Coverage carried; pinning verified real by the leg; counts from the orchestrator's direct extraction."
+        },
+        {
+          "defect_id": "design-fork-structural-gap",
+          "action": "fixed",
+          "note": "Adopted: deferral sentence replaced by explicit design-shape rows in the dispatch table."
+        },
+        {
+          "defect_id": "detection-mechanism-structural-gap",
+          "action": "fixed",
+          "note": "Adopted: preamble now distinguishes file-based detection from row-based mapping."
+        },
+        {
+          "defect_id": "test-engineer-citation-incomplete",
+          "action": "fixed",
+          "note": "Adopted: context bullet now carries the full iOS carve-out."
+        },
+        {
+          "defect_id": "frontend-node-overlap-structural-gap",
+          "action": "fixed",
+          "note": "Adopted: row-matching line resolves Node backend-vs-frontend by DoD."
+        },
+        {
+          "defect_id": "repo-facade-coverage-disclosure",
+          "action": "fixed",
+          "note": "Adopted: facade grep run (README/USER_GUIDE zero hits, verified); GitHub About listed as human-owned advisory."
+        },
+        {
+          "defect_id": "DF1-deferral-enumeration",
+          "action": "fixed",
+          "note": "Adopted: all four design routes enumerated as table rows."
+        },
+        {
+          "defect_id": "DF2-prefix-scope-undercount",
+          "action": "fixed",
+          "note": "Adopted: fix re-scoped to a count-immune criterion; verified inventories (role table 9, e2e-testing.md 13) pinned in the proposal."
+        },
+        {
+          "defect_id": "DF3-subagent-review-count",
+          "action": "fixed",
+          "note": "Adopted: audit note corrected to '2 lines carrying 15+ bare roster names'."
+        }
+      ]
+    },
+    {
+      "round": 4,
+      "same_source_findings": 11,
+      "hetero_findings": 3,
+      "hetero_degraded": false,
+      "blockers": 2,
+      "verdict": "rewrite",
+      "findings": [
+        {
+          "defect_id": "D1",
+          "severity": "warning",
+          "kind": "contradiction",
+          "location": "non-goal vs fix subsection",
+          "evidence": "7-instance vs 9-instance counts disagreed.",
+          "suggestion": "One count/criterion."
+        },
+        {
+          "defect_id": "D2",
+          "severity": "warning",
+          "kind": "citation-error",
+          "location": "inventory breakdown",
+          "evidence": "3 non-playwright instances mislabeled tester-family; they are tester:371, backend-developer:230, frontend-developer:57.",
+          "suggestion": "Relabeled breakdown."
+        },
+        {
+          "defect_id": "D3",
+          "severity": "warning",
+          "kind": "contradiction",
+          "location": "fix criterion",
+          "evidence": "EVERY-bare-instance criterion would prefix TOC anchors, breaking links.",
+          "suggestion": "Exclude TOC anchors/heading links."
+        },
+        {
+          "defect_id": "D4",
+          "severity": "warning",
+          "kind": "citation-error",
+          "location": "facade audit note",
+          "evidence": "zero-hits claim was a false negative (grep against nonexistent skill-local paths); repo-root README.md:17 lists the agents bare with inline scoping disclosure.",
+          "suggestion": "Corrected note with repo-root paths; advisory disposition."
+        },
+        {
+          "defect_id": "D5",
+          "severity": "warning",
+          "kind": "contradiction",
+          "location": "Web frontend row",
+          "evidence": "Frontend has no file-detection table; the platform row was unreachable by the stated mechanism.",
+          "suggestion": "Relabeled as a DoD-shape row."
+        },
+        {
+          "defect_id": "D6",
+          "severity": "warning",
+          "kind": "structural-gap",
+          "location": "preamble",
+          "evidence": "Per-item file re-detection conflicts with the frozen-anchor doctrine; queue has no platform field.",
+          "suggestion": "PROJECT platform detected once at plan interpretation."
+        },
+        {
+          "defect_id": "D7",
+          "severity": "warning",
+          "kind": "coverage-gap",
+          "location": "design row",
+          "evidence": "The design three-role fork's /impeccable branch was unrepresented.",
+          "suggestion": "Visual-design route added."
+        },
+        {
+          "defect_id": "D8",
+          "severity": "warning",
+          "kind": "coverage-gap",
+          "location": "fix summary",
+          "evidence": "design-decisions.md ADR entry omitted from the change-surface enumeration.",
+          "suggestion": "Added to the summary."
+        },
+        {
+          "defect_id": "D9",
+          "severity": "warning",
+          "kind": "coverage-gap",
+          "location": "criterion agent list",
+          "evidence": "architect/code-reviewer/security-specialist bare in the role table but outside the criterion.",
+          "suggestion": "Criterion extended to every dispatch-table/carve-out-cited name."
+        },
+        {
+          "defect_id": "D10",
+          "severity": "warning",
+          "kind": "coverage-gap",
+          "location": "E2E row",
+          "evidence": "MCP-availability fallback (playwright absent -> tester) not carried into the row.",
+          "suggestion": "Condition added to the row."
+        },
+        {
+          "defect_id": "D11",
+          "severity": "coverage",
+          "kind": "coverage-gap",
+          "location": "evidence substrate",
+          "evidence": "103 metas now vs pinned 94; leg sampled 20/103 consistent with the story but did not recount.",
+          "suggestion": "ADR pins the extraction-snapshot time."
+        },
+        {
+          "defect_id": "different-1",
+          "severity": "blocker",
+          "kind": "structural-gap",
+          "location": "step-4 dispatch table",
+          "evidence": "Coder-dispatch table carried non-Coder rows (architect / Plan / requirements-manager) under a 'Dispatch the Coder' header.",
+          "suggestion": "Move non-Coder shapes to a companion route sentence."
+        },
+        {
+          "defect_id": "different-2",
+          "severity": "blocker",
+          "kind": "citation-error",
+          "location": "row-matching Node line",
+          "evidence": "DoD-wins precedence over the role table's unconditional .ts/.js->Node backend detection had no source.",
+          "suggestion": "Ground in trigger keywords; record the precedence as new doctrine in the ADR."
+        },
+        {
+          "defect_id": "different-3",
+          "severity": "warning",
+          "kind": "structural-gap",
+          "location": "step-4 composed text",
+          "evidence": "Rich path sentence placement shown only by reference, not inline.",
+          "suggestion": "Show the composed step 4 with the Rich path sentence in place."
+        }
+      ],
+      "dispositions": [
+        {
+          "defect_id": "D1",
+          "action": "fixed",
+          "note": "Adopted: non-goal reworded to the criterion-scoped fix."
+        },
+        {
+          "defect_id": "D2",
+          "action": "fixed",
+          "note": "Adopted: inventory relabeled (tester:371, backend-developer:230, frontend-developer:57)."
+        },
+        {
+          "defect_id": "D3",
+          "action": "fixed",
+          "note": "Adopted: criterion excludes TOC anchors and heading links."
+        },
+        {
+          "defect_id": "D4",
+          "action": "fixed",
+          "note": "Adopted: facade audit corrected to repo-root paths; README:17 bare-but-disclosing recorded as advisory; USER_GUIDE zero hits verified with the right path."
+        },
+        {
+          "defect_id": "D5",
+          "action": "fixed",
+          "note": "Adopted: Web frontend relabeled as a DoD-shape row."
+        },
+        {
+          "defect_id": "D6",
+          "action": "fixed",
+          "note": "Adopted: preamble scoped to the PROJECT platform detected once at plan interpretation."
+        },
+        {
+          "defect_id": "D7",
+          "action": "fixed",
+          "note": "Adopted: visual-design route added (/impeccable skill)."
+        },
+        {
+          "defect_id": "D8",
+          "action": "fixed",
+          "note": "Adopted: design-decisions.md added to the fix summary."
+        },
+        {
+          "defect_id": "D9",
+          "action": "fixed",
+          "note": "Adopted: criterion extended to every dispatch-table/carve-out-cited name (architect, code-reviewer, security-specialist included)."
+        },
+        {
+          "defect_id": "D10",
+          "action": "fixed",
+          "note": "Adopted: E2E row carries the MCP-absent fallback condition."
+        },
+        {
+          "defect_id": "D11",
+          "action": "fixed",
+          "note": "Coverage carried; ADR pins the 2026-08-24 extraction snapshot (94 metas at extraction; session has since grown)."
+        },
+        {
+          "defect_id": "different-1",
+          "action": "fixed",
+          "note": "Adopted: non-Coder shapes (architect / Plan / requirements-manager / /impeccable) moved to a companion route sentence after the table; the table is Coder-scope only."
+        },
+        {
+          "defect_id": "different-2",
+          "action": "fixed",
+          "note": "Adopted: Node backend-vs-frontend grounded in the role table's trigger keywords; precedence flagged as new doctrine recorded in the rule-6 ADR entry."
+        },
+        {
+          "defect_id": "different-3",
+          "action": "fixed",
+          "note": "Adopted: composed step 4 shown with the Rich path sentence inline."
+        }
+      ]
+    },
+    {
+      "round": 5,
+      "same_source_findings": 9,
+      "hetero_findings": 0,
+      "hetero_degraded": false,
+      "blockers": 0,
+      "verdict": "pass",
+      "findings": [
+        {
+          "defect_id": "R5-F1",
+          "severity": "warning",
+          "kind": "authority-chain-break",
+          "location": "fix criterion + inventory",
+          "evidence": "9-instance inventory omitted architect@57, code-reviewer@411/417, security-specialist@417 per the fix's own criterion; devops-engineer/requirements-manager verified zero bare.",
+          "suggestion": "Inventory corrected to 13; zero-instance names stated."
+        },
+        {
+          "defect_id": "R5-F2",
+          "severity": "warning",
+          "kind": "structural-gap",
+          "location": "rule-6 consistency note",
+          "evidence": "ADR-entry spec omitted the precedence doctrine the row-matching line labels 'new doctrine — recorded in the rule-6 ADR entry'.",
+          "suggestion": "ADR spec extended to the precedence doctrine."
+        },
+        {
+          "defect_id": "R5-F3",
+          "severity": "warning",
+          "kind": "structural-gap",
+          "location": "step-5 carve-out placement",
+          "evidence": "End-of-bullet placement made the 'instead' anaphora cross the block/skip branches; bare code-reviewer beside prefixed security-specialist unstated.",
+          "suggestion": "Place after the converge parenthetical; accept the mixed convention explicitly."
+        },
+        {
+          "defect_id": "R5-F4",
+          "severity": "warning",
+          "kind": "structural-gap",
+          "location": "composed step-4 blockquote",
+          "evidence": "Bracketed placeholder could be pasted literally by an implementer.",
+          "suggestion": "Full Rich path sentence inline."
+        },
+        {
+          "defect_id": "R5-F5",
+          "severity": "warning",
+          "kind": "coverage-gap",
+          "location": "iOS platform row",
+          "evidence": "Apple-architecture DoD fell to ios-developer while role table:320 routes it to architect; companion sentence applies only outside the table.",
+          "suggestion": "Apple-architecture carve-out in the row-matching line."
+        },
+        {
+          "defect_id": "R5-F6",
+          "severity": "warning",
+          "kind": "citation-error",
+          "location": "agent-name audit note",
+          "evidence": "Line-20 roster count stated 13; actual 17 (13 existing + 4 new).",
+          "suggestion": "Corrected to 17."
+        },
+        {
+          "defect_id": "R5-F7",
+          "severity": "warning",
+          "kind": "coverage-gap",
+          "location": "rule-5 audit surface",
+          "evidence": "feature-dev.md hardcoded agent_type worked examples unlisted.",
+          "suggestion": "Added as audited-and-left-as-is."
+        },
+        {
+          "defect_id": "R5-F8",
+          "severity": "warning",
+          "kind": "contradiction",
+          "location": "preamble wording",
+          "evidence": "'role rows below' collided with the role-table term (rule 10 one-term-per-concept).",
+          "suggestion": "Renamed 'dispatch rows below'."
+        },
+        {
+          "defect_id": "R5-C1",
+          "severity": "coverage",
+          "kind": "coverage-gap",
+          "location": "evidence claims",
+          "evidence": "Leg verified the pinned session + agentType shape + 104-meta growth consistency; did not re-derive the historical 22/94 classification.",
+          "suggestion": "Prior-round verification recorded in the record dispositions."
+        }
+      ],
+      "dispositions": [
+        {
+          "defect_id": "R5-F1",
+          "action": "fixed",
+          "note": "Adopted: inventory corrected to 13 role-table instances; devops-engineer/requirements-manager stated zero-bare (verified)."
+        },
+        {
+          "defect_id": "R5-F2",
+          "action": "fixed",
+          "note": "Adopted: rule-6 note now includes the precedence doctrine (DoD-wins, Node trigger resolution, Apple-architecture carve-out)."
+        },
+        {
+          "defect_id": "R5-F3",
+          "action": "fixed",
+          "note": "Adopted: carve-out placed after the converge parenthetical; mixed prefix convention accepted in a consistency note."
+        },
+        {
+          "defect_id": "R5-F4",
+          "action": "fixed",
+          "note": "Adopted: full Rich path sentence shown inline in the composed step 4."
+        },
+        {
+          "defect_id": "R5-F5",
+          "action": "fixed",
+          "note": "Adopted: Apple-architecture carve-out added to the row-matching line."
+        },
+        {
+          "defect_id": "R5-F6",
+          "action": "fixed",
+          "note": "Adopted: line-20 roster corrected to 17 (13 existing + 4 new)."
+        },
+        {
+          "defect_id": "R5-F7",
+          "action": "fixed",
+          "note": "Adopted: feature-dev.md added to the audit surface as audited-and-left-as-is."
+        },
+        {
+          "defect_id": "R5-F8",
+          "action": "fixed",
+          "note": "Adopted: renamed to 'the dispatch rows below'."
+        },
+        {
+          "defect_id": "R5-C1",
+          "action": "fixed",
+          "note": "Coverage carried; the 22/94 classification was extracted by the orchestrator pre-run and is recorded in earlier-round dispositions."
+        }
+      ]
+    },
+    {
+      "round": 6,
+      "same_source_findings": 6,
+      "hetero_findings": 0,
+      "hetero_degraded": false,
+      "blockers": 0,
+      "verdict": "pass",
+      "findings": [
+        {
+          "defect_id": "R6-01",
+          "severity": "warning",
+          "kind": "contradiction",
+          "location": "prefix-fix inventory",
+          "evidence": "Role-table inventory 13 -> 14: line 417 carries two code-reviewer citations (bold label + prose) plus line 411.",
+          "suggestion": "Recount to 14."
+        },
+        {
+          "defect_id": "R6-02",
+          "severity": "warning",
+          "kind": "coverage-gap",
+          "location": "rule-6 ADR scope",
+          "evidence": "Mixed-prefix convention + criterion scope lived only in the transient proposal, not the durable ADR (rule 6).",
+          "suggestion": "ADR entry records (c) the mixed-prefix convention with the rejected alternative."
+        },
+        {
+          "defect_id": "R6-03",
+          "severity": "warning",
+          "kind": "structural-gap",
+          "location": "step-5 placement anchor",
+          "evidence": "'immediately after the parenthetical' would land mid-sentence before '+ run-record (per-item).'.",
+          "suggestion": "Anchor after '+ run-record (per-item).'."
+        },
+        {
+          "defect_id": "R6-04",
+          "severity": "warning",
+          "kind": "contradiction",
+          "location": "dispatch table row 2 label",
+          "evidence": "'frontend DoD' label collided with the DoD-shape-row taxonomy and clause-2 trigger resolution.",
+          "suggestion": "Rename to 'Web / UI work (frontend)'."
+        },
+        {
+          "defect_id": "R6-05",
+          "severity": "warning",
+          "kind": "coverage-gap",
+          "location": "rule-5 sweep",
+          "evidence": "Sweep omitted refactoring.md Task(developer) (unregistered name), bug-fix.md, documentation.md, ast-grep-patterns.md, feature-dev.md full ranges.",
+          "suggestion": "Enumerate + defer explicitly; flag Task(developer) as a found defect."
+        },
+        {
+          "defect_id": "R6-06",
+          "severity": "coverage",
+          "kind": "coverage-gap",
+          "location": "drift evidence",
+          "evidence": "Consistent-in-kind verified (26/104 general-purpose, one each of the three typed v0.6 dispatches, zero tester); exact snapshot classification not re-derived.",
+          "suggestion": "Carried; recorded in earlier-round dispositions."
+        }
+      ],
+      "dispositions": [
+        {
+          "defect_id": "R6-01",
+          "action": "fixed",
+          "note": "Adopted: inventory corrected to 14 role-table instances (code-reviewer ×3)."
+        },
+        {
+          "defect_id": "R6-02",
+          "action": "fixed",
+          "note": "Adopted: ADR entry scope extended to (c) the mixed-prefix convention with the rejected alternative."
+        },
+        {
+          "defect_id": "R6-03",
+          "action": "fixed",
+          "note": "Adopted: anchor reworded to after '+ run-record (per-item).', before 'On block:'."
+        },
+        {
+          "defect_id": "R6-04",
+          "action": "fixed",
+          "note": "Adopted: row label renamed to 'Web / UI work (frontend)' — no DoD term."
+        },
+        {
+          "defect_id": "R6-05",
+          "action": "fixed",
+          "note": "Adopted: Task(<agent>) sweep enumerated and deferred explicitly; refactoring.md Task(developer) flagged as a found unregistered-name defect for a separate fix."
+        },
+        {
+          "defect_id": "R6-06",
+          "action": "fixed",
+          "note": "Coverage carried; consistency-in-kind verified by the leg."
+        }
+      ]
+    }
+  ],
+  "substantive_converged": true,
+  "coverage": [
+    "core-claims-coverage: 4/4",
+    "cap=7, rounds=6",
+    "rounds 5-6 different-family: qwen3 provider malformed (hetero-stream-no-result); minimax contributed zero findings",
+    "relocated 2026-08-24: artifact + record moved from the gitignored workspace/csr-coder-dispatch-fix/ to the committed docs path so the ADR #55 pointer resolves in-repo"
+  ],
+  "stalemate": false,
+  "rightness": "human_confirm_required",
+  "cap": 7,
+  "core_claims": [
+    "C1: plan-driven-mode.md step 4 dispatches a Coder subagent but names no subagent_type (the gap exists)",
+    "C2: rust/go/java-patterns assign their platforms to backend-developer",
+    "C3: ADR #29 rejected the general-purpose fallback",
+    "C4: the proposed fix mappings match the role tables and are complete and rule-10-consistent"
+  ],
+  "size_tier": "short"
+}
