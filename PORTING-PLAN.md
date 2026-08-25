@@ -340,3 +340,22 @@ solidforge-pi/
 - **有意 divergence 保留**：qwen3 alias → qwen-bailian（本环境 key 为按量制；upstream 扫向 qwen-token-plan-cn）；zai 路由 = pi coding 端点（upstream bigmodel.json 留 CC `/api/anthropic` 端点）——双平台各正。
 
 **终验**：52/52 门禁绿（五技能全量）。
+
+
+---
+
+## 16. 三端 `.env.solidforge` 统一（2026-08-25，env-unify）
+
+**复验结论**：文件发现逻辑三端兼容——CC/pi 逐字一致（`<project-root>/.env.solidforge` → `.env`，shell wins）；dsh 同两层 + preset-root 第三层兜底（且 dsh harness 擦 shell 凭据，文件即权威源）。差异仅在**变量名消费**：
+
+| 路由 | CC | pi | dsh |
+|---|---|---|---|
+| deepseek | `DEEPSEEK_ANTHROPIC_AUTH_TOKEN`（convention）| 同（`_token_env`）| 同（convention；dsh 已移除该 profile——同源）|
+| glm | `BIGMODEL_ANTHROPIC_AUTH_TOKEN` | 同（桥→`ZAI_CODING_CN_API_KEY`）| 原 `<ROUTE>_API_KEY` → **已对齐** `BIGMODEL_...` |
+| minimax-cn | `MINIMAX_ANTHROPIC_AUTH_TOKEN` | 同 | 原 `MINIMAX_CN_API_KEY` → **已对齐** |
+| qwen-bailian | `QWEN_BAILIAN_ANTHROPIC_AUTH_TOKEN` | **已修**（原 `QWEN3_` 过时）| —（无此 profile）|
+| qwen-token-plan-cn | `QWEN_TOKEN_PLAN_CN_ANTHROPIC_AUTH_TOKEN` | **已修**（原 `..._API_KEY` 不一致）| 同（convention）|
+
+**落地**：① pi 两个 qwen profile `_token_env` 对齐 upstream 文件名约定；sf-providers 桥表加 `QWEN_TOKEN_PLAN_CN_`→`..._API_KEY`、Bailian 现行名 `QWEN_BAILIAN_` + legacy `QWEN3_` 双认；example 模板同步。② dsh 四个 DSH-NATIVE/外部 profile（zai/minimax-cn/qwen，pd+csr 双拷贝）加 `_token_env`/`_credential_env` 指向共享文件的 CC 约定名（dsh 的 escape-hatch 字段，语义即为此）。③ **部署**：一份物理文件 `solidforge/.env.solidforge` + symlink（pi 根 `../solidforge/.env.solidforge`；dsh preset 根绝对链接）。
+
+**验证**：14 个消费点矩阵全 OK（dry-check）；dsh `_materialize_profile` fail-fast 实测读通共享文件；pi qwen3 alias 实弹（认证+路由+模型解析正常；该次运行的 no-structured-output 为 provider 输出形态波动，`_parse_pi_stream` 最小回归测试证明解析器无回归——多 part/fence/前后 prose 均正确提取）；csr 6/6 + pd wiring 绿。

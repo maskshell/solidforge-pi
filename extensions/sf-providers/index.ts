@@ -35,10 +35,17 @@ const CREDENTIAL_BRIDGE: Record<string, string> = {
 	BIGMODEL_ANTHROPIC_AUTH_TOKEN: "ZAI_CODING_CN_API_KEY",
 	DEEPSEEK_ANTHROPIC_AUTH_TOKEN: "DEEPSEEK_API_KEY",
 	MINIMAX_ANTHROPIC_AUTH_TOKEN: "MINIMAX_CN_API_KEY",
+	QWEN_TOKEN_PLAN_CN_ANTHROPIC_AUTH_TOKEN: "QWEN_TOKEN_PLAN_CN_API_KEY",
 };
 
-/** Bailian pay-as-you-go key var (the qwen-bailian route's credential). */
-const BAILIAN_TOKEN_ENV = "QWEN3_ANTHROPIC_AUTH_TOKEN";
+/** Bailian pay-as-you-go key vars (route `qwen-bailian`'s credential).
+ * CURRENT convention: QWEN_BAILIAN_ANTHROPIC_AUTH_TOKEN (the shared
+ * three-harness .env.solidforge, upstream filename convention); the legacy
+ * QWEN3_ name is still honored so pre-rename user files keep working. */
+const BAILIAN_TOKEN_ENVS = [
+	"QWEN_BAILIAN_ANTHROPIC_AUTH_TOKEN",
+	"QWEN3_ANTHROPIC_AUTH_TOKEN",
+];
 
 function loadEnvFile(file: string, into: NodeJS.ProcessEnv, overwrite: boolean): void {
 	let text: string;
@@ -77,11 +84,11 @@ export default function (pi: ExtensionAPI) {
 	// The ONE non-catalog route: Bailian pay-as-you-go DashScope. Registered only
 	// when the token is present. Facts copied from the catalog's qwen3.8-max entry
 	// (same model as the token-plan channel); pay-per-use pricing unknown -> 0.
-	const bailianToken = process.env[BAILIAN_TOKEN_ENV];
-	if (bailianToken) {
+	const bailianEnv = BAILIAN_TOKEN_ENVS.find((v) => process.env[v]);
+	if (bailianEnv) {
 		pi.registerProvider("qwen-bailian", {
 			baseUrl: "https://dashscope.aliyuncs.com/compatible-mode/v1",
-			apiKey: `$${BAILIAN_TOKEN_ENV}`,
+			apiKey: `$${bailianEnv}`,
 			api: "openai-completions",
 			models: [
 				{
