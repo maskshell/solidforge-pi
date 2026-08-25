@@ -45,7 +45,15 @@ const PROFILES: ProfileDef[] = [
 		id: "bigmodel",
 		baseUrl: "https://open.bigmodel.cn/api/anthropic",
 		tokenEnv: "BIGMODEL_ANTHROPIC_AUTH_TOKEN",
-		models: [{ id: "GLM-5.2[1M]", contextWindow: 1_000_000 }],
+		models: [
+			{ id: "GLM-5.2", contextWindow: 1_000_000 }, // verified live 2026-08-25; [1M] suffix is a CC convention the endpoint rejects
+		],
+	},
+	{
+		id: "qwen3",
+		baseUrl: "https://token-plan.cn-beijing.maas.aliyuncs.com/apps/anthropic",
+		tokenEnv: "QWEN3_ANTHROPIC_AUTH_TOKEN",
+		models: [{ id: "qwen3.8-max", contextWindow: 1_000_000 }],
 	},
 ];
 

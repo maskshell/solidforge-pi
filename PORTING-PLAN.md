@@ -218,8 +218,8 @@ solidforge-pi/
 
 | 阶段 | 内容 | 打通验证 |
 |---|---|---|
-| **M0 spike** | sf-subagents 扩展跑通 + **directTools 命名实测** + models.json/registerProvider 对 DeepSeek 端点连通性 | `subagent` 工具调 `sf-doc-reviewer` 返回结构化结果 |
-| **M1 csr** | skills/cross-source-review + sf-hooks（hooks 首次接线）+ hetero_doc_review.py 改造（spawn 替换） | 完整 csr 收敛环跑通一份真实 doc |
+| **M0 spike** ✅ | sf-subagents 扩展跑通 + directTools 命名实测 + models.json/registerProvider 对 DeepSeek 端点连通性 | `subagent` 工具调 `solidforge:doc-reviewer` 返回结构化结果 |
+| **M1 csr** ✅（2026-08-25） | skills/cross-source-review 移植：hetero_doc_review.py spawn 层 pi 化（`pi --mode json -p -e sf-providers`）+ guard 测试重写（8 检查）+ SKILL.md/install.md/divergence.md 适配 | **实弹**：bigmodel(GLM-5.2) 抓到植入矛盾（blocker+双行引文）；qwen3 401 被 `hetero-api-error` 如实披露；离线 6/6 测试全绿（含 budget/turns 熔断 degrade） |
 | **M2 psv/pas** | 两个 outcome-axis 技能（无 hooks 依赖，最快） | psv 覆盖记录 + pas 撞车记录各一份 |
 | **M3 pd** | parallel-development：TaskCreate 拍板与实现（§5.3）+ fast_gate 接线 + playwright adapter 接入 | 双环收敛（内环 gates + 外环 review）全绿 |
 | **M4 arm + 收尾** | arm-tools 命令 + arm.py AGENTS.md 补丁 + plugin_layout.py 更新 + README（含 adapter 前置声明、CI trust 说明） | 全新项目 arm → converge 全流程 |
@@ -261,6 +261,14 @@ solidforge-pi/
 | DeepSeek 连通性（sf-providers + `.env.solidforge` 自加载） | ✅ `--model deepseek/deepseek-v4-flash` 返回正常 |
 | 已落盘资产 | `package.json`（pi manifest）、`agents/sf-*.md` ×22（5 个带 M3 TODO 旗标）、`extensions/sf-subagents/`、`extensions/sf-providers/`、`tools/convert_agents.py`（可重跑） |
 | 遗留 → M1 | ① MiniMax 连通（同机制复制）② sf-providers 模型规格（contextWindow/maxTokens/costs）按 provider 文档校准 ③ reasoning 标志确认 ④ agent 正文 prose 工具名清洗（非反引号处） |
+
+### M1 实施记录（2026-08-25）
+
+- **hetero_doc_review.py pi 化**（外科手术式，CLI 契约与输出 JSON 形状不变）：`_pi_argv`（spawn `pi --mode json -p --no-session -e <sf-providers>`；provider/model 由 profile `_provider`+`model` 组合）；`_run_streamed` 解析 pi JSONL（assistant turn = `message_end.role=assistant`，cost 累计自 `usage.cost.total`）+ **wrapper-side budget/turns 熔断**（pi 无 CLI flag，degrade subtype 与 CC 时代一致：`error_max_budget_usd`/`error_max_turns`）；新增 **`hetero-api-error` 分类**（pi 把 provider 错误放 `message_end.errorMessage` 且 rc=0，实测曾误报 no-result）；`_parse_pi_stream` 防御性 fence 提取（pi 无 `--json-schema`，防御解析成为唯一路径）；退役 `--no-stream`/`--observe-hooks`/`--findings-schema` 与 structured-retry fallback；`cc_stderr_tail`→`pi_stderr_tail`，provider_runs 增 `cost_usd`。
+- **guard 测试重写**（8 检查）：argv 面、telemetry（pi 事件）、bytes/wall/budget/turns 四熔断、api-error 分类、provider_runs；fake child 发 pi JSONL 事件。
+- **环境校准**（实测）：bigmodel Anthropic 端点拒 `GLM-5.3[1M]`/`GLM-4.7-Air`（400 modelCode 不存在），`GLM-5.2` 可用 → profile 与 sf-providers 同步改；qwen3 token 401（环境问题，如实披露路径已验证）；sf-providers 补 qwen3 注册。
+- **已知限制**：BigModel 端点不回报 usage cost（`cost_usd=0`，budget cap 对其无效——telemetry 如实为 0）；resolved model 实测显示 `glm-5.3`（端点侧路由，telemetry 价值正在于此）。
+- disconnect_check 适配：agent frontmatter 检查从 name/description/tools/disallowedTools → 前三（pi 用正面 tools 白名单）。
 
 ---
 
