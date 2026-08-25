@@ -1,0 +1,263 @@
+# SolidForge → Pi 移植方案
+
+> 状态：方案定稿（2026-08-22）｜**M0 spike 已完成（2026-08-23）**｜源：`/Users/solosus/dev/ws-ai/solidforge`（Claude Code 插件）｜目标：本仓库（pi package）
+> 本文档由三轮分析沉淀：① 可行性分析 → ② 对抗性复查（3 处纠错）→ ③ pi-mcp-adapter 调研决策 → ④ M0 spike 实测（结果已回写 §6/§9/§10）。
+
+---
+
+## 0. 结论速览
+
+**无根本性障碍。** SolidForge 的灵魂——确定性收敛策略引擎（`converge.py` / `produce.py` / `loop_state.py` / `plan_queue.py` 等纯 stdlib Python CLI）和协议文本——完全 harness 无关，约 70% 资产可直接复用。Claude Code 插件外壳（agents / hooks / command / MCP 四件套）需按 Pi 的扩展模型重建，其中 **4 处为实质重写点**。
+
+| 分级 | 内容 | 占比 |
+|---|---|---|
+| 直接复用 | 5 个 SKILL.md（文本替换后）、全部 Python infra、schemas、arch-configs、设计文档 | ~70% |
+| 适配层 | agents 转换、hooks shim、arm-tools 命令、profiles | ~25% |
+| 实质重写 | ① hetero 异族子进程 substrate ② playwright MCP 三件套（引入 adapter 后已减半）③ TaskCreate 调度/冲突检测层 ④ budget/turns 上限下沉 | ~5% |
+
+**移植顺序**：csr → psv/pas → parallel-development（对 harness 依赖递增，先用 csr 打通"subagent 扩展 + hetero 子进程"全链路再铺开）。
+
+---
+
+## 1. 源项目盘点
+
+SolidForge 是一个 Claude Code 插件（`.claude-plugin/plugin.json` + 自带 marketplace），捆绑：
+
+- **5 个技能**：`cross-source-review`（文档收敛）、`blueprint-crafting`（上游工件）、`parallel-development`（并行开发编排 + 收敛环）、`primary-source-verification`（引用源核验）、`prior-art-search`（新颖性撞车检测）
+- **22 个子代理**（`agents/*.agent.md`，作用域 `solidforge:<name>`）：architect、backend/frontend/ios-developer、code-reviewer、doc/plan-reviewer、claim-extractor/verifier、novelty-claim-extractor、collision-verifier、playwright-test 三件套、graphiti-config-generator 等
+- **3 个 hooks**（Python stdlib-only）：`blueprint_guard.py` + `counters.py`（PreToolUse）、`fast_gate.py`（PostToolUse）
+- **1 个命令**：`/solidforge:arm-tools`（Layer 2 项目武装）
+- **MCP 依赖**（外部，不随包分发）：playwright-test（E2E 必需）、graphiti（可选，优雅降级）、ast-grep（可选，有 CLI 替代路径）、fedaot-wiki（1 处）
+- **hetero 异族子进程**：`hetero_review.py` / `hetero_doc_review.py` spawn `claude -p --settings profiles/<backend>.json`（DeepSeek/BigModel/MiniMax/Qwen3 的 Anthropic 兼容端点），token 约定 `<NAME>_ANTHROPIC_AUTH_TOKEN`，`.env.solidforge` 自加载
+
+---
+
+## 2. 直接复用清单（不动或仅文本替换）
+
+| 组件 | 复用方式 | 备注 |
+|---|---|---|
+| 5 个 `SKILL.md` | 复制 + 文本替换 | Pi 实现同一 Agent Skills 标准；技能名全部合规。**description 长度卡边**：parallel-development 1016/1024、psv 1011、pas 1014——**禁止加字**，Pi 适配说明写进正文而非 frontmatter |
+| Python infra（全部 `infra/scripts/`、`infra/hooks/`、`infra/install/`） | 原样复用 | 均为 stdlib-only CLI，经 bash 调用，与宿主无关 |
+| schemas / arch-configs / docs | 原样复用 | 纯文件 |
+
+SKILL.md 文本替换项（全量）：
+
+1. **60+ 处** `` `solidforge:<name>` `` spawn 引用 → 具体工具调用指引：`call subagent tool with agent="sf-<name>", task=...`（见 §4.1）
+2. **16 处** `/solidforge:arm-tools` → `/arm-tools`
+3. `${CLAUDE_PLUGIN_ROOT}` → 技能内相对路径（Pi progressive disclosure 规范：以 skill 目录为基准的相对引用）
+4. `TaskCreate` / `TodoWrite`（parallel-development/SKILL.md 内 **22 处**）→ 见 §5.3 重写方案
+5. `mcp__graphiti__*`（memory-protocol.md 43 处）→ proxy 调用格式（§6）
+6. `mcp__ast-grep__*`（4 处）→ `sg` CLI（ast-grep 官方双路径之一）
+7. `mcp__playwright-test__*` → §6 决策
+8. `CLAUDE_PROJECT_DIR` 字样（csr SKILL.md 等）→ 语义等价改述（"项目根"）
+
+---
+
+## 3. 复查纠错记录（已验证的事实，防方案回退）
+
+> 本节是第二轮对抗性复查的产出，三条都是初版方案的错误判断，**后续执行时不得回退到初版结论**。
+
+1. **CLAUDE.md：Pi 原生支持**（usage.md："Pi loads `AGENTS.md` or `CLAUDE.md`"）。arm.py 的 constitution 注入基本原样工作。残留风险：目标项目根已有 `AGENTS.md` 时，同目录 `CLAUDE.md` 是否被加载未明示（仅 `AGENTS.override.md` 取代机制有文档）。**修正动作**：arm.py 加 ~10 行——项目根存在 `AGENTS.md` 时优先追加到它。
+2. **Pi 包无 `agents/` 资源类型**。约定目录仅 `extensions/ skills/ prompts/ themes/`；官方 subagent 扩展的 `discoverAgents()` 只扫 `~/.pi/agent/agents` 与 `.pi/agents`（向上爬树）。包内 `agents/` 目录**不会被任何机制发现**。**修正动作**：sf-subagents 扩展改 `discoverAgents()`，额外合并包自身 `agents/` 目录（~15 行 TS）；包根 `agents/` 仅作存储位置。
+3. **TaskCreate 不是零散小项**。22 处引用且承担**并发冲突检测**功能（任务 metadata `files_touched` 判定并行任务是否触碰同一文件）。官方 todo.ts 示例无自定义 metadata 字段，装上不够用。**修正动作**：见 §5.3，二选一拍板。
+
+---
+
+## 4. 适配层设计
+
+### 4.1 sf-subagents 扩展（基于官方示例裁剪）
+
+以 `examples/extensions/subagent/` 为基础，三处修改：
+
+1. **discoverAgents() 合并包内 `agents/`**（纠错 2）
+2. **并发上限**：示例硬编码 8 任务/4 并发，对 pd 的大规模并行场景上调（8→可配置，默认 16；并发 4→8）
+3. 工具名保持 `subagent`（`pi.registerTool({name:"subagent"})`），SKILL.md 重写时引用该名
+
+**Agent 转换规则**（22 个 `.agent.md` → `.md`）：
+
+- frontmatter：`name/description/tools/model` 四字段保留；CC 专属可选字段（`run_in_background` 等）剥除（Pi 忽略但不识别）
+- 重命名：`<name>` → `sf-<name>`（对齐原 `solidforge:` 作用域语义，避免与用户 `~/.pi/agent/agents/` 全局同名冲突——这正是原项目用作用域前缀的原因）
+- **工具名映射**：`Read→read, Grep→grep, Glob→find, LS→ls, Edit→edit, MultiEdit→edit（多 edits 数组）, Write→write, Bash→bash`
+- description 无需重写：原风格（numbered use cases，50–500 字符）同时满足 CC 与 Pi 最佳实践（agent-crafter 规范对照通过）
+
+**spawn 机制**（已验证）：`pi --mode json -p --no-session --model <m> --tools <list> --append-system-prompt <file>`，解析 JSON-lines 事件流（`message_end`/`tool_result_end`）；`--tools` 支持 built-in + extension + custom 工具；agent 无 `model` 字段时继承父会话模型与 thinking level。
+
+**注意**：非交互子进程的项目信任依赖 `defaultProjectTrust` / `--approve` / 已存 trust 决策——CI 场景需在 README 写明（如 `defaultProjectTrust: "always"` 的安全权衡）。
+
+### 4.2 sf-hooks 扩展（hook shim，零改动复用 Python）
+
+~150 行 TS，把 Pi 事件转成 CC hook 协议喂给原 Python 脚本：
+
+| Claude Code | Pi 对应物 |
+|---|---|
+| PreToolUse matcher `Edit\|Write` | `tool_call` 事件，`toolName ∈ {edit, write}` |
+| PostToolUse matcher `Edit\|Write` | `tool_result` 事件（可改结果） |
+| stdin payload `tool_input.file_path` | `event.input.path`（Pi 参数名不同） |
+| `hookSpecificOutput.permissionDecision:"deny"`（PreToolUse，调用不执行） | `{block: true, reason}` 返回值 |
+| `{"decision":"block","reason"}`（PostToolUse，编辑已发生，反馈自纠） | `tool_result` 返回 `{isError: true}` + reason 回注 |
+| env `CLAUDE_PROJECT_DIR` | `ctx.cwd` 注入子进程环境 |
+| env `CLAUDE_PLUGIN_ROOT` | 包根（`import.meta` 定位） |
+| hooks.json timeout 5s/20s | `AbortSignal.timeout` 同值保留 |
+
+三个脚本的协议已逐一核实（`read_payload()`=stdin JSON、`emit_block`/`deny_block` 输出格式）。shim 放 `extensions/sf-hooks/index.ts`。
+
+### 4.3 arm-tools 命令
+
+`commands/arm-tools.md` → `prompts/arm-tools.md`。Pi prompt templates 支持同样的 `description` / `argument-hint` / `$ARGUMENTS` frontmatter，近乎直接转换。两处内容修改：
+
+- `${CLAUDE_PLUGIN_ROOT}` → 相对/包路径
+- **Step 3 LSP 推荐段重写**：原推荐 claude-plugins-official 的 LSP 插件——Pi 无对应生态，改为直接推荐 language-server 二进制安装命令
+
+arm.py 本体：加 AGENTS.md 优先逻辑（§3.1）；`plugin_layout.py` 自检更新为校验 pi package 结构。
+
+### 4.4 profiles（hetero 的 provider 声明）
+
+两条路径（token 约定 `<NAME>_ANTHROPIC_AUTH_TOKEN` 两条路径都保留）：
+
+- **路径 A（零代码，用户侧配置）**：`~/.pi/agent/models.json`，每 provider 一段 `{baseUrl: ".../anthropic", apiKey: "$DEEPSEEK_ANTHROPIC_AUTH_TOKEN", api: "anthropic-messages", models: [...]}`。`.env.solidforge` 自加载逻辑照旧（models.json 的 `apiKey:"$VAR"` 在请求时解析 shell 环境变量——需确认 pi 对 `.env` 文件不自加载，wrapper 先 load 再 export 的模式可保留）。
+- **路径 B（包自包含）**：sf-providers 扩展 `registerProvider`（参考 `custom-provider-anthropic` 示例），异步工厂可自读 `.env.solidforge`。
+
+**首版决策：路径 B**（solidforge 的卖点是一体安装；models.json 把配置负担转嫁给用户，与原体验不符）。
+
+---
+
+## 5. 实质重写点（4 处）
+
+### 5.1 hetero 异族子进程 substrate
+
+`hetero_review.py` / `hetero_doc_review.py` / research tier 的 spawn 从 `claude -p --settings ...` 改为：
+
+```
+pi --mode json -p --no-session --model <provider>/<model> \
+  --tools <allowed> --append-system-prompt <prompt-file> [-p "<prompt>"]
+```
+
+Pi 无对应物、需下沉实现的 CC flag：
+
+| CC flag | Pi 替代 |
+|---|---|
+| `--settings profiles/<x>.json` | sf-providers 扩展注册的 provider（§4.4） |
+| `--max-budget-usd <cap>` | **自行实现**：JSON 事件流含 `usage.cost.total`，wrapper 累计超限即 SIGKILL |
+| `--max-turns <cap>` | **自行实现**：计数 `message_end`(assistant) 事件 |
+| `--json-schema <violation-log.schema.json>` | **下沉**：schema 校验移入 `converge.py` / wrapper 层（psv/csr 本来就有 schema 校验环节，顺势收编） |
+| `--permission-mode bypassPermissions` | Pi `-p` 模式无权限弹窗，天然等价 |
+| `--output-format stream-json --verbose --include-partial-messages` | `--mode json`（逐行 JSON 事件） |
+
+wrapper 的心跳（stderr 每 30s）、`provider_runs[]` 记账、`.env.solidforge` 加载序、ADR #52/#43 的 caps 语义全部保留——只换底层 spawn 命令与解析器。
+
+### 5.2 playwright MCP 三件套（引入 adapter 后重写面减半）
+
+见 §6 决策。三个 playwright agent 的 frontmatter `mcp__playwright-test__*` 工具列表（26+ 个）改写为 proxy 调用指引（或 directTools 命名，待实测）。
+
+### 5.3 TaskCreate 调度/冲突检测层（需拍板 ⚖️）
+
+两个方案：
+
+- **方案一（SKILL.md 叙述几乎不动）**：sf-subagents 扩展顺带注册 `sf_task` 工具，schema 带 `files_touched[]`、`status`、`agent` 字段，复刻 TaskCreate/TodoWrite 语义。
+- **方案二（更贴合项目"deterministic 优先"哲学）**：任务注册表下沉为 `.claude/parallel-dev/tasks.json` 状态文件，由现有 Python 层（`loop_state.py` 家族）管理 `task add/claim/conflict-check` 子命令；SKILL.md 调度段改写为 CLI 调用。冲突检测（`files_touched` 交集）在 Python 里做，可测试、可 golden。
+
+**倾向方案二**（冲突检测是收敛环的正确性部件，应在确定性层），但方案二 SKILL.md 改写量大。**此项需在动 parallel-development 前拍板。**
+
+### 5.4 budget/turns 上限
+
+并入 §5.1 wrapper 实现，无独立工作面。
+
+---
+
+## 6. pi-mcp-adapter 决策（v2.27.0，已调研）
+
+**体检**：MIT；官方 `@modelcontextprotocol/client 2.0.0`；月下载 58 万（pi 生态事实标准）；凭据入 OS keychain、OAuth URL 绑定、host 配置默认不自动加载（`hostConfigDiscovery:"off"`）。**风险**：单维护者（有活跃 fork 可自救）；peerDep 锁 `@earendil-works/pi-ai ^0.84.1`，pi 升级后可能短暂不兼容——**写入依赖风险清单**。
+
+**按依赖分级**：
+
+| solidforge 依赖 | 决策 | 模式 | 理由 |
+|---|---|---|---|
+| **graphiti**（可选） | ✅ 用 adapter | **proxy**（单个 `mcp` 代理工具，懒连接） | 调用稀疏，近零空闲成本；本来声明优雅降级 |
+| **playwright-test**（E2E 必需） | ✅ 用 adapter | **proxy（已定案，见 §6 实测）** | 保住 MCP 语义与跨步骤浏览器会话态，重写面最小 |
+| **ast-grep**（可选） | ❌ 不用 adapter | — | 官方 CLI（`@ast-grep/cli`）就是两条路径之一，不值得挂底座 |
+
+**playwright 的真权衡（proxy vs directTools）**：
+
+- proxy：上下文极省（~200 tokens vs 单 server 10k+），但三个 agent 的工具白名单从"26 个具名工具"退化为 1 个代理——**丢失细粒度工具纪律**（solidforge 的 model-routing.md 把 narrow tool surface 列为 reviewer tier 的可靠性依据）
+- directTools（`directTools: true|[...]` + `toolPrefix:"mcp"` + `includeTools`）：逐工具注册，恢复具名粒度
+
+**✅ M0 实测定案（2026-08-23）：proxy。** 对 adapter v2.27.0 源码验证：`formatToolName()` 以**单下划线**拼接（`` `${prefix}_${tool}` ``），`toolPrefix:"mcp"` 产出 `mcp__playwright-test_browser_click`，**与 CC 的双下划线 `mcp__playwright-test__browser_click` 不一致**——"frontmatter 近乎免改"的乐观假设被推翻，directTools 路径同样需要全量文本替换（且引入 schema 进上下文的代价）。加上下述信任问题，proxy 是两条路中改写面更小的那条。
+
+**⚠️ 信任问题具体化（M0 发现）**：subagent 异构子进程（`pi --mode json -p`）非交互运行，项目级 `.mcp.json` 在 `defaultProjectTrust:"ask"`（默认）下**不被加载**。缓解（M3 验证）：① playwright-test server 配置在用户全局（`~/.config/mcp/mcp.json` 或 `~/.pi/agent/mcp.json`）；② 包内 `pi.mcp` 声明（adapter 的 package-mcp-loader 加载，包是用户级安装，理论不走项目信任——待实测）；③ CI 设 `defaultProjectTrust:"always"`。
+
+**对移植的直接增益**：
+
+- 包内分发：`package.json` `"pi": {"mcp": "./mcp.json"}` 可随包发 playwright-test server 定义（自动 `包名__` 前缀），用户零配置
+- 存量兼容：宿主项目已有 `.mcp.json`（给 CC 配的）直接被识别——CC 迁来项目无缝
+- 运行时注册：`registerMcpServer({pi, name, definition})` 可编程式按需注册，session 级隔离
+
+**前置声明**：solidforge-pi README 需写明 `pi install npm:pi-mcp-adapter` 为可选前置（graphiti/playwright 用到时）——peer 关系，不静默替用户装第三方。
+
+---
+
+## 7. 目标形态（修正版）
+
+```
+solidforge-pi/
+├── package.json              # pi manifest: extensions/skills/prompts + pi.mcp
+├── mcp.json                  # playwright-test server 定义（随包分发）
+├── skills/                   # 5 个技能：原样复制 + §2 文本替换
+├── prompts/arm-tools.md      # 原 command 转换 + Step3 重写
+├── agents/                   # 22 个转换后 agent（sf- 前缀）——仅存储，由扩展加载
+└── extensions/
+    ├── sf-subagents/index.ts # 官方示例裁剪：包内 agents 发现 + 并发上调 + (可选 sf_task)
+    ├── sf-hooks/index.ts     # tool_call/tool_result → CC hook 协议 shim（§4.2）
+    └── sf-providers/index.ts # registerProvider: deepseek/bigmodel/minimax/qwen3
+```
+
+安装：`pi install git:github.com/<you>/solidforge-pi`（git/npm 包替代 plugin marketplace；npm 发布需带 `pi-package` keyword）。
+
+---
+
+## 8. 移植顺序与里程碑
+
+| 阶段 | 内容 | 打通验证 |
+|---|---|---|
+| **M0 spike** | sf-subagents 扩展跑通 + **directTools 命名实测** + models.json/registerProvider 对 DeepSeek 端点连通性 | `subagent` 工具调 `sf-doc-reviewer` 返回结构化结果 |
+| **M1 csr** | skills/cross-source-review + sf-hooks（hooks 首次接线）+ hetero_doc_review.py 改造（spawn 替换） | 完整 csr 收敛环跑通一份真实 doc |
+| **M2 psv/pas** | 两个 outcome-axis 技能（无 hooks 依赖，最快） | psv 覆盖记录 + pas 撞车记录各一份 |
+| **M3 pd** | parallel-development：TaskCreate 拍板与实现（§5.3）+ fast_gate 接线 + playwright adapter 接入 | 双环收敛（内环 gates + 外环 review）全绿 |
+| **M4 arm + 收尾** | arm-tools 命令 + arm.py AGENTS.md 补丁 + plugin_layout.py 更新 + README（含 adapter 前置声明、CI trust 说明） | 全新项目 arm → converge 全流程 |
+
+---
+
+## 9. 风险清单
+
+| 风险 | 影响 | 缓解 |
+|---|---|---|
+| SKILL.md description 卡 1024 上限（1016/1014/1011） | Pi 适配说明无处加 | 写进正文，不碰 frontmatter；替换文本时监控长度 |
+| pi-mcp-adapter 单维护者 + peerDep `^0.84.1` | pi 升级后 adapter 断连 → playwright/graphiti 降级 | 锁 adapter 精确版本；graphiti 本来优雅降级；playwright 有 CLI 兜底预案 |
+| 非交互子进程项目信任（subagent `pi -p` 不弹信任框） | CI/新环境子代理加载不到项目资源 | README 写明 `--approve` / `defaultProjectTrust` 权衡 |
+| `toolPrefix:"mcp"` 命名与 CC 不一致（**M0 已实测确认**：`mcp__playwright-test_browser_click` 单下划线） | playwright frontmatter 无论哪条路都要改写 | 已定案 proxy：三 agent 提示词改写为 `mcp({search})/mcp({tool})` 指引（M3） |
+| 项目级 `.mcp.json` 在非交互子进程不可用（defaultProjectTrust 默认 ask） | CI/新环境子代理看不到 playwright server | M3 验证包内 `pi.mcp` 路径 + README 全局配置指引 |
+| 同目录 AGENTS.md + CLAUDE.md 并存优先级未明示 | arm.py 写 CLAUDE.md 但项目读 AGENTS.md → constitution 不加载 | arm.py AGENTS.md 优先补丁（§3.1） |
+| subagent 官方示例并发 8/4 | pd 大规模并行受限 | sf-subagents 上调并加配置 |
+| Pi 无 budget/turns/spending 内建上限 | ADR #52/#43 的 caps 语义弱化 | wrapper 自实现（§5.1）——这是硬性移植要求，不可省 |
+
+---
+
+## 10. 待拍板事项 → 已拍板（M0，2026-08-23）
+
+| 事项 | 决策 | 依据 |
+|---|---|---|
+| 1. TaskCreate 层 | **方案二**：Python tasks.json 状态文件（`loop_state.py` 家族管理 `task add/claim/conflict-check`） | 冲突检测是收敛环正确性部件，应在确定性层（可测试、可 golden）；M3 执行 |
+| 2. playwright proxy vs directTools | **proxy**（adapter v2.27.0 源码实测：directTools 命名单下划线，与 CC 不一致，免改假设不成立） | 见 §6 |
+| 3. providers 路径 A/B | **路径 B**（registerProvider 扩展），已实现于 `extensions/sf-providers`，DeepSeek 连通已验证 | 一体安装体验 |
+| 4. agent 前缀 | **`sf-`**，已实施（22 个 agent 已转换落盘 `agents/`） | 对齐原 solidforge: 作用域语义 |
+
+---
+
+## 11. M0 spike 结果（2026-08-23）
+
+| 验证项 | 结果 |
+|---|---|
+| sf-subagents 扩展（包内 agents 发现 + spawn 链路） | ✅ 冒烟通过：`-e` 加载 → 发现 `sf-doc-reviewer`（package source）→ spawn 子进程 → 正确抓到植入的 zero-downtime 矛盾，按 schema 返回 4 findings |
+| directTools 命名实测 | ✅ 完成（源码验证，未装 adapter）：**不一致**（单下划线），决策定 proxy |
+| DeepSeek 连通性（sf-providers + `.env.solidforge` 自加载） | ✅ `--model deepseek/deepseek-v4-flash` 返回正常 |
+| 已落盘资产 | `package.json`（pi manifest）、`agents/sf-*.md` ×22（5 个带 M3 TODO 旗标）、`extensions/sf-subagents/`、`extensions/sf-providers/`、`tools/convert_agents.py`（可重跑） |
+| 遗留 → M1 | ① MiniMax 连通（同机制复制）② sf-providers 模型规格（contextWindow/maxTokens/costs）按 provider 文档校准 ③ reasoning 标志确认 ④ agent 正文 prose 工具名清洗（非反引号处） |
