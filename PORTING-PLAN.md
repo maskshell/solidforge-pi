@@ -286,3 +286,5 @@ solidforge-pi/
 6. prompt template（prompt-templates.js L85）：name = 文件名去 `.md` 无清洗；冒号文件名在 POSIX/APFS/git/npm 均合法（仅 macOS Finder 显示不佳）
 
 **已实施**：`convert_agents.py` 改为保留 `solidforge:` 名（YAML 加引号）+ 文件名保留源形式 `<name>.agent.md`；`prompts/solidforge:arm-tools.md` 占位模板已验证展开与 `$ARGUMENTS` 替换。上轮一次失败的 edit 调用导致的静默半途编辑（并发上限/接口字段未改）已在本轮补齐。
+
+**附带验证：argument-hint（CC 同名同渲染）**。prompt template 的 frontmatter `argument-hint` 在补全列表内渲染为 `${hint} — ${desc}`（autocomplete.js L209-214，与 CC 一致）；`/solidforge:arm-tools` 保留 CC 原版 hint。注意分档：扩展命令（registerCommand）**无** argumentHint 字段（types.d.ts RegisteredCommand），只有空格后的动态参数候选（getArgumentCompletions → AutocompleteItem{value,label,description}）——因此 arm-tools 保持 template 路线，不转扩展命令（两者不能同名共存，会触发 :1/:2 冲突后缀）。
