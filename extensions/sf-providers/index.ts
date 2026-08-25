@@ -1,61 +1,48 @@
 /**
- * sf-providers — SolidForge hetero (different-family) provider registry.
+ * sf-providers — SolidForge hetero credential bridge (pi port, v2).
  *
- * Registers the Anthropic-compatible endpoints SolidForge's different-family
- * review substrate (hetero_review.py / hetero_doc_review.py profiles) targets:
- * DeepSeek + MiniMax (+ BigModel when token present). Token resolution follows
- * the SolidForge convention (ADR #40): <NAME>_ANTHROPIC_AUTH_TOKEN from
- * <cwd>/.env.solidforge, then <cwd>/.env, then shell env — shell wins.
+ * REDESIGN (M2.5, informed by solidforge-dsh's FILENAME=ROUTE + catalog-inherit
+ * principle): pi's built-in catalog ALREADY carries every hetero target route —
+ * `zai-coding-cn` (glm-5.x, coding endpoint, openai-completions), `deepseek`
+ * (v4-flash/pro, native endpoint), `minimax-cn` (MiniMax-M3, anthropic endpoint),
+ * `qwen-token-plan-cn` (aggregated fleet incl. qwen3.8-max). Registering custom
+ * providers here would DUPLICATE model facts that can then drift from the
+ * catalog — the M1 "GLM-5.2 calibration" misdiagnosis came exactly from a custom
+ * bigmodel/anthropic-endpoint registration (wrong endpoint+protocol for pi; the
+ * CC-era `/api/anthropic` surface is not pi-ai's glm route).
  *
- * Usage:
- *   pi -e ./extensions/sf-providers --model deepseek/deepseek-v4-flash -p "..."
- *   (hetero wrappers spawn: pi --mode json -p --no-session --model deepseek/deepseek-v4-flash ...)
+ * So this extension registers NOTHING. It only bridges CREDENTIALS: SolidForge's
+ * CC-convention token vars (loaded from <cwd>/.env.solidforge then <cwd>/.env,
+ * shell wins) are exported under the pi-ai route env names — but ONLY when the
+ * target var is not already set (auth.json / shell / user env take precedence).
+ * Model facts (baseUrl, protocol, contextWindow — the CC-era `[1M]` suffix is a
+ * context-window parameter carried by the catalog's contextWindow field, never
+ * part of a pi model id) all come from the catalog.
+ *
+ * Route env conventions (pi-ai env-api-keys):
+ *   zai-coding-cn -> ZAI_CODING_CN_API_KEY    (CC source: BIGMODEL_ANTHROPIC_AUTH_TOKEN)
+ *   deepseek      -> DEEPSEEK_API_KEY         (CC source: DEEPSEEK_ANTHROPIC_AUTH_TOKEN)
+ *   minimax-cn    -> MINIMAX_CN_API_KEY       (CC source: MINIMAX_ANTHROPIC_AUTH_TOKEN)
+ *   qwen-token-plan-cn -> QWEN_TOKEN_PLAN_CN_API_KEY (CC source: QWEN3_ANTHROPIC_AUTH_TOKEN)
+ *
+ * Notes:
+ * - zai-coding-cn usually authenticates via pi's auth.json (the user's default
+ *   provider); the bridge is a fallback, and it never overrides existing auth.
+ * - A bridge value that the endpoint rejects surfaces in the wrapper as
+ *   hetero-api-error with the provider's message (honest disclosure, rule 3).
  */
 
 import * as fs from "node:fs";
 import * as path from "node:path";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 
-interface ProfileDef {
-	id: string;
-	baseUrl: string;
-	tokenEnv: string;
-	models: Array<{ id: string; contextWindow: number; maxTokens?: number }>;
-}
-
-// Model specs are PLACEHOLDERS (profiles/*.json carry routing only, no specs).
-// TODO(M1): verify context windows / max output against provider docs and set costs.
-const PROFILES: ProfileDef[] = [
-	{
-		id: "deepseek",
-		baseUrl: "https://api.deepseek.com/anthropic",
-		tokenEnv: "DEEPSEEK_ANTHROPIC_AUTH_TOKEN",
-		models: [
-			{ id: "deepseek-v4-flash", contextWindow: 128_000 },
-			{ id: "deepseek-v4-flash[1m]", contextWindow: 1_000_000 },
-		],
-	},
-	{
-		id: "minimax",
-		baseUrl: "https://api.minimaxi.com/anthropic",
-		tokenEnv: "MINIMAX_ANTHROPIC_AUTH_TOKEN",
-		models: [{ id: "MiniMax-M3[1m]", contextWindow: 1_000_000 }],
-	},
-	{
-		id: "bigmodel",
-		baseUrl: "https://open.bigmodel.cn/api/anthropic",
-		tokenEnv: "BIGMODEL_ANTHROPIC_AUTH_TOKEN",
-		models: [
-			{ id: "GLM-5.2", contextWindow: 1_000_000 }, // verified live 2026-08-25; [1M] suffix is a CC convention the endpoint rejects
-		],
-	},
-	{
-		id: "qwen3",
-		baseUrl: "https://token-plan.cn-beijing.maas.aliyuncs.com/apps/anthropic",
-		tokenEnv: "QWEN3_ANTHROPIC_AUTH_TOKEN",
-		models: [{ id: "qwen3.8-max", contextWindow: 1_000_000 }],
-	},
-];
+/** CC-convention source var -> pi-ai route env var. Exported only if unset. */
+const CREDENTIAL_BRIDGE: Record<string, string> = {
+	BIGMODEL_ANTHROPIC_AUTH_TOKEN: "ZAI_CODING_CN_API_KEY",
+	DEEPSEEK_ANTHROPIC_AUTH_TOKEN: "DEEPSEEK_API_KEY",
+	MINIMAX_ANTHROPIC_AUTH_TOKEN: "MINIMAX_CN_API_KEY",
+	QWEN3_ANTHROPIC_AUTH_TOKEN: "QWEN_TOKEN_PLAN_CN_API_KEY",
+};
 
 function loadEnvFile(file: string, into: NodeJS.ProcessEnv, overwrite: boolean): void {
 	let text: string;
@@ -83,21 +70,11 @@ export default function (pi: ExtensionAPI) {
 	loadEnvFile(path.join(cwd, ".env.solidforge"), process.env, false);
 	loadEnvFile(path.join(cwd, ".env"), process.env, false);
 
-	for (const p of PROFILES) {
-		if (!process.env[p.tokenEnv]) continue; // provider without token stays unregistered (graceful)
-		pi.registerProvider(p.id, {
-			baseUrl: p.baseUrl,
-			apiKey: `$${p.tokenEnv}`,
-			api: "anthropic-messages",
-			models: p.models.map((m) => ({
-				id: m.id,
-				name: `${p.id}/${m.id}`,
-				reasoning: false, // TODO(M1): confirm thinking support per provider
-				input: ["text"],
-				cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, // unknown — honest zero, TODO(M1)
-				contextWindow: m.contextWindow,
-				maxTokens: m.maxTokens ?? 8192,
-			})),
-		});
+	// Credential bridge: CC-convention token -> pi-ai route env, never overriding.
+	for (const [src, dst] of Object.entries(CREDENTIAL_BRIDGE)) {
+		const token = process.env[src];
+		if (token && !process.env[dst]) {
+			process.env[dst] = token;
+		}
 	}
 }

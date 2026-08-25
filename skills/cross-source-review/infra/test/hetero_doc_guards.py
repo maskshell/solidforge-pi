@@ -137,19 +137,20 @@ def run():
     mod = _load_module()
 
     # --- check 1: argv guards -------------------------------------------
-    profile = {"_provider": "deepseek", "model": "deepseek-v4-flash[1m]"}
+    profile = {"_provider": "zai-coding-cn", "model": "glm-5.3"}
     argv = mod._pi_argv(profile, "", "prompt", "read,grep,find,bash")
-    argv_nomodel = mod._pi_argv(profile, "minimax/M3", "prompt", None)
+    argv_nomodel = mod._pi_argv(profile, "deepseek/deepseek-v4-pro[1m]", "prompt", None)
     ok1 = (
         argv[0] == "pi"
         and _flag_value(argv, "--mode") == "json"
         and "-p" in argv
         and "--no-session" in argv
         and "-e" in argv
-        and _flag_value(argv, "--model") == "deepseek/deepseek-v4-flash[1m]"
+        and _flag_value(argv, "--model") == "zai-coding-cn/glm-5.3"
         and _flag_value(argv, "--tools") == "read,grep,find,bash"
         and argv[-1] == "prompt"
-        and _flag_value(argv_nomodel, "--model") == "minimax/M3"
+        # CC-era context-window suffix is stripped under pi (catalog contextWindow)
+        and _flag_value(argv_nomodel, "--model") == "deepseek/deepseek-v4-pro"
         and "--tools" not in argv_nomodel
         and os.path.isdir(_flag_value(argv, "-e"))
     )

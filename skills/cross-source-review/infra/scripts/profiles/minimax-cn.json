@@ -1,0 +1,7 @@
+{
+  "_comment": "PI hetero profile — MiniMax family via pi's BUILT-IN catalog route minimax-cn (baseUrl https://api.minimaxi.com/anthropic, anthropic-messages; the sk-cp- key format belongs to the CN platform, not the international minimax route). FILENAME=ROUTE. _family = MODEL LINEAGE (minimax). Catalog-inherited facts: MiniMax-M3 ctx 1M reasoning, $0.3/$1.2 per Mtok. Credential: MINIMAX_CN_API_KEY, bridged from MINIMAX_ANTHROPIC_AUTH_TOKEN by sf-providers.",
+  "_provider": "minimax-cn",
+  "model": "MiniMax-M3",
+  "_family": "minimax",
+  "_token_env": "MINIMAX_ANTHROPIC_AUTH_TOKEN"
+}

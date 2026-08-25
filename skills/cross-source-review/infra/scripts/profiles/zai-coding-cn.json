@@ -1,0 +1,7 @@
+{
+  "_comment": "PI hetero profile — Zhipu GLM family via pi's BUILT-IN catalog route zai-coding-cn (baseUrl https://open.bigmodel.cn/api/coding/paas/v4, openai-completions, thinkingFormat zai — NOT the CC-era /api/anthropic surface). FILENAME=ROUTE (dsh principle). _family = MODEL LINEAGE (glm): zai/bigmodel/zhipu are brands of one lineage. Model facts are CATALOG-INHERITED (glm-5.3 ctx 1M — the CC-era [1M] suffix is a context-window parameter, carried by contextWindow, never in the id); this file declares routing + credential ONLY. Credential: normally auth.json (zai-coding-cn is the typical default provider); _token_env names the CC-convention fallback var bridged by sf-providers.",
+  "_provider": "zai-coding-cn",
+  "model": "glm-5.3",
+  "_family": "glm",
+  "_token_env": "BIGMODEL_ANTHROPIC_AUTH_TOKEN"
+}

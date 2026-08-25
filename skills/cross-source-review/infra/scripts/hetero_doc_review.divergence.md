@@ -169,3 +169,40 @@ divergences from it (all deliberate, all logged for Phase-B viability):
 `run_claude` / `_run_claude_once` / `adversarial_prompt` / `_validate_findings_shape` /
 `_extract_json_object` signatures preserved; guard gate re-based on the pi event
 format (8 checks incl. budget/turns/api-error classification).
+
+
+---
+
+## PI PORT v2 — catalog routes + credential bridge (2026-08-25, informed by solidforge-dsh)
+
+The v1 port registered custom providers in sf-providers (duplicating model facts).
+That was wrong twice, both caught live:
+
+1. **Wrong endpoint+protocol for GLM**: a custom `bigmodel` provider on the CC-era
+   `/api/anthropic` surface rejected `GLM-5.3`/`GLM-5.3[1M]` (400 modelCode). The
+   v1 "calibration" to GLM-5.2 was a MISDIAGNOSIS — pi's built-in route
+   `zai-coding-cn` serves `glm-5.3` (ctx 1M) on the CODING endpoint
+   (`/api/coding/paas/v4`, openai-completions, thinkingFormat zai); verified live.
+2. **`[1M]`/`[1m]` is a context-window parameter**, not part of a model id: under
+   pi the window is the catalog model's `contextWindow` property. `_pi_argv`
+   strips the suffix; profile `model` fields carry bare catalog ids.
+
+v2 design (dsh's FILENAME=ROUTE + catalog-inherit principle):
+- profiles/ = route-named files (`zai-coding-cn.json`, `deepseek.json`,
+  `minimax-cn.json`, `qwen-token-plan-cn.json`) carrying `_provider` (route),
+  `model` (catalog id), `_family` (model lineage: glm/deepseek/minimax/qwen),
+  `_token_env` (CC-convention source var; EMPTY = auth.json route). The CC-era
+  `env` tier-alias block is REMOVED (inert under pi).
+- CC-era profile NAMES (bigmodel/minimax/qwen3) resolve via `_PROFILE_ALIASES`
+  so existing `.env.solidforge` HETERO_DOC_PROFILE values keep working.
+- sf-providers registers NOTHING — it is a pure CREDENTIAL BRIDGE (CC token vars
+  -> pi-ai route env names, never overriding auth.json/shell/user env). Every
+  model fact is catalog-inherited and cannot drift.
+- `_load_profile` skips the env fail-fast when `_token_env` is empty (route
+  authenticates via pi auth.json — the zai-coding-cn default-provider case).
+
+Live verification (2026-08-25): zai-coding-cn/glm-5.3 (blocker found; auth.json),
+minimax-cn/MiniMax-M3 (bridge credential; cost_usd $0.0074 — catalog pricing makes
+the wrapper-side budget cap REAL), deepseek/deepseek-v4-flash ($0.0032),
+qwen-token-plan-cn/qwen3.8-max -> hetero-api-error 401 (expired token-plan key,
+disclosed honestly).

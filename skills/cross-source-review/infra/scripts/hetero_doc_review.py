@@ -322,7 +322,18 @@ def _expand_env_values(obj):
     return expand(obj)
 
 
+# CC-era profile NAME -> pi catalog ROUTE file (user .env.solidforge files still
+# carry CC names in HETERO_DOC_PROFILE, e.g. "bigmodel,qwen3"; resolve to the
+# route-named FILENAME=ROUTE files — dsh principle).
+_PROFILE_ALIASES = {
+    "bigmodel": "zai-coding-cn",
+    "minimax": "minimax-cn",
+    "qwen3": "qwen-token-plan-cn",
+}
+
+
 def _resolve_profile_path(name):
+    name = _PROFILE_ALIASES.get(name, name)
     p = os.path.join(PROFILES_DIR, f"{name}.json")
     if not os.path.exists(p):
         sys.exit(
@@ -363,15 +374,19 @@ def _load_profile(name):
     with open(src_path, encoding="utf-8") as fh:
         tmpl = json.load(fh)
     token_var = _resolve_token_var(name, tmpl)
-    token = os.environ.get(token_var, "")
-    if not token:
-        sys.exit(
-            f"error: provider '{name}' needs the env var ${token_var}. The wrapper reads it "
-            "from <cwd>/.env.solidforge then <cwd>/.env (shell wins) — "
-            "if you cd'd into the skill dir, re-run from the PROJECT ROOT (where .env.solidforge "
-            "lives). Convention: "
-            "<UPPERCASE-FILENAME>_ANTHROPIC_AUTH_TOKEN; override via the template's `_token_env`."
-        )
+    if token_var:
+        # CC-convention env credential: fail fast with the clear error. An EMPTY
+        # `_token_env: ""` means the route authenticates via pi's own auth.json /
+        # route env (e.g. zai-coding-cn, typically the default provider) — skip
+        # the check; a bad credential then surfaces honestly as hetero-api-error.
+        token = os.environ.get(token_var, "")
+        if not token:
+            sys.exit(
+                f"error: provider '{name}' needs the env var ${token_var}. The wrapper reads it "
+                "from <cwd>/.env.solidforge then <cwd>/.env (shell wins) — "
+                "if you cd'd into the skill dir, re-run from the PROJECT ROOT (where .env.solidforge "
+                "lives). Override or empty the template's `_token_env` (empty = auth.json route)."
+            )
     return tmpl
 
 
@@ -435,24 +450,35 @@ def adversarial_prompt(artifact_ref, authority_ref, prior_findings=None, round_n
 def _pi_argv(profile, model_override, prompt, allowed_tools):
     """Build the pi spawn argv. See PI-SUBSTRATE MANIFEST above.
 
-    `--model` is composed from the profile's `_provider` + `model` fields
-    (e.g. deepseek + deepseek-v4-flash[1m] -> "deepseek/deepseek-v4-flash[1m]");
-    a `model_override` containing "/" is used verbatim; one without "/" is
-    scoped to the profile's `_provider`. Budget/turn caps are NOT argv flags
-    under pi — they are enforced wrapper-side from the live stream
-    (_run_streamed; ADR #41/#52 semantics preserved via the SAME error
-    subtypes as the CC era)."""
+    `--model` is composed from the profile's `_provider` + `model` fields as
+    "<route>/<model-id>" (e.g. zai-coding-cn/glm-5.3 — a pi catalog route); a
+    `model_override` containing "/" is used verbatim; one without "/" is scoped
+    to the profile's `_provider`. The CC-era [1M]/[1m] context-window suffix is
+    STRIPPED (under pi the window is the catalog model's contextWindow property,
+    never part of the id). Budget/turn caps are NOT argv flags under pi — they
+    are enforced wrapper-side from the live stream (_run_streamed; ADR #41/#52
+    semantics preserved via the SAME error subtypes as the CC era)."""
     provider_id = profile.get("_provider")
     if not provider_id or not isinstance(provider_id, str):
         sys.exit(
             "error: profile template lacks a `_provider` field (the pi provider id "
             'registered by sf-providers). Add "_provider": "<name>" to the profile.'
         )
+
+    def _strip_ctx_suffix(mid):
+        # The CC-era [1M]/[1m] suffix is a CONTEXT-WINDOW parameter; under pi the
+        # window is a catalog model property (contextWindow), never part of the id.
+        return re.sub(r"\[(1m|1M)\]$", "", mid)
+
     if model_override:
         model_id = (
             model_override
             if "/" in model_override
             else f"{provider_id}/{model_override}"
+        )
+        route, _, mid = model_id.rpartition("/")
+        model_id = (
+            f"{route}/{_strip_ctx_suffix(mid)}" if route else _strip_ctx_suffix(mid)
         )
     else:
         profile_model = profile.get("model")
@@ -461,7 +487,7 @@ def _pi_argv(profile, model_override, prompt, allowed_tools):
                 "error: profile template lacks a `model` field (the pi model id). "
                 'Add "model": "<id>" to the profile or pass --model.'
             )
-        model_id = f"{provider_id}/{profile_model}"
+        model_id = f"{provider_id}/{_strip_ctx_suffix(profile_model)}"
     argv = [
         _pi_executable(),
         "--mode",
