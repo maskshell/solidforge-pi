@@ -206,3 +206,37 @@ minimax-cn/MiniMax-M3 (bridge credential; cost_usd $0.0074 — catalog pricing m
 the wrapper-side budget cap REAL), deepseek/deepseek-v4-flash ($0.0032),
 qwen-token-plan-cn/qwen3.8-max -> hetero-api-error 401 (expired token-plan key,
 disclosed honestly).
+
+
+---
+
+## PI PORT v2.1 — qwen-bailian (pay-as-you-go DashScope route, 2026-08-25)
+
+User correction: the QWEN3_ANTHROPIC_AUTH_TOKEN credential is an Alibaba Bailian
+PAY-PER-USE DashScope key, not a token-plan subscription key. pi's catalog carries
+ONLY the three token-plan qwen routes (cn-beijing / ap-southeast-1 x2) — no
+Bailian route — and the token-plan endpoint REJECTS the pay-per-use key (the
+earlier "401 expired key" reading was wrong: the key was fine, the ROUTE was wrong;
+verified live — qwen3.8-max / qwen3.7-max / qwen-max all pong on
+dashscope.aliyuncs.com/compatible-mode/v1).
+
+This is the ONE legitimate sf-providers registration (no catalog facts to
+duplicate — registration adds new information):
+
+- route `qwen-bailian`: baseUrl dashscope compatible-mode/v1, openai-completions,
+  credential `$QWEN3_ANTHROPIC_AUTH_TOKEN`; registered ONLY when that var is set.
+- model facts (ctx 1M / maxTokens 131072 / reasoning / input) copied from the
+  catalog's qwen3.8-max entry (same model, other billing channel); pay-per-use
+  pricing unknown -> cost stays 0 (telemetry honestly reads 0).
+- compat is LOAD-BEARING and copied verbatim: without `supportsDeveloperRole:false`
+  pi sends the system prompt as an OpenAI `developer` role, which DashScope rejects
+  (400 "developer is not one of [...]" — observed live, fixed by the compat copy).
+  reasoning_content is parsed generically by pi-ai (no compat needed for that).
+- profiles: `qwen-bailian.json` (new default for the qwen3 alias — the observed
+  credential type); `qwen-token-plan-cn.json` retargeted to the
+  QWEN_TOKEN_PLAN_CN_API_KEY convention (subscription users).
+
+Live verification: qwen3 alias -> qwen-bailian/qwen3.8-max, full review pass
+(68.6s, 3 turns, release-freeze contradiction blocker caught, malformation '').
+All four hetero routes now live-verified: zai-coding-cn/glm-5.3, minimax-cn/
+MiniMax-M3, deepseek/deepseek-v4-flash, qwen-bailian/qwen3.8-max.

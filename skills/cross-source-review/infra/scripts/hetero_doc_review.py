@@ -328,7 +328,8 @@ def _expand_env_values(obj):
 _PROFILE_ALIASES = {
     "bigmodel": "zai-coding-cn",
     "minimax": "minimax-cn",
-    "qwen3": "qwen-token-plan-cn",
+    "qwen3": "qwen-bailian",  # Bailian pay-as-you-go (the observed default);
+    # token-plan subscription users edit HETERO_DOC_PROFILE to qwen-token-plan-cn
 }
 
 

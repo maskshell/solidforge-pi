@@ -1,0 +1,7 @@
+{
+  "_comment": "PI hetero profile — Qwen family via Alibaba Bailian PAY-AS-YOU-GO DashScope (route `qwen-bailian`, registered by the bundled sf-providers extension — pi's catalog has ONLY token-plan SUBSCRIPTION qwen routes, which reject pay-per-use keys: observed 401 on token-plan.cn-beijing with a working Bailian key). FILENAME=ROUTE. _family = MODEL LINEAGE (qwen). Model facts copied from the catalog's qwen3.8-max entry (same model, other billing channel; ctx 1M, reasoning, reasoning_content parsed generically by pi-ai). Credential: QWEN3_ANTHROPIC_AUTH_TOKEN (CC convention; the DashScope key doubles as it — verified live 2026-08-25: qwen3.8-max / qwen3.7-max / qwen-max all pong on compatible-mode/v1).",
+  "_provider": "qwen-bailian",
+  "model": "qwen3.8-max",
+  "_family": "qwen",
+  "_token_env": "QWEN3_ANTHROPIC_AUTH_TOKEN"
+}
