@@ -56,7 +56,7 @@ Run in order; do not wait for the user between steps.
 
 3. `python3 infra/scripts/produce.py plan-model.json --out-dir docs/` → runs the inner ring + freeze; prints `process_converged` (false until the outer ring is supplied) and writes `<name>.queue.md` + `.run-record.json`. Fix any named inner Blocker (anchor / authority / ODP) and re-run.
 
-4. Invoke the `subagent` tool (agent="solidforge:plan-reviewer"); save its findings to `findings.json`; re-run `python3 infra/scripts/produce.py plan-model.json --outer findings.json --out-dir docs/` → `process_converged=true` on a clean outer ring.
+4. Invoke the `subagent` tool (agent="solidforge:plan-reviewer") — pass the spec via the authority chain so the seam-quality checks are active (the spec absent → the checks degrade to a coverage note); save its findings to `findings.json`; re-run `python3 infra/scripts/produce.py plan-model.json --outer findings.json --out-dir docs/` → `process_converged=true` on a clean outer ring.
 
 If memory says the docs were already converged, read the frozen `.run-record.json` / `.queue.md` to judge whether re-converge is needed — the verdict lives in the run-record, not in the infra source.
 

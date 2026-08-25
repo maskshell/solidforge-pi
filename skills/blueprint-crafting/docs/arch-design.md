@@ -105,7 +105,7 @@ Anchors:
 - scope boundary (in-scope + explicitly out-of-scope)
 - constraints and assumptions
 - decisions already made
-- testable acceptance criteria
+- testable acceptance criteria — per-AC entries in the spec's existing free-form shape, each carrying a `— seam: <public-boundary-name>` tail with a one-clause catch/miss note (the seam is the substitution point — where behavior can change without editing the code, Feathers *WELC* 2004 ch.4; the name is the public boundary the caller actually uses, never an internal helper; parallel-development latches the declared seam at Phase-0 derivation — the absent-spec-seam path derives, coverage-noted)
 - non-goals
 
 ### Architecture design (arch-design)

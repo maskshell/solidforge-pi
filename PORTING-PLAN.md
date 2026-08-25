@@ -321,3 +321,22 @@ solidforge-pi/
 - **终验**：5 技能 52/52 离线门禁全绿；实弹链路全数通过（subagent 双跳、四异源路由、sf-hooks 三路径、task 注册表、pd 异源腿含 run-record、psv/pas e2e、arm 双路径）。
 
 **收官状态**：五技能全部在位且门禁绿；四个 CC 外壳件（agents/hooks/command/substrate）全部按 pi 模型重建；方案文档与 divergence 日志全程同步。后续可选：npm 发布（pi-package keyword 已就位）、M0.5 agent prose 工具名残留清洗、sf-providers 模型规格进一步校准。
+
+
+---
+
+## 15. Upstream 同步记录（2026-08-25，sync-1）
+
+比对本移植复制基线（08-25 11:54）与 upstream `../solidforge` HEAD（45f596b）：
+
+**已命中（无需动作）**：
+- `29c5e13` TDD 三件套 / `5af48fe` GLM-5.3 / `5d0b493`+`dbbce21`+`082bc7b` 命名清扫 / `5656ef7` rustfmt edition / ADR #53 flash 默认 —— 全部在复制基线内（早前 `grep "seam:"` 带冒号属误判，正文为 "seam —"）。
+- `8255b34`+`45f596b` ADR #57 三级命名 —— **upstream 反向采纳了本移植的学说**（commit 自述 "borrowed from the pi + dsh ports"）；pi 侧 profiles 全部合规（`_provider`==文件名、`_family` 齐、qwen-bailian/minimax-cn 同名、qwen3 双侧退役）。FABLE tier 全路由钉死为 CC env 阶梯概念，pi 无对应机制（`_pi_argv` 直连 route/model）→ N/A。
+- `3a93109` docs/papers 快照 → pi 包范围外（只带 skills；技能内链接不涉）。
+
+**同步落地（本次）**：
+- `ca9edc5`（bc seam Option A）：loop_state.py **手工合并** `set-blueprint-ref` + fresh-state 崩溃修复（与 task 注册表共存，沙盒验证 ref/rev 双写）；bc SKILL.md seam-aware spawn；bc docs 4 件 wholesale（arch-design §3 AC-ENTRY、seam-upstream-anchor proposal+record）；plan-reviewer agent 增 seam-quality (a/b/c) 检查。
+- `5b06dd3`+`8255b34`：csr install.md 家族列表（pi 路由版）；pd model-routing.md 三级学说表（pi 路由示例）；`.env.solidforge.example` 双 qwen 凭据通道（bailian 按量 vs token-plan 订阅）+ alias 说明。
+- **有意 divergence 保留**：qwen3 alias → qwen-bailian（本环境 key 为按量制；upstream 扫向 qwen-token-plan-cn）；zai 路由 = pi coding 端点（upstream bigmodel.json 留 CC `/api/anthropic` 端点）——双平台各正。
+
+**终验**：52/52 门禁绿（五技能全量）。

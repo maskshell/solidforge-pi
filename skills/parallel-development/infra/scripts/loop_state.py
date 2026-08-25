@@ -5,7 +5,7 @@ The single source of truth for inner-ring iteration counts, error fingerprints (
 
 Invoked two ways:
   - by the orchestrator (SKILL.md / convergent-loop.md) at well-defined points:
-      init / bump-iteration / reset-inner / set-snapshot / add-budget / set-status / mark-escalation / mark-suspend / mark-hard-terminated / mark-converged / set-blueprint-version / record-outer / mark-rollback / run-record
+      init / bump-iteration / reset-inner / set-snapshot / add-budget / set-status / mark-escalation / mark-suspend / mark-hard-terminated / mark-converged / set-blueprint-version / set-blueprint-ref / record-outer / mark-rollback / run-record
   - by hooks and the arch-contract gate to query/record:
       gate-fail <fingerprint>   record + check-breakers (used by fast_gate)
       record-fingerprint <fp>   record only
@@ -543,6 +543,9 @@ def main(argv=None):
     s_bp = sub.add_parser("set-blueprint-version")
     s_bp.add_argument("version")
 
+    s_br = sub.add_parser("set-blueprint-ref")
+    s_br.add_argument("ref")
+
     s_susp = sub.add_parser("mark-suspend")
     s_susp.add_argument("--blueprint-defect", action="store_true")
     s_susp.add_argument("--reason", default="manual suspend")
@@ -698,11 +701,27 @@ def main(argv=None):
 
     elif args.cmd == "set-blueprint-version":
         state["blueprint_version"] = args.version
-        state.setdefault("blueprint_revision", {})
+        # init seeds blueprint_revision as None — setdefault returns the existing
+        # None and the item-assignment crashes; coalesce instead (same fix as
+        # set-blueprint-ref below; caught by the fresh-state behavioral smoke).
+        state["blueprint_revision"] = state.get("blueprint_revision") or {}
         state["blueprint_revision"]["new_version"] = args.version
         record_event(state, "blueprint-revised", {"version": args.version})
         save(state)
         print(json.dumps({"blueprint_version": args.version}))
+
+    elif args.cmd == "set-blueprint-ref":
+        # Path-versioned re-freeze companion to set-blueprint-version (the revision
+        # channel's step 4): --blueprint-ref is init-only, so a re-freeze that lands
+        # on <task>-v<n>.blueprint.md would leave the recorded ref pointing at the
+        # STALE file. Mirrors set-blueprint-version's event shape (blueprint-revised
+        # bookkeeping preserved; the event name distinguishes the ref act).
+        state["blueprint_ref"] = args.ref
+        state["blueprint_revision"] = state.get("blueprint_revision") or {}
+        state["blueprint_revision"]["new_ref"] = args.ref
+        record_event(state, "blueprint-ref-updated", {"ref": args.ref})
+        save(state)
+        print(json.dumps({"blueprint_ref": args.ref}))
 
     elif args.cmd == "mark-escalation":
         action, reason = check_breakers(state)

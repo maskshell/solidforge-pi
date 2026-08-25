@@ -2,6 +2,16 @@
 
 > Single source of truth for WHICH model family runs at WHICH stage of the convergence loop. Authority: ADR #40 (`design-decisions.md §40`) + the operational plan (`docs/hetero-orchestration-proposal.md §3`). On conflict, ADR #40 wins.
 
+## Profile naming — the three-level doctrine (borrowed from/with the pi+ds ports; ROUTE and FAMILY are DIFFERENT axes and never mix)
+
+| Level | Carrier | Examples (pi routes) | Role |
+| --- | --- | --- | --- |
+| ROUTE | the profile FILENAME | `zai-coding-cn` / `qwen-bailian` / `minimax-cn` / `deepseek` | the credential+endpoint CHANNEL; the token var derives from it |
+| FAMILY | the `_family` FIELD | `qwen` / `glm` / `minimax` / `deepseek` | the MODEL LINEAGE — the same/different-family judgment unit |
+| MODEL | the `model` FIELD | `qwen3.8-max` / `glm-5.3` / `MiniMax-M3` | the pinned per-generation id, editable per generation, NEVER part of the filename |
+
+Relations: one family rides MANY routes (`qwen`: the token-plan subscription channel + the Bailian pay-per-use channel; `glm`: pi's zai-coding-cn coding route — zai/bigmodel/zhipu are brands of ONE lineage); one route may serve MANY families (the token-plan channel serves qwen/glm/deepseek/kimi — `_family` names the PINNED MODEL's lineage, not the route's); profile names are version-free (the generation lives in `model`). The same-family/different-family judgment reads `_family` — never the route name.
+
 ## Routing policy (per stage)
 
 | Stage | Mode | Provider (example) | Always? | Role |

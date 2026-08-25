@@ -18,7 +18,7 @@ Functional points the system MUST implement. The Coder must never delete or sile
 
 ## Acceptance Criteria (BDD)
 
-Behavior-driven, structured verification baseline. Each should map to an executable test. "Satisfied" requires the behavior, not merely a green exit. Each AC line carries a `seam:` field — the public boundary the caller actually uses (never an internal helper), plus a one-clause catch/miss note (see intent-blueprint.md "AC seam field").
+Behavior-driven, structured verification baseline. Each should map to an executable test. "Satisfied" requires the behavior, not merely a green exit. Each AC line carries a `seam:` field — latched from the spec when declared; derived when absent — the public boundary the caller actually uses (never an internal helper), plus a one-clause catch/miss note (see intent-blueprint.md "AC seam field").
 
 - AC-1: Given <context> When <action> Then <observable outcome> — seam: `public-boundary-name` (catches: `what-this-boundary-verifies`; misses: `what-it-does-not`)
 - AC-2: Given <context> When <action> Then <observable outcome> — seam: `public-boundary-name` (catches: `what-this-boundary-verifies`; misses: `what-it-does-not`)

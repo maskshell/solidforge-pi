@@ -1,0 +1,1578 @@
+{
+ "artifact": "skills/blueprint-crafting/docs/seam-upstream-anchor.proposal.md",
+ "rounds": [
+  {
+   "round": 1,
+   "same_source_findings": 5,
+   "hetero_findings": 9,
+   "hetero_degraded": false,
+   "blockers": 1,
+   "verdict": "rewrite",
+   "findings": [
+    {
+     "defect_id": "bc1-01",
+     "severity": "warning",
+     "kind": "structural-gap",
+     "location": "Fix 1 (spec AC shape) + Fix 3 (rich path)",
+     "evidence": "The proposal prescribes 'AC-x <Given/When/Then> — seam: ...' but no bc authority defines spec ACs as BDD-shaped with AC-x ids; pd intent-blueprint.md states the BDD refinement is the BLUEPRINT's downstream act ('spec acceptance-criteria → Blueprint AC, refined into BDD').",
+     "suggestion": "Attach the seam tail to spec ACs' existing free-form shape; state the declared-seam-wins precedence."
+    },
+    {
+     "defect_id": "bc1-02",
+     "severity": "warning",
+     "kind": "contradiction",
+     "location": "Non-goals + Rejected (a) lossless-contract framing",
+     "evidence": "The rejection premise 'a schema field would duplicate free-form content into the lossless round-trip contract' is inaccurate: the schema is additively versioned and an upstream_only field would not enter the executable/lossless subset (plan-model.schema.json subset_tags).",
+     "suggestion": "Rest the rejection on the duplication argument, drop the lossless framing."
+    },
+    {
+     "defect_id": "bc1-03",
+     "severity": "warning",
+     "kind": "citation-error",
+     "location": "Status line + Context ('Option B' label)",
+     "evidence": "ADR #56 never uses the label 'Option B' — it records 'Architecture choice (recorded)' and names only 'Option A' in the follow-up line; a reader verifying the label against the cited record cannot find it.",
+     "suggestion": "Define the A/B labels at first use."
+    },
+    {
+     "defect_id": "bc1-cov-1",
+     "severity": "coverage",
+     "kind": "coverage-gap",
+     "location": "Claims 2-3 sourcing",
+     "evidence": "Wiki/mattpocock citations verified against the vendored snapshots only; live-wiki/repo drift not checked; no bc source documents the spec-AC shape (no template exists) — the evidential floor beneath bc1-01.",
+     "suggestion": "None required; disclosure only."
+    },
+    {
+     "defect_id": "bc1-cov-2",
+     "severity": "coverage",
+     "kind": "coverage-gap",
+     "location": "Claim 6 constraints-checker claim",
+     "evidence": "constraints_check.py reads only the anchors map + dod_ref doc-prefix (verified the seam tail cannot interact); the checker was not read in full and bc's test suite was not run — the rule-1 note is a commitment at proposal time.",
+     "suggestion": "None required; disclosure only."
+    },
+    {
+     "defect_id": "bc1-dfr-1",
+     "evidence": "Doc: \"the schema is additively versioned with tagged upstream_only fields pd consumes on the rich path\". The cited in-repo anchor (plan-model.schema.json, named in the doc's Sources) declares the opposite: \"(2) upstream_only — metadata this skill sources (complexity / risk / authority / ODP / constraints-profile / descriptive title/scope), tagged and IGNORED by parallel-development\" (schema description) and subset_tags: \"upstream_only: title, scope, ... — tagged, ignored by parallel-development\". bc's own infra/scripts/plan_model.py:192 prints \"upstream_only = tagged metadata this skill sources; ignored downstream\", and a grep of skills/parallel-development/infra/ finds ZERO upstream_only consumers; the rich path (intent-blueprint.md:43-57) reads the SPEC via the queue's authority_chain, never plan-model upstream_only fields. This false premise now carries the rejection's reasoning (\"so the lossless-contract framing is NOT the reason\") and is destined for the bc ADR per rule 6 — an ADR would record a reversed schema semantic. Likely introduced while fixing bc1-02.",
+     "kind": "contradiction",
+     "location": "Rejected alternatives (a), line 60 — the upstream_only parenthetical",
+     "severity": "blocker",
+     "suggestion": "Correct the premise: an upstream_only seam field would be INERT at the pd end (ignored per the subset contract), so rest the rejection on duplication-or-inertness — not on a consumption that does not exist."
+    },
+    {
+     "defect_id": "bc1-dfr-2",
+     "evidence": "Doc: \"The spec's acceptance-criteria section gains, per AC\" — presupposing a spec acceptance-criteria section defined bc-side. Verified: bc SKILL.md contains ZERO occurrences of acceptance-criteria or of any spec-section name (jtbd / scope-boundary / non-goals / desired-outcome / constraints-assumptions — grep all no-match); the only in-repo definition of a spec `acceptance-criteria` section is pd intent-blueprint.md:47 (\"spec `acceptance-criteria` → Blueprint AC, refined into BDD Given/When/Then\"). bc has no spec template (infra/ has only scripts/ and test/), so the edit has no locatable carrier. Distinct from bc1-01 (BDD-shape authority) and bc1-cov-1 (disclosure): the attachment point itself is absent from the named file.",
+     "kind": "structural-gap",
+     "location": "Fix 1 heading + first paragraph (\"### 1. bc SKILL.md — the spec AC gains the seam declaration\" / \"The spec's acceptance-criteria section gains, per AC\")",
+     "severity": "warning",
+     "suggestion": "Fix 1 must first land the spec-AC section definition (or name the section list) in bc SKILL.md — the seam tail cannot 'gain' per-AC on a section no bc doc defines."
+    },
+    {
+     "defect_id": "bc1-dfr-3",
+     "evidence": "Doc: \"the Planner **LATCHES** it (structural — high confidence, the extraction-mode table's Latch row)\". The table (plan-driven-mode.md:47-53, 'Graded extraction') keys its Latch row to \"Cursor `todos[]` frontmatter; iteration-plan tables; decomposition tables\" — structural/tabular signals only — and routes \"Freeform scope text\" to Semantic-summarize. A seam tail embedded in free-form spec AC prose matches no Latch-row signal. The table also governs Phase −1 queue interpretation, not the Phase-0 blueprint derivation Fix 3 modifies. Additionally, the table's carrier file is named NOWHERE in the doc: Sources lists only \"pd intent-blueprint.md rich path\" and the rule-5 doc-audit (line 46) omits plan-driven-mode.md — the pointer is unverifiable for a reader.",
+     "kind": "authority-chain-break",
+     "location": "Fix 3 (pd intent-blueprint.md rich path), line 41",
+     "severity": "warning",
+     "suggestion": "Either justify latch-confidence via the explicit-marker notion that actually fits (the anchors map's \"latch: explicit anchor sections\", plan-model.schema.json $defs/anchors) and cite that, or define the seam tail's own extraction grade — and name the table's carrier file at first use."
+    },
+    {
+     "defect_id": "bc1-dfr-4",
+     "evidence": "Doc: \"mattpocock's to-spec is the upstream anchor — wiki `test-seam` §AI 编码中的接缝纪律 · 上游冻结\". The cited section's 上游冻结 bullet (test-seam.md:21) reads \"接缝清单在规格阶段协商并冻结，实现阶段只消耗不重新协商\" — no to-spec, no mattpocock. The to-spec attribution is carried by mattpocock-skills.md:8 (\"规格与接缝协商（to-spec）：产出规格，同时协商并冻结测试接缝——test-seam 预协商接缝的上游锚点\") and mattpocock-tdd.md:35 — and neither source appears in the doc's Sources section (line 66 cites only the two test-seam sections).",
+     "kind": "citation-error",
+     "location": "Context, line 9 (to-spec attribution)",
+     "severity": "warning",
+     "suggestion": "Attribute to-spec to mattpocock-skills (§链条与人工确认门) / mattpocock-tdd and add those sources to the Sources list."
+    },
+    {
+     "defect_id": "bc1-dfr-5",
+     "evidence": "Doc rule-5 audit: \"pd `design-decisions.md` ADR #56 (follow-up line → LANDED)\" — only the follow-up line. But ADR #56's Decision body records \"**Architecture choice (recorded)**: bc carries NO seam field — the seam is a pd-side DERIVATIVE ..., not a bc-negotiated upstream anchor\". Landing Option A reverses that recorded choice; the audit plans no amendment or supersession note for the architecture-choice sentence, so the pd authority chain (cited as authority by intent-blueprint.md:30 \"ADR #56\") would keep recording the opposite of the landed architecture. The repo idiom amends ADRs in place (ADR #55: \"AMENDED 2026-08-24: ... LANDED as a follow-up commit\").",
+     "kind": "coverage-gap",
+     "location": "Consistency notes / Rule 5 doc-audit, line 46",
+     "severity": "warning",
+     "suggestion": "Add the ADR #56 architecture-choice sentence's amendment/supersession (e.g. an AMENDED note pointing to the bc-side ADR) to the rule-5 enumeration."
+    },
+    {
+     "defect_id": "bc1-dfr-6",
+     "evidence": "Rule 7 note: \"mirrors the pd seam-field landing (same AC-line format + catch/miss clause) — one format across the pipeline\" vs the same doc's Fix 1: \"attaching to the spec AC's EXISTING free-form shape, NOT imposing a BDD shape or AC-x id scheme on bc\". The landed pd AC-line format is `AC-1 <Given/When/Then> — seam: <public-boundary-name>` (intent-blueprint.md:30); the bc format deliberately differs in both id scheme and body — only the tail is shared. A reader implementing from the rule-7 note alone would replicate the pd BDD AC-line shape bc-side, violating Fix 1. Internal contradiction introduced by the bc1-01 fix without updating the rule-7 note.",
+     "kind": "contradiction",
+     "location": "Consistency notes / Rule 7, line 48 vs Fix 1 line 21",
+     "severity": "warning",
+     "suggestion": "Reword rule 7 to \"same seam-TAIL format (`— seam:` + catch/miss clause); the AC body shape deliberately differs (free-form spec AC vs pd BDD)\"."
+    },
+    {
+     "defect_id": "bc1-dfr-7",
+     "evidence": "Doc Fix 2: \"for each spec AC declaring a seam, check: (a)...(b)...(c)\" — but the reviewer's subject is the plan-model (plan-reviewer.agent.md:12 \"You review a FROZEN plan-model\"), the plan-model carries no spec ACs (the doc's own Gap: \"spec ACs are free-form content in the spec artifact, referenced via item `dod_ref`\"), and the agent's input contract makes the authority docs conditional (agent.md workflow: \"Read the plan-model (and the authority-chain docs it references, if provided)\"). Fix 2 names no resolution path from a plan-model item to its spec ACs (dod_ref? authority_chain?) and no degrade when the spec is not provided — the check's activation condition is undefined.",
+     "kind": "structural-gap",
+     "location": "Fix 2 (plan-reviewer.agent.md seam-quality dimension), line 31",
+     "severity": "warning",
+     "suggestion": "Specify the resolution path (follow each item's dod_ref into the spec's acceptance-criteria section) and the not-provided degrade (coverage note, rule 3)."
+    },
+    {
+     "defect_id": "bc1-dfr-8",
+     "evidence": "Doc: \"Absent seam → pd derives (today's behavior, coverage-noted); the degrade stays legal and is not a Blocker\" — sentence subject is the absent-SPEC-seam path. In the cited pd anchor, \"the degrade\" is a defined term for a different state: absent seam on the BLUEPRINT AC line (intent-blueprint.md:32 \"Absent seam on the AC line → ... the degrade is unverifiable at the producer end\"; convergent-loop.md:203 \"No seam declared on the AC line (the legal absent-seam degrade)\"), and rich-path derivation is explicitly \"the exception, not the rich-path norm\" (intent-blueprint.md:34) — never a degrade. Post-Option-A, absent-spec-seam → derive → the blueprint still carries a seam, so the pd degrade never fires on this path; the referent of \"the degrade\" is undefined and one reading conflicts with the term's definition in the cited anchor (rule 10: one term per concept).",
+     "kind": "structural-gap",
+     "location": "Fix 1 precedence paragraph, line 27 (\"the degrade stays legal\")",
+     "severity": "warning",
+     "suggestion": "Name the two states distinctly — absent-SPEC-seam → pd derives (fallback); absent-BLUEPRINT-seam → the pd absent-seam degrade — and drop \"the degrade\" from the spec-level clause."
+    },
+    {
+     "defect_id": "bc1-dfr-cov-1",
+     "evidence": "Doc line 46: \"`agents/plan-reviewer.agent.md` (repo agents/ dir — mirrors the installed plugin)\". Verified: the only in-repo copy is /agents/plan-reviewer.agent.md (repo-wide find); no plugin-directory agent copies exist in-repo (only repo-root hooks/hooks.json). Whether an out-of-repo installed-plugin copy exists and would also need the Fix-2 edit is not verifiable from this repository — the mirror claim and the audit's sufficiency (repo copy only) rest on it.",
+     "kind": "coverage-gap",
+     "location": "Consistency notes / Rule 5 doc-audit, line 46 (\"repo agents/ dir — mirrors the installed plugin\")",
+     "severity": "coverage",
+     "suggestion": "Disclosure only; if an installed-plugin copy exists outside the repo, enumerate its sync in the rule-5 audit."
+    }
+   ],
+   "dispositions": [
+    {
+     "defect_id": "bc1-01",
+     "action": "fixed",
+     "note": "fixed — the seam tail now attaches to the spec AC's EXISTING free-form shape (no BDD/AC-x scheme imposed on bc; the BDD refinement stays the blueprint's downstream act); precedence stated: when the refined boundary differs from the declared seam, the DECLARED seam wins (upstream anchor authority)"
+    },
+    {
+     "defect_id": "bc1-02",
+     "action": "fixed",
+     "note": "fixed — the rejection now rests on the duplication argument; the lossless-contract framing dropped with the schema's additive-versioning fact noted (an upstream_only field would not touch the executable subset)"
+    },
+    {
+     "defect_id": "bc1-03",
+     "action": "fixed",
+     "note": "fixed — A/B labels defined at first use in the status line: Option A = this proposal; Option B = the pd-only choice ADR #56 records as \"Architecture choice (recorded)\""
+    },
+    {
+     "defect_id": "bc1-cov-1",
+     "action": "rejected",
+     "note": "rejected — no artifact change: the disclosure stands; the spec-AC-shape gap is addressed by bc1-01's fix (no shape imposed)"
+    },
+    {
+     "defect_id": "bc1-cov-2",
+     "action": "rejected",
+     "note": "rejected — no artifact change: the rule-1 note is a commitment at proposal time; the gate run happens at implementation"
+    },
+    {
+     "defect_id": "bc1-dfr-1",
+     "action": "fixed",
+     "note": "fixed — the upstream_only parenthetical corrected to the verified fact: upstream_only fields are \"ignored by parallel-development\" (schema subset_tags + bc plan_model.py; pd rich path reads the SPEC via authority_chain, never plan-model fields); the rejection now rests on duplication-or-inertness"
+    },
+    {
+     "defect_id": "bc1-dfr-2",
+     "action": "fixed",
+     "note": "fixed — Fix 1 split into (1a) bc SKILL.md DEFINES the spec acceptance-criteria section (which no bc doc currently defines — verified zero occurrences) + (1b) each spec AC gains the seam tail"
+    },
+    {
+     "defect_id": "bc1-dfr-3",
+     "action": "fixed",
+     "note": "fixed — the latch justification re-anchored to the anchors-map notion (plan-model.schema.json $defs/anchors: \"latch: explicit anchor sections\"), with the rejected Phase-1 extraction-table justification named (that table governs queue interpretation, a different act) and the carrier file cited"
+    },
+    {
+     "defect_id": "bc1-dfr-4",
+     "action": "fixed",
+     "note": "fixed — the to-spec attribution now cites wiki mattpocock-skills §链条与人工确认门 (the source that carries it) + added to Sources"
+    },
+    {
+     "defect_id": "bc1-dfr-5",
+     "action": "fixed",
+     "note": "fixed — rule-5 audit now amends BOTH ADR #56 lines: the follow-up line AND the architecture-choice sentence, which gains an AMENDED note pointing at the bc-side ADR (repo idiom: ADR #55)"
+    },
+    {
+     "defect_id": "bc1-dfr-6",
+     "action": "fixed",
+     "note": "fixed — rule-7 note reworded: same seam-TAIL format; the AC body shape deliberately differs (free-form spec AC vs pd BDD)"
+    },
+    {
+     "defect_id": "bc1-dfr-7",
+     "action": "fixed",
+     "note": "fixed — Fix 2 gains the activation + resolution path: follow each item's dod_ref into the spec acceptance-criteria section; spec not provided → coverage note (rule 3, inactive)"
+    },
+    {
+     "defect_id": "bc1-dfr-8",
+     "action": "fixed",
+     "note": "fixed — the two states named distinctly: absent-SPEC-seam → pd derives (fallback); absent-BLUEPRINT-seam → the pd degrade (never fires on this path); \"the degrade\" dropped from the spec-level clause"
+    },
+    {
+     "defect_id": "bc1-dfr-cov-1",
+     "action": "rejected",
+     "note": "rejected — no artifact change: the installed plugin is a SYMLINK to this repo (/Users/solosus/.claude/skills/solidforge -> /Users/solosus/dev/ws-ai/solidforge), so the repo copy IS the installed copy — one file, no sync enumeration needed (the audit already notes it)"
+    }
+   ]
+  },
+  {
+   "round": 2,
+   "same_source_findings": 5,
+   "hetero_findings": 4,
+   "hetero_degraded": false,
+   "blockers": 1,
+   "verdict": "rewrite",
+   "findings": [
+    {
+     "defect_id": "bc2-novel-1",
+     "severity": "warning",
+     "kind": "contradiction",
+     "location": "Fix 1 line 21 (1a attachment-point rationale)",
+     "evidence": "The exclusivity claim 'bc currently defines NO spec-section shape' is false: bc's constraints.json product-spec profile anchors include acceptance-criteria (with bilingual aliases), docs/odp1-blueprint-collapse-design.md references it, and the golden fixture carries the anchor — bc lacks only the AC-ENTRY shape.",
+     "suggestion": "Restate: bc names the anchor sections but defines no AC-entry shape."
+    },
+    {
+     "defect_id": "bc2-novel-2",
+     "severity": "warning",
+     "kind": "coverage-gap",
+     "location": "Rule 5 doc-audit (intent-blueprint.md pointer)",
+     "evidence": "The audit names intent-blueprint.md only as '(rich path)' but the now-false sentence 'bc carries no seam field (bc is out of scope)' lives at :34 under '## AC seam field', not the rich-path section — an implementer rewriting only the derive clause could leave a self-contradicting pd doc.",
+     "suggestion": "Name the specific sentence + section."
+    },
+    {
+     "defect_id": "bc2-novel-3",
+     "severity": "warning",
+     "kind": "contradiction",
+     "location": "Core claim 6 parenthetical vs revised artifact",
+     "evidence": "Claim 6 says '(lossless contract duplication)' but the revised artifact rests on duplication-or-inertness (the bc1-02 fix dropped the lossless framing); the claim's substance holds, the parenthetical is stale.",
+     "suggestion": "Reword claim 6's parenthetical to match the landed fix."
+    },
+    {
+     "defect_id": "bc2-cov-1",
+     "severity": "coverage",
+     "kind": "coverage-gap",
+     "location": "wiki citations",
+     "evidence": "Wiki citations verified against vendored snapshots only; live-wiki drift not checked (round-1 disclosure stands).",
+     "suggestion": "None required; disclosure only."
+    },
+    {
+     "defect_id": "bc2-cov-2",
+     "severity": "coverage",
+     "kind": "coverage-gap",
+     "location": "Rule 1 note",
+     "evidence": "bc self-gates + pd gate subset not executed this round; the rule-1 note remains a proposal-time commitment; the seam tail lives outside the plan-model contract so no schema interaction is possible by construction — disclosed rather than asserted green.",
+     "suggestion": "None required; disclosure only."
+    },
+    {
+     "defect_id": "bc2-negot-1",
+     "severity": "blocker",
+     "kind": "contradiction",
+     "location": "Context (line 9, mattpocock/to-spec citation) vs Proposed fix 1–3 + Non-goals + Rejected",
+     "evidence": "The doc claims: 'mattpocock's to-spec IS that anchor — \"规格与接缝协商（to-spec）：产出规格，同时协商并冻结测试接缝\" … Option A moves the anchor to where the doctrine says it belongs.' The cited authorities make AGREEMENT-with-a-human the defining half of that anchor: mattpocock-tdd.md:35 'Pre-agreed seam … The rule is absolute: no test at an unconfirmed seam. In the full chain the seams are agreed earlier, during to-spec'; mattpocock-tdd.md:5 'names the public boundaries it intends to test at and stops for your confirmation'; test-seam.md:20 '在写任何测试之前先命名打算测试的公开边界并等待确认；硬规则是\"不在未确认的接缝上写测试\"'; even the doc's own second citation (mattpocock-skills §链条与人工确认门:12) says 守卫式规则（接缝确认）锚定在管线更上游. Yet Option A's mechanism implements only the freeze half: the bc author-agent DECLARES the tail (Fix 1b), a same-family plan-reviewer checks it advisory (Fix 2), and the word 协商/confirm/human appears nowhere in any fix, non-goal, or rejected alternative — the confirmation step of the very doctrine invoked as justification is neither adopted, nor delegated to an existing bc human gate, nor rejected (pd ADR #56 Rejected(a) rejected chat-time prose confirmation for the pd side; re-opening the to-spec citation bc-side without reconciling that recorded rejection compounds the break).",
+     "suggestion": "Add a disposition for the negotiation half: either name the bc-side human-confirmation surface (e.g. the spec artifact's pre-freeze human review) or explicitly reject/defer it with an ADR-#56(a)-style rationale."
+    },
+    {
+     "defect_id": "bc2-dodref-1",
+     "severity": "warning",
+     "kind": "structural-gap",
+     "location": "Gap bullet 2 (line 14) + Fix 2 resolution path (line 34)",
+     "evidence": "The Gap (stamped 'verified 2026-08-24') asserts 'spec ACs are free-form content in the spec artifact, referenced via item `dod_ref`', and Fix 2 builds the reviewer's activation path on it: 'it resolves each item's `dod_ref` into the spec's acceptance-criteria section'. But the schema defines dod_ref as 'Pointer to this item's definition-of-done (authority doc + section)' — a DoD pointer, not an AC pointer; the only in-repo dod_ref exemplars (bc golden queue, docs/plan-queues/blueprint-crafting.queue.md:45–129) point at iteration-plan DoD sections; SKILL.md mentions dod_ref only in the handshake line; and no bc doc establishes any convention that product-spec items' dod_refs resolve into acceptance-criteria entries (nor that product-spec items are per-AC at all). The load-bearing mechanism Fix 2 depends on is asserted as an existing verified convention but is defined nowhere in the repo.",
+     "suggestion": "Either cite the in-repo source that establishes dod_ref→spec-AC for product-spec plan-models, or restate Fix 2's activation as 'read the spec's acceptance-criteria anchor section directly (constraints.json product-spec anchor)' without the dod_ref resolution claim."
+    },
+    {
+     "defect_id": "bc2-wrongseam-1",
+     "severity": "warning",
+     "kind": "structural-gap",
+     "location": "Fix 1b precedence sentence (line 30) + Fix 3 (line 44)",
+     "evidence": "Fix 1b names exactly two states — 'absent-SPEC-seam → pd derives (fallback…); absent-BLUEPRINT-seam → the pd absent-seam degrade' — and fixes precedence as 'when the pd refinement's inferred boundary differs from the declared seam, the DECLARED seam wins'. The third state, a DECLARED-but-wrong seam (internal-helper name, unreachable boundary), has no disposition: Fix 2's bc-side checks are advisory-only ('A boundary-choice disagreement without evidence is a warning, never a Blocker') and can miss (same-family), Fix 3 removes pd's derivation discretion ('LATCHES it — latch-grade, high confidence'), and the doc never wires the bad-latched-seam case to pd's existing escape (intent-blueprint.md:65–82 revision channel, 'acceptance criteria that cannot be satisfied') — leaving check (g) to flag correct tests as nonconforming against a wrong frozen seam with no named recovery path in the proposal.",
+     "suggestion": "Name the wrong-declared-seam state and its disposition (e.g. rides the blueprint revision channel with a blueprint-defect flag back to the bc spec)."
+    },
+    {
+     "defect_id": "bc2-cov-symlink",
+     "severity": "coverage",
+     "kind": "coverage-gap",
+     "location": "Consistency notes, Rule 5 (line 49) — 'repo agents/ dir — the installed plugin is a symlink to this repo, one copy'",
+     "evidence": "Partially verified: repo-root agents/plan-reviewer.agent.md is the single plugin-bundled copy (plugin_layout.py EXPECTED_AGENTS includes plan-reviewer; no second copy exists under ~/.claude/agents), but the SYMLINK mechanism of the installed plugin registration itself could not be verified in this environment (no install pointer found under ~/.claude/plugins beyond an empty solidforge-skills-dir marker) — if the installed plugin is a copy rather than a symlink on some consumer machine, the rule-5 audit's 'one copy' edit would not propagate there.",
+     "suggestion": "None required at proposal time; disclose alongside rule-1 gate runs at implementation."
+    }
+   ],
+   "dispositions": [
+    {
+     "defect_id": "bc2-novel-1",
+     "action": "fixed",
+     "note": "fixed — the rationale restated: bc NAMES the spec anchor sections (constraints.json product-spec profile incl. acceptance-criteria with bilingual aliases) but defines no AC-ENTRY shape; the fix lands the entry shape + seam tail"
+    },
+    {
+     "defect_id": "bc2-novel-2",
+     "action": "fixed",
+     "note": "fixed — the audit now names the specific now-false sentences: intent-blueprint.md:34 \"bc carries no seam field (bc is out of scope)\" under \"## AC seam field\" + the derive instruction, AND the rich-path seeding section"
+    },
+    {
+     "defect_id": "bc2-novel-3",
+     "action": "rejected",
+     "note": "rejected — no artifact change: the core-claim set is frozen at framing and the artifact text is the authority (the substance holds on the revised artifact; the parenthetical is stale wording in the claim set only)"
+    },
+    {
+     "defect_id": "bc2-cov-1",
+     "action": "rejected",
+     "note": "rejected — no artifact change: disclosure only, stands (vendored-snapshot verification is the run's declared authority bound)"
+    },
+    {
+     "defect_id": "bc2-cov-2",
+     "action": "rejected",
+     "note": "rejected — no artifact change: disclosure only; the gate run happens at implementation per rule 1"
+    },
+    {
+     "defect_id": "bc2-negot-1",
+     "action": "fixed",
+     "note": "fixed — the negotiation half now has an explicit disposition: Rejected (d) records the rejection of mattpocock's chat-time confirmation with the same rule-4 rationale as pd ADR #56 Rejected (a); the standing-in surfaces named (spec freeze + plan-reviewer advisory checks); the human gate stays at the outcome axis. Recorded, not silent (rule 3)"
+    },
+    {
+     "defect_id": "bc2-dodref-1",
+     "action": "fixed",
+     "note": "fixed — Fix 2's activation restated: the reviewer reads the spec's acceptance-criteria anchor section directly via the authority chain (the constraints.json product-spec anchor); the dod_ref resolution claim dropped (dod_ref is a DoD pointer, not an AC pointer — verified against the schema)"
+    },
+    {
+     "defect_id": "bc2-wrongseam-1",
+     "action": "fixed",
+     "note": "fixed — the third state named: declared-but-WRONG seam → the pd Planner flags it as a blueprint defect via the pd revision channel's \"self-contradictory AC\" trigger (intent-blueprint.md Blueprint Revision Channel) back to the bc spec; check (g) conforms against the corrected declaration"
+    },
+    {
+     "defect_id": "bc2-cov-symlink",
+     "action": "rejected",
+     "note": "rejected — no artifact change: the symlink was verified directly (ls -la: /Users/solosus/.claude/skills/solidforge -> /Users/solosus/dev/ws-ai/solidforge); the consumer-machine propagation scenario is beyond this workspace's audit surface"
+    }
+   ]
+  },
+  {
+   "round": 3,
+   "same_source_findings": 7,
+   "hetero_findings": 4,
+   "hetero_degraded": false,
+   "blockers": 0,
+   "verdict": "pass",
+   "findings": [
+    {
+     "defect_id": "bc3-dodref-residual",
+     "severity": "warning",
+     "kind": "contradiction",
+     "location": "Gap bullet 2 + Non-goals bullet 1",
+     "evidence": "The dod_ref resolution claim survives twice ('referenced via item dod_ref' in Gap; '(referenced via dod_ref)' in Non-goals) while the revised Fix 2 says the opposite (NOT via dod_ref, a DoD pointer); the bc2-dodref-1 fix touched Fix 2 only.",
+     "suggestion": "Delete the residual clauses; the spec is consumed via the authority chain."
+    },
+    {
+     "defect_id": "bc3-revchannel-trigger",
+     "severity": "warning",
+     "kind": "authority-chain-break",
+     "location": "Fix 1b third state (escape-hatch trigger)",
+     "evidence": "The cited trigger 'self-contradictory AC' is wrong: intent-blueprint.md's revision channel lists unreachable / self-contradictory (NFR-vs-use-case) / 'has acceptance criteria that cannot be satisfied' — the fitting trigger is the third.",
+     "suggestion": "Cite the actual third trigger."
+    },
+    {
+     "defect_id": "bc3-escape-endpoint",
+     "severity": "warning",
+     "kind": "structural-gap",
+     "location": "Fix 1b third state (escape-hatch endpoint)",
+     "evidence": "The revision channel ends at a re-frozen BLUEPRINT, not a corrected bc spec; the anchor authority forbids fixing the blueprint's seam while the spec declares the wrong one — the bc-side round-trip that produces the corrected declaration is unnamed.",
+     "suggestion": "Name the endpoint: bc-side re-convergence lifecycle (re-open spec, correct, re-freeze, re-latch)."
+    },
+    {
+     "defect_id": "bc3-audit-reversal",
+     "severity": "warning",
+     "kind": "contradiction",
+     "location": "Rule 5 audit (ADR #56 entry)",
+     "evidence": "The audit overstates the reversal: 'bc carries NO seam field' remains TRUE under Option A (seam in spec text, not a schema field — the proposal's own Non-goals); only the DERIVATIVE half is reversed and the follow-up line is FULFILLED.",
+     "suggestion": "Restate the reversal scope precisely."
+    },
+    {
+     "defect_id": "bc3-cov-wiki",
+     "severity": "coverage",
+     "kind": "coverage-gap",
+     "location": "wiki citations",
+     "evidence": "All wiki quotes + anchors verified against vendored snapshots; live-wiki drift not checked (run's declared authority bound).",
+     "suggestion": "None required; disclosure only."
+    },
+    {
+     "defect_id": "bc3-cov-symlink",
+     "severity": "coverage",
+     "kind": "coverage-gap",
+     "location": "Rule 5 symlink claim",
+     "evidence": "The symlink could not be re-verified with read-only tools (Glob skips symlinked dirs); rests on the round-2 disposition's ls -la verification.",
+     "suggestion": "None required; disclose at implementation."
+    },
+    {
+     "defect_id": "bc3-cov-gates",
+     "severity": "coverage",
+     "kind": "coverage-gap",
+     "location": "Rule 1 note",
+     "evidence": "Gates not executed this round; the rule-1 note remains a proposal-time commitment.",
+     "suggestion": "None required; disclosure only."
+    },
+    {
+     "defect_id": "bc3-ref-granularity",
+     "severity": "warning",
+     "kind": "authority-chain-break",
+     "location": "§3 pd intent-blueprint.md rich path — the LATCH sentence's `ref` parenthetical",
+     "evidence": "Doc: \"per the anchors-map latch notion (bc `plan-model.schema.json` `$defs/anchors`: 'latch: explicit anchor sections; semantic-infer: inferred'; the seam tail is an explicit marker on a spec AC, `ref` pointing at it)\". The quoted schema text is verbatim, but the `ref` extension over-reads it: the anchors def is \"anchor-name -> {present, ref?, confidence?}\" — one entry per registry anchor NAME (constraints.json product-spec anchors are section names, e.g. `acceptance-criteria`), with ref = \"Optional pointer to where the anchor is satisfied\" (the anchor = the section). normalizer.py:299 confirms section granularity and a non-pointer value: anchors[anchor] = {\"present\": True, \"ref\": \"heading\", \"confidence\": LATCH} — the ref is the literal discriminator \"heading\"/\"prose\", never a pointer to an individual AC's seam tail. Additionally the anchors map is a bc-side plan-model structure; pd's rich-path Planner reads the SPEC via the queue's authority_chain (intent-blueprint.md:45) and holds no anchors map, so the latch's mechanical carrier at pd is analogy only — \"`ref` pointing at it\" states a mechanism that exists on neither side.",
+     "suggestion": "Drop the `ref` clause or restate as analogy: latch-grade confidence per the anchors-map notion; no ref/anchors-map entry is created at pd (the latch is the Phase-0 act recorded on the blueprint AC line itself)."
+    },
+    {
+     "defect_id": "bc3-escape-unwired",
+     "severity": "warning",
+     "kind": "structural-gap",
+     "location": "§Proposed fix (3 edit points) × Fix 1b third state — the named endpoint's routing",
+     "evidence": "Fix 1b: \"Endpoint, named: the blueprint-defect escalation reaches the bc-side re-convergence lifecycle (re-open the spec, correct the declaration, re-freeze, re-latch ...)\". But the fix header says \"Proposed fix (3 edit points)\" and none of them lands this routing: Fix 1 lands it only in bc SKILL.md (read by bc authors, never by the escalating pd actor); Fix 3 edits intent-blueprint.md's rich path (the latch rule) and does not touch the Blueprint Revision Channel — the decision-point doc the escalating actor reads, whose step 3 is \"Escalate to the Planner (`requirements-manager` / `Plan`) + a human\" (intent-blueprint.md:77) with zero bc routing. Per the doc's own rule (\"the anchor authority forbids fixing the blueprint's seam while the spec still declares the wrong one\"), the channel's steps 4–6 (bump version, re-freeze, restart at Phase 1) cannot complete until the SPEC is corrected bc-side — a cross-skill dependency (including the in-flight queue/run-record re-sync after the spec re-freezes) that exists only in proposal prose, assigned to no edit point. Distinct from bc3-escape-endpoint (endpoint unnamed — now named): this is the next-layer defect, the named endpoint is unwired.",
+     "suggestion": "Add a fourth edit point (or extend Fix 3): a routing sentence in intent-blueprint.md's Blueprint Revision Channel — declared-seam defects escalate to the bc-side re-convergence lifecycle before steps 4–6 can run."
+    },
+    {
+     "defect_id": "bc3-flag-actor",
+     "severity": "warning",
+     "kind": "structural-gap",
+     "location": "Fix 1b third state — the flagging actor and detection timing",
+     "evidence": "Doc: \"declared-but-WRONG seam ... → the pd Planner flags it as a blueprint defect (the pd revision channel's third trigger: 'has acceptance criteria that cannot be satisfied' ..., intent-blueprint.md Blueprint Revision Channel)\". The trigger quote is verbatim, but the cited channel assigns the acts differently: \"If implementation or review discovers the blueprint is: ... the Coder MUST NOT edit the blueprint. Instead: ... Raise a suspend with a blueprint-defect flag\" (intent-blueprint.md:67-76) — discovery belongs to implementation/review, execution to the Coder, and the Planner is the escalation TARGET (step 3), never the flag-raiser. If instead the Planner detects the wrong seam at Phase-0 derivation, that is PRE-freeze — the channel (post-freeze machinery, status frozen→revising) is not the vehicle at all, and nothing is named for the pre-freeze case. The doc's sentence spans both timings without picking one; who detects the wrong seam, and when, is unspecified. (Uncovered by bc3-revchannel-trigger, which was the trigger citation, and bc3-escape-endpoint, which was the endpoint.)",
+     "suggestion": "Pick one: post-freeze — Coder/review discovers via check (g) and raises the existing channel; or pre-freeze — the Planner refuses to freeze and escalates directly; name the actor and timing."
+    },
+    {
+     "defect_id": "bc3-feathers-primary-unverifiable",
+     "severity": "coverage",
+     "kind": "coverage-gap",
+     "location": "Fix 1b Feathers citation",
+     "evidence": "Doc: 'Feathers: \"a place where you can alter behavior in your program without editing in that place\", *Working Effectively with Legacy Code* 2004 ch.4'. The book itself is not vendored and not fetchable this run; the quote is oracle-verified only against the vendored wiki snapshot's transcription (authority/test-seam.md:7, which itself cites ch.4 in its 来源 line). Distinct from bc3-cov-wiki (live-wiki drift): this discloses that the direct primary-source citation rests on a secondary-source transcription. The adjacent mattpocock quotes are covered — mattpocock-tdd.md is the vendored raw fetch and the Rejected-(d) quote matches it verbatim.",
+     "suggestion": "None required; disclose at implementation (or re-verify against the book if it ever enters the authority set)."
+    }
+   ],
+   "dispositions": [
+    {
+     "defect_id": "bc3-dodref-residual",
+     "action": "fixed",
+     "note": "fixed — both residual dod_ref clauses removed (Gap + Non-goals); the spec is consumed via the authority chain"
+    },
+    {
+     "defect_id": "bc3-revchannel-trigger",
+     "action": "fixed",
+     "note": "fixed — the escape hatch now cites the actual third trigger: \"has acceptance criteria that cannot be satisfied\" (an AC whose declared seam boundary cannot observe its outcome)"
+    },
+    {
+     "defect_id": "bc3-escape-endpoint",
+     "action": "fixed",
+     "note": "fixed — the endpoint named: the blueprint-defect escalation reaches the bc-side re-convergence lifecycle (re-open spec, correct the declaration, re-freeze, re-latch); the anchor-authority constraint stated"
+    },
+    {
+     "defect_id": "bc3-audit-reversal",
+     "action": "fixed",
+     "note": "fixed — the ADR #56 amendment scope restated: the DERIVATIVE half is reversed, \"bc carries NO seam field\" remains TRUE (seam in spec text, not a schema field), the follow-up line is FULFILLED; both gain AMENDED notes"
+    },
+    {
+     "defect_id": "bc3-cov-wiki",
+     "action": "rejected",
+     "note": "rejected — no artifact change: disclosure only, stands"
+    },
+    {
+     "defect_id": "bc3-cov-symlink",
+     "action": "rejected",
+     "note": "rejected — no artifact change: the symlink was verified via ls -la in the round-2 reconciliation (disposition record); re-disclosed at implementation"
+    },
+    {
+     "defect_id": "bc3-cov-gates",
+     "action": "rejected",
+     "note": "rejected — no artifact change: the gate run happens at implementation per rule 1"
+    },
+    {
+     "defect_id": "bc3-ref-granularity",
+     "action": "fixed",
+     "note": "fixed — the `ref` clause dropped; the anchors-map latch restated as ANALOGY (the map is bc-side, section-granular, ref = heading/prose discriminator per normalizer.py; no ref/anchors-map entry at pd; the latch is the Phase-0 act recorded on the blueprint AC line itself)"
+    },
+    {
+     "defect_id": "bc3-escape-unwired",
+     "action": "fixed",
+     "note": "fixed — edit point 4 added: a routing sentence in intent-blueprint.md's Blueprint Revision Channel (declared-seam defects escalate to the bc-side re-convergence lifecycle before the re-freeze steps; the cross-skill re-sync named); the proposal header now says 4 edit points and the rule-5 audit includes it"
+    },
+    {
+     "defect_id": "bc3-flag-actor",
+     "action": "fixed",
+     "note": "fixed — actor + timing named: POST-freeze the Coder/reviewer discovers via check (g) and raises the channel (Planner = escalation target); PRE-freeze the Planner refuses to freeze and escalates directly (the channel does not apply)"
+    },
+    {
+     "defect_id": "bc3-feathers-primary-unverifiable",
+     "action": "rejected",
+     "note": "rejected — no artifact change: disclosure only (the Feathers quote is oracle-verified against the vendored wiki transcription; the book is not vendored)"
+    }
+   ]
+  },
+  {
+   "round": 4,
+   "same_source_findings": 8,
+   "hetero_findings": 8,
+   "hetero_degraded": false,
+   "blockers": 1,
+   "verdict": "rewrite",
+   "findings": [
+    {
+     "defect_id": "bc4-dodref-residual",
+     "severity": "warning",
+     "kind": "contradiction",
+     "location": "Rejected (a) line 67",
+     "evidence": "A THIRD dod_ref occurrence survives: 'the spec doc already carries the content and dod_ref is the authority pointer' — contradicting the artifact's own revised Gap bullet + Fix 2 (dod_ref is a DoD pointer, not an AC pointer).",
+     "suggestion": "Delete the clause; the duplication limb rests on the spec-doc-carries-content limb alone."
+    },
+    {
+     "defect_id": "bc4-never-fires",
+     "severity": "warning",
+     "kind": "contradiction",
+     "location": "Fix 1b third state",
+     "evidence": "'never fires ... because derivation always lands a seam' guarantees a fallible LLM act; the source doc hedges ('a systematic absent seam is a defect, not the norm' — never 'never').",
+     "suggestion": "Hedge to 'not expected on this path'."
+    },
+    {
+     "defect_id": "bc4-audit-seeding-label",
+     "severity": "warning",
+     "kind": "citation-error",
+     "location": "Rule 5 audit (intent-blueprint enumeration)",
+     "evidence": "Two enumeration errors: 'the derive instruction' duplicates the same line-34 paragraph; 'the rich-path seeding section' contains NO now-false sentence (only the latch sentence is added there).",
+     "suggestion": "Split: now-false = line 34 paragraph; edit-point sections = seeding + revision channel."
+    },
+    {
+     "defect_id": "bc4-audit-consequence2",
+     "severity": "warning",
+     "kind": "coverage-gap",
+     "location": "Rule 5 audit (ADR #56 amendment scope)",
+     "evidence": "ADR #56's second consequence sentence ('a wrong-boundary AC survives bc's plan-reviewer ... surfaces only at pd's reviewer check (g), one stage later') becomes false under Fix 2 but is omitted from the now-false enumeration.",
+     "suggestion": "Add the consequence sentence to the amendment scope."
+    },
+    {
+     "defect_id": "bc4-cov-wiki",
+     "severity": "coverage",
+     "kind": "coverage-gap",
+     "location": "Sources (wiki citations)",
+     "evidence": "Wiki quotes + anchors verified verbatim against vendored snapshots; live-wiki drift not checkable (standing disclosure).",
+     "suggestion": "None required; disclosure only."
+    },
+    {
+     "defect_id": "bc4-cov-symlink",
+     "severity": "coverage",
+     "kind": "coverage-gap",
+     "location": "Rule 5 symlink claim",
+     "evidence": "Symlink not re-verifiable with read-only tools; rests on round-2 ls -la verification (standing disclosure).",
+     "suggestion": "None required; re-disclose at implementation."
+    },
+    {
+     "defect_id": "bc4-cov-gates",
+     "severity": "coverage",
+     "kind": "coverage-gap",
+     "location": "Rule 1 note",
+     "evidence": "Gates not executed this round; rule-1 commitment stands (standing disclosure).",
+     "suggestion": "None required; disclosure only."
+    },
+    {
+     "defect_id": "bc4-cov-feathers",
+     "severity": "coverage",
+     "kind": "coverage-gap",
+     "location": "Fix 1b Feathers citation",
+     "evidence": "The book is not vendored; the quote is verified only against the wiki transcription (standing disclosure).",
+     "suggestion": "None required; disclose at implementation."
+    },
+    {
+     "defect_id": "bc4-prefreeze-no-carrier",
+     "severity": "blocker",
+     "kind": "structural-gap",
+     "location": "Fix 1b third state (PRE-freeze limb) vs the 4 edit points",
+     "evidence": "Doc Fix 1b: 'PRE-freeze, the pd Planner refuses to freeze and escalates directly (the channel does not apply pre-freeze)' — one of the 'Three states, named distinctly'. But no edit point carries it: edit 3 is described in the rule-5 audit as only 'the latch sentence is ADDED there' (intent-blueprint.md rich-path seeding); edit 4 is scoped to the Blueprint Revision Channel, which intent-blueprint.md:65 defines as the change path for a blueprint whose frontmatter `status: frozen` ('The blueprint changes ONLY through this channel') — i.e. post-freeze, as the doc itself concedes; edits 1–2 land in bc SKILL.md / plan-reviewer.agent.md, which the pd Planner never loads at Phase 0 (its decision doc is intent-blueprint.md Phase 0: 'the Planner … converts the request into a blueprint, sets `status: frozen`'). The PRE-freeze limb's escalation target is also unnamed, in contrast to the POST-freeze limb where every actor is named ('the Coder executes the suspend, the Planner is the escalation TARGET'). Landed as written, the pre-freeze refusal exists only in proposal prose — a workspace-rule-8 reachability hole (a capability must be reachable at the decision-point doc the acting model reads).",
+     "suggestion": "Give the PRE-freeze limb a pd-side carrier: extend Fix 3's latch sentence (or add a Phase-0 sentence) with the refuse-to-freeze + direct bc escalation, and name the escalation target."
+    },
+    {
+     "defect_id": "bc4-fix2-activation-unconditional-amendment",
+     "severity": "warning",
+     "kind": "structural-gap",
+     "location": "Fix 2 activation path + Rule 5 audit's ADR #56 consequence-2 amendment claim",
+     "evidence": "Fix 2: 'The agent's input contract already makes the authority docs conditional (\"if provided\"); when the spec is NOT provided, the check degrades to a coverage note' — verified against plan-reviewer.agent.md:56 ('Read the plan-model (and the authority-chain docs it references, if provided)'). But bc SKILL.md step 4's spawn instruction carries no input contract ('Spawn `solidforge:plan-reviewer`; save its findings to `findings.json`'), and none of the 4 edit points instructs the bc loop to PASS the spec. Meanwhile the audit's amendment claim is unconditional: 'the wrong-boundary AC is now caught at bc's advisory checks with check (g) as the post-freeze net' — a catch that presumes the active path. On the default spawn the check rides the coverage-degrade and the amended ADR claim overstates.",
+     "suggestion": "Either add to Fix 2 an edit making SKILL.md step 4 pass the authority-chain docs to the reviewer, or qualify the amended consequence ('caught … when the spec is provided to the reviewer')."
+    },
+    {
+     "defect_id": "bc4-adr56-consequence1-omitted",
+     "severity": "warning",
+     "kind": "coverage-gap",
+     "location": "Rule 5 audit — ADR #56 amendment scope, FIRST consequence clause",
+     "evidence": "ADR #56 (design-decisions.md:413) states three consequences; the first is 'derivation quality = one LLM act (coverage-noted, not gate-enforced)'. Under Fix 3 the rich path no longer derives — the doc's own words: 'Derivation from the Given/When/Then boundary becomes the absent-spec-seam fallback only' — so the one-LLM-act risk transmutes into bc-side DECLARATION quality. The audit's amendment enumeration covers only 'the architecture-choice sentence's DERIVATIVE half …, the follow-up line …, AND the second consequence sentence' (the same-family leg flagged the second; this is the first, a different clause). Left unamended, 'derivation quality' misdescribes the Option-A architecture, where the load-bearing act is the declaration.",
+     "suggestion": "Add the first consequence clause to the amendment scope: re-point 'derivation quality = one LLM act' to 'declaration quality = one LLM act (still coverage-noted)'."
+    },
+    {
+     "defect_id": "bc4-audit-pdm-step3-carrier",
+     "severity": "warning",
+     "kind": "coverage-gap",
+     "location": "Rule 5 audit — omission of plan-driven-mode.md step 3 rich-path sentence",
+     "evidence": "The derive instruction has a SECOND landed carrier at the orchestrator's decision point: plan-driven-mode.md:158 '**Rich path**: if `plan_queue.detect_producer` reports `blueprint-crafting`, seed the Phase-0 anchor from bc's spec in the `authority_chain` (derive, don't re-imagine — see intent-blueprint.md §Rich path)'. The doc's rule-5 audit enumerates the pd side as intent-blueprint.md (two sections) + design-decisions.md ADR #56 only — plan-driven-mode.md step 3 is neither an edit point nor recorded as considered-and-skipped. Under the repo's own ADR #55 doctrine (decision-point inlining — the instruction must live at the doc the dispatcher reads), the latch-vs-derive carve-out needs at least an explicit considered note here; the parenthetical cross-ref mitigates but leaves the orchestrator-facing sentence itself carrying the un-carved 'derive' instruction.",
+     "suggestion": "Add plan-driven-mode.md step 3 to the rule-5 audit: either a one-clause latch carve-out or an explicit no-edit rationale."
+    },
+    {
+     "defect_id": "bc4-audit-archdesign-s3",
+     "severity": "warning",
+     "kind": "coverage-gap",
+     "location": "Rule 5 audit — omission of bc arch-design.md §3 (the authoritative artifact contract)",
+     "evidence": "bc SKILL.md: 'docs/arch-design.md = authoritative spec' and step 1 defers to it: 'arch-design §3 lists the per-type anchors'. arch-design.md §3 'Product spec (spec / PRD)' enumerates the anchor 'testable acceptance criteria'. Fix 1a lands the AC-ENTRY shape plus a REQUIRED seam tail ('The catch/miss clause is required, not optional') in SKILL.md — new normative content of the spec artifact's contract — yet the rule-5 audit never touches or records arch-design.md, the doc where the per-type artifact contract actually lives. Rule 5: a capability ripples through every enumeration; the authoritative contract doc is a first-class candidate, and its absence is silent (rule 3).",
+     "suggestion": "Add arch-design.md §3 to the audit: extend the product-spec anchor entry with the AC-ENTRY shape pointer, or record an explicit no-edit rationale."
+    },
+    {
+     "defect_id": "bc4-audit-facade-silent",
+     "severity": "warning",
+     "kind": "coverage-gap",
+     "location": "Rule 5 audit — facade-docs category absent",
+     "evidence": "Workspace rule 5 lists 'project facade docs (README, USER_GUIDE, GitHub About)' as an audit category (advisory severity, but the pass itself is 'a required step'). USER_GUIDE.md:77 describes the rich path user-visibly: 'the spec's acceptance criteria seed executable tests' — and specs authored under Option A now carry a required seam tail, a user-visible authoring change. The doc's rule-5 audit contains no facade entry and no deferred-note, against the repo idiom set by ADR #55 (deferred items 'enumerated in the proposal's rule-5 audit not silent'). Advisory category, so warning — but the silence is the defect.",
+     "suggestion": "Add a facade row to the rule-5 audit: candidate sync locations or an explicit deferred decision (human/outer-ring call)."
+    },
+    {
+     "defect_id": "bc4-sources-inrepo-incomplete",
+     "severity": "warning",
+     "kind": "coverage-gap",
+     "location": "Sources — in-repo anchors list",
+     "evidence": "The body makes load-bearing claims against four in-repo files absent from Sources: constraints.json ('product-spec profile anchors include `acceptance-criteria`, with bilingual detection aliases' — verified true at constraints.json:11,81), normalizer.py ('`ref` is the \"heading\"/\"prose\" discriminator' — normalizer.py:299,303), plan_model.py ('plan-model.schema.json subset_tags + bc `plan_model.py`' — plan_model.py:23), and plan-driven-mode.md §Phase −1 (the Latch row the Fix 3 rejection rests on — verified at plan-driven-mode.md:51). Sources lists only 'bc SKILL.md, plan-model.schema.json, agents/plan-reviewer.agent.md; pd intent-blueprint.md rich path'. All four claims verify, so no authority-chain-break — the defect is the auditability omission against the repo convention (the pd proposal's Sources enumerates every in-repo anchor with line numbers: 'In-repo anchors: SKILL.md:17,23-25, feature-dev.md:70-103, …').",
+     "suggestion": "Add the four files (with section/line anchors) to the Sources in-repo list."
+    },
+    {
+     "defect_id": "bc4-cov-tospec-primary",
+     "severity": "coverage",
+     "kind": "coverage-gap",
+     "location": "Context §2 (the to-spec attribution)",
+     "evidence": "Doc: 'mattpocock's to-spec IS that anchor — \"规格与接缝协商（to-spec）：产出规格，同时协商并冻结测试接缝\" (wiki `mattpocock-skills` §链条与人工确认门)'. The quote is verbatim in the vendored snapshot (mattpocock-skills.md:8), but mattpocock's to-spec primary doc itself is NOT among the vendored authorities (tdd.md, the implement cadence excerpt, and the changelog entry are) — the attribution is verified only against the wiki transcription. Standing disclosure, distinct from the same-family's Feathers-book disclosure (different source); no action required this round.",
+     "suggestion": "None required; disclose at implementation if the to-spec page is ever load-bearing on its own."
+    }
+   ],
+   "dispositions": [
+    {
+     "defect_id": "bc4-dodref-residual",
+     "action": "fixed",
+     "note": "fixed — the third dod_ref clause deleted from Rejected (a); the duplication limb now rests on the spec-doc-carries-content limb alone (consumed via the authority chain)"
+    },
+    {
+     "defect_id": "bc4-never-fires",
+     "action": "fixed",
+     "note": "fixed — hedged: \"NOT expected on this path: latch and derive both land a seam, but a missed latch is the coverage-noted LLM-act risk, so never fires is not claimed\""
+    },
+    {
+     "defect_id": "bc4-audit-seeding-label",
+     "action": "fixed",
+     "note": "fixed — the enumeration split: now-false sentence = line 34's rich-path paragraph (both clauses, one paragraph); edit-point sections = the seeding section (latch sentence ADDED) + the revision channel (routing sentence ADDED)"
+    },
+    {
+     "defect_id": "bc4-audit-consequence2",
+     "action": "fixed",
+     "note": "fixed — ADR #56's second consequence sentence added to the amendment scope (becomes false under Fix 2: bc's plan-reviewer gains the seam-quality dimension; check (g) remains the post-freeze net)"
+    },
+    {
+     "defect_id": "bc4-cov-wiki",
+     "action": "rejected",
+     "note": "rejected — no artifact change: standing disclosure"
+    },
+    {
+     "defect_id": "bc4-cov-symlink",
+     "action": "rejected",
+     "note": "rejected — no artifact change: standing disclosure"
+    },
+    {
+     "defect_id": "bc4-cov-gates",
+     "action": "rejected",
+     "note": "rejected — no artifact change: standing disclosure"
+    },
+    {
+     "defect_id": "bc4-cov-feathers",
+     "action": "rejected",
+     "note": "rejected — no artifact change: standing disclosure"
+    },
+    {
+     "defect_id": "bc4-prefreeze-no-carrier",
+     "action": "fixed",
+     "note": "fixed — the PRE-freeze limb gained its carrier: the latch sentence in edit point 3 states the Planner REFUSES to freeze on a declared-but-wrong seam and escalates directly to the bc-side re-convergence lifecycle (same endpoint as post-freeze; no revision channel applies pre-freeze — that channel is the frozen-blueprint change path only); the escalation target named"
+    },
+    {
+     "defect_id": "bc4-fix2-activation-unconditional-amendment",
+     "action": "fixed",
+     "note": "fixed — Fix 2 gains the bc SKILL.md step-4 spawn clause (pass the spec via the authority chain — the active path becomes the default); the audit's consequence-2 wording qualified (\"caught ... WHEN the spec is provided to the reviewer\")"
+    },
+    {
+     "defect_id": "bc4-adr56-consequence1-omitted",
+     "action": "fixed",
+     "note": "fixed — ADR #56's FIRST consequence clause added to the amendment scope: \"derivation quality = one LLM act\" transmutes to \"declaration quality = one LLM act, still coverage-noted\""
+    },
+    {
+     "defect_id": "bc4-audit-pdm-step3-carrier",
+     "action": "fixed",
+     "note": "fixed — plan-driven-mode.md chaining-loop step 3 added to the audit + edit scope: the rich-path sentence gains the one-clause latch-first carve-out (ADR #55 decision-point inlining)"
+    },
+    {
+     "defect_id": "bc4-audit-archdesign-s3",
+     "action": "fixed",
+     "note": "fixed — bc arch-design.md §3 added to the audit: the product-spec anchor entry gains the AC-ENTRY shape pointer (new normative contract content must live in the authoritative contract doc)"
+    },
+    {
+     "defect_id": "bc4-audit-facade-silent",
+     "action": "fixed",
+     "note": "fixed — a facade row added to the audit (USER_GUIDE.md rich-path description, user-visible authoring change; candidate sync locations enumerated, deferred not silent — ADR #55 idiom)"
+    },
+    {
+     "defect_id": "bc4-sources-inrepo-incomplete",
+     "action": "fixed",
+     "note": "fixed — the four omitted files added to Sources with line anchors (constraints.json :11,:81; normalizer.py :299; plan_model.py :192; plan-driven-mode.md §Phase −1 :51 — all verified against the files)"
+    },
+    {
+     "defect_id": "bc4-cov-tospec-primary",
+     "action": "rejected",
+     "note": "rejected — no artifact change: disclosure only (the to-spec attribution is verified against the vendored wiki transcription; the primary to-spec doc is not vendored)"
+    }
+   ]
+  },
+  {
+   "round": 5,
+   "same_source_findings": 6,
+   "hetero_findings": 6,
+   "hetero_degraded": false,
+   "blockers": 1,
+   "verdict": "rewrite",
+   "findings": [
+    {
+     "defect_id": "bc5-claim3-dodref-wording",
+     "severity": "warning",
+     "kind": "contradiction",
+     "location": "Core claim 3 (frozen claim set)",
+     "evidence": "Claim 3's 'referenced via item dod_ref' clause contradicts the revised artifact's verified position (consumed via the authority chain; dod_ref is a DoD pointer); the artifact is right, the claim-set wording is stale.",
+     "suggestion": "Reword claim 3's reference clause in the claim set."
+    },
+    {
+     "defect_id": "bc5-checkg-unglossed",
+     "severity": "warning",
+     "kind": "structural-gap",
+     "location": "Context line 7 + Fix 1b + Fix 4 + Non-goals ('check (g)' x4 unglossed)",
+     "evidence": "The bare label 'check (g)' is used four times without definition; it resolves only via pd convergent-loop.md's template item 3(g) — violating the doc's own rule-10 self-claim (no cross-doc load assumption).",
+     "suggestion": "Gloss (g) at first use in Context."
+    },
+    {
+     "defect_id": "bc5-trigger-mapping",
+     "severity": "warning",
+     "kind": "structural-gap",
+     "location": "Fix 1b POST-freeze limb + Fix 4",
+     "evidence": "The wrong-seam routing hangs on a gloss ('an AC whose declared seam boundary cannot observe its outcome') the channel doc does not carry — the third trigger bullet reads only 'has acceptance criteria that cannot be satisfied'; Fix 4's one-routing-sentence scope does not amend the bullet (rule-8 gap at the classification moment).",
+     "suggestion": "Extend Fix 4 to amend the trigger bullet."
+    },
+    {
+     "defect_id": "bc5-archdesign-pointer-vs-content",
+     "severity": "warning",
+     "kind": "contradiction",
+     "location": "Rule 5 audit (arch-design.md §3 item)",
+     "evidence": "The rationale demands the normative content live in the authoritative contract doc, but the edit is described as a 'pointer' — inverting the hierarchy the rationale itself demands (SKILL.md:95 declares arch-design.md the authoritative spec).",
+     "suggestion": "Describe the edit as the shape DEFINITION living in arch-design §3, SKILL.md referencing it."
+    },
+    {
+     "defect_id": "bc5-sources-duplicate",
+     "severity": "warning",
+     "kind": "structural-gap",
+     "location": "Sources lines 75 vs 77",
+     "evidence": "Line 77 restates a strict subset of line 75's fuller enumeration verbatim — redundant double enumeration, drift risk, breaks the one-canonical-enumeration convention.",
+     "suggestion": "Delete line 77."
+    },
+    {
+     "defect_id": "bc5-cov-standing",
+     "severity": "coverage",
+     "kind": "coverage-gap",
+     "location": "standing disclosures",
+     "evidence": "Live-wiki drift / symlink claim / Feathers-book / to-spec primary / gate commitments / plan_queue implementation not read — standing disclosures re-stated.",
+     "suggestion": "None required."
+    },
+    {
+     "defect_id": "bc5-checkg-detection-overstated",
+     "severity": "blocker",
+     "kind": "authority-chain-break",
+     "location": "Fix 1b, declared-but-WRONG seam state, POST-freeze limb",
+     "evidence": "Doc claims the wrong-seam state — which it defines as TWO sub-cases: \"declared-but-WRONG seam (internal-helper name / boundary the AC's observable outcome cannot be observed at) — actor + timing, named: POST-freeze, the Coder/reviewer discovers it via check (g) and raises the pd revision channel's third trigger\". But the cited check (g) (convergent-loop.md:203, reviewer prompt template item 3) says only: \"(g) seam conformance — do the tests sit at the seam declared on the blueprint AC line ...; testing a different boundary than the frozen one is a finding.\" Check (g) detects test↔declared-seam NON-conformance, not seam wrongness: for the internal-helper sub-case, tests written AT the declared internal helper CONFORM and check (g) is silent — the named discovery channel cannot discover half the state it is named for. The doc's own Rule-5 hedge (\"with check (g) as the post-freeze net\") concedes it is a conformance net; Fix 1b promotes it to a wrong-seam detector.",
+     "suggestion": "Scope the check-(g) discovery claim to the cannot-observe sub-case (where tests must go elsewhere, forcing non-conformance); name bc Fix 2(a) as the primary catch for the internal-helper sub-case and note the conforming-wrong-seam hole honestly (rule 3)."
+    },
+    {
+     "defect_id": "bc5-adr56-anchor-is-blueprint-unamended",
+     "severity": "warning",
+     "kind": "coverage-gap",
+     "location": "Consistency notes, Rule 5 audit — pd design-decisions.md ADR #56 amendment scope",
+     "evidence": "The amendment scope enumerates four items (architecture-choice sentence's DERIVATIVE half, follow-up line, first consequence clause, second consequence sentence) — but ADR #56 Decision (a) carries a fifth Option-A-falsified sentence the scope omits: \"mattpocock's 'pre-agreed seam, confirmed with the user before any test is written' translates to the frozen-anchor idiom: the upstream anchor is the blueprint, not a mid-RED conversation\". Under Option A the proposal's own precedence rule relocates anchor authority to the spec (\"the anchor authority forbids fixing the blueprint's seam while the spec still declares the wrong one\"), making \"the upstream anchor is the blueprint\" now-false — exactly the sentence class the meticulously-split enumeration (now-false vs edit-point) exists to catch. The ADR heading (\"the seam freezes IN the blueprint\") is the historical record and is fine under an AMENDED note; this content sentence is not.",
+     "suggestion": "Add the upstream-anchor-idiom sentence to the ADR #56 amendment scope (transmute to \"the upstream anchor is the spec; the blueprint latches\")."
+    },
+    {
+     "defect_id": "bc5-template-canonical-carrier-absent",
+     "severity": "warning",
+     "kind": "coverage-gap",
+     "location": "Consistency notes, Rule 5 audit — pd enumeration (template file missing); also absent from Sources",
+     "evidence": "The Rule-5 pd enumeration lists intent-blueprint.md / plan-driven-mode.md / design-decisions.md ADR #56 — but never `infra/templates/intent-blueprint.template.md`, the file the P7 landing itself identified as load-bearing: pd tdd-seam-tracer-bullet.proposal.md:47 — \"The canonical AC-line carrier — `infra/templates/intent-blueprint.template.md` (template line 23 ...) — gains the same `— seam:` tail, else newly authored blueprints default to the absent-seam degrade\" (verified: template lines 21–24 carry the seam tail today). Under Option A the provenance of the template's `— seam:` slot FORKS (latch when declared / derive when absent) — the proposal's central pd behavior change — yet the template, the doc the Planner fills at the authoring moment, gets no latch carrier and is not even enumerated as checked-no-edit-needed, despite the proposal invoking ADR #55 (\"the instruction must live at the doc the dispatcher reads\") to justify the parallel plan-driven-mode step-3 edit.",
+     "suggestion": "Either add a latch-first clause to the template's AC section (line 21) as an edit point, or enumerate it in the Rule-5 audit as explicitly checked-and-unchanged with the reason."
+    },
+    {
+     "defect_id": "bc5-acentry-definition-location-three-way",
+     "severity": "warning",
+     "kind": "contradiction",
+     "location": "Fix 1 heading + Fix 1(a) vs Consistency notes Rule 5 (SKILL.md item and arch-design.md §3 item)",
+     "evidence": "Fix 1(a) states \"bc SKILL.md defines the spec's acceptance-criteria section\" (heading: \"the spec's acceptance-criteria section is DEFINED bc-side\"), but the doc's own Rule-5 audit says the definition lives in arch-design.md §3: \"the product-spec anchor entry gains the AC-ENTRY shape DEFINITION (new normative contract content must live in the authoritative contract doc, not only SKILL.md — SKILL.md references it)\" — while the SAME Rule-5 list's SKILL.md item also claims \"bc SKILL.md (spec AC-ENTRY shape definition + seam tail + ...)\". Three descriptions disagree on which doc is normative for the AC-ENTRY shape; an implementer executing Fix 1(a) verbatim lands the definition in SKILL.md, violating the doc's own authority-chain rule (SKILL.md:95: \"docs/arch-design.md = authoritative spec\"). This is the Fix-1 endpoint of the hierarchy inversion the same-family reviewer flagged only at the Rule-5 location.",
+     "suggestion": "Pick one carrier (arch-design §3 per the Rule-5 rationale) and reword Fix 1(a) to \"SKILL.md references the AC-ENTRY shape defined in arch-design.md §3\"; drop the duplicate claim from the Rule-5 SKILL.md item."
+    },
+    {
+     "defect_id": "bc5-queue-resync-uncarried",
+     "severity": "warning",
+     "kind": "structural-gap",
+     "location": "Fix 4(b) routing sentence — in-flight queue/run-record re-sync",
+     "evidence": "Fix 4(b) names a load-bearing cross-skill mechanic inside a parenthetical — \"the cross-skill dependency includes the in-flight queue/run-record re-sync after the spec re-freezes\" — but none of the four edit points, nor any Rule-5 item, carries it: Fix 4's edits are the trigger-bullet amendment and one routing sentence; the routing sentence itself ends at \"the spec is re-opened and corrected bc-side BEFORE the channel's re-freeze steps can run\". The frozen queue was frozen against the pre-re-open spec via its authority_chain, and the run-record tracks the frozen blueprint ref — who performs the re-sync, at which step, and in which doc is assigned nowhere, violating the doc's own rule-8 principle it cites two sentences later (\"the gloss must live at the decision-point doc\").",
+     "suggestion": "Assign the re-sync an owner and decision-point carrier (e.g. a clause in the routing sentence naming the pd orchestrator act, or an explicit deferred-with-coverage-note line in Non-goals)."
+    },
+    {
+     "defect_id": "bc5-rejected-d-rationale-attribution",
+     "severity": "warning",
+     "kind": "authority-chain-break",
+     "location": "Rejected alternatives, item (d)",
+     "evidence": "The doc attributes a rationale to the ADR that the ADR does not carry: \"REJECTED with the same rationale as pd ADR #56 Rejected (a): frozen anchors + adversarial review replace prose confirmation gates (workspace rule 4)\". ADR #56's Rejected (a) actually reads: \"mattpocock's prose seam confirmation (chat-time) — frozen anchors replace prose gates, consistent with rule 4\" — no adversarial-review conjunct. The \"+ adversarial review\" component is this proposal's own addition (it maps to Fix 2), so presenting it as \"the same rationale as\" the cited ADR entry is citation drift: a reader checking the ADR finds a narrower rationale than claimed.",
+     "suggestion": "Reword to \"same rationale as ADR #56 Rejected (a) (frozen anchors replace prose gates), extended here by Fix 2's adversarial seam-quality checks\"."
+    }
+   ],
+   "dispositions": [
+    {
+     "defect_id": "bc5-claim3-dodref-wording",
+     "action": "rejected",
+     "note": "rejected — no artifact change: the core-claim set is FROZEN at framing (the bc2-novel-3 precedent) and the artifact text is the authority; the stale clause is recorded here in the disposition note for auditability"
+    },
+    {
+     "defect_id": "bc5-checkg-unglossed",
+     "action": "fixed",
+     "note": "fixed — check (g) glossed at first use in Context (\"the seam-conformance check in pd convergent-loop.md's reviewer prompt template item 3\"); later uses ride the first-use gloss"
+    },
+    {
+     "defect_id": "bc5-trigger-mapping",
+     "action": "fixed",
+     "note": "fixed — Fix 4 split into two edits: (a) the third trigger bullet gains the explicit wrong-declared-seam case (in-doc naming at the classification moment); (b) the routing sentence"
+    },
+    {
+     "defect_id": "bc5-archdesign-pointer-vs-content",
+     "action": "fixed",
+     "note": "fixed — the audit item now describes the edit as arch-design §3 gaining the AC-ENTRY shape DEFINITION with SKILL.md referencing it"
+    },
+    {
+     "defect_id": "bc5-sources-duplicate",
+     "action": "fixed",
+     "note": "fixed — the redundant line-77 enumeration deleted (line 75 is the single canonical enumeration)"
+    },
+    {
+     "defect_id": "bc5-cov-standing",
+     "action": "rejected",
+     "note": "rejected — no artifact change: standing disclosures"
+    },
+    {
+     "defect_id": "bc5-checkg-detection-overstated",
+     "action": "fixed",
+     "note": "fixed — the wrong-seam state split into two sub-cases with DIFFERENT catches: (i) internal-helper → primary catches = bc Fix 2(a) + pd pre-freeze refuse; check (g) is NOT a detector (tests at the declared helper CONFORM — the conforming-wrong-seam hole stated honestly, rule 3); (ii) cannot-observe-boundary → check (g) discovery (tests must go elsewhere, forcing non-conformance)"
+    },
+    {
+     "defect_id": "bc5-adr56-anchor-is-blueprint-unamended",
+     "action": "fixed",
+     "note": "fixed — the fifth falsified sentence (Decision (a)'s \"the upstream anchor is the blueprint, not a mid-RED conversation\") added to the amendment scope: transmutes to \"the upstream anchor is the spec; the blueprint latches\" under Option A's precedence rule"
+    },
+    {
+     "defect_id": "bc5-template-canonical-carrier-absent",
+     "action": "fixed",
+     "note": "fixed — infra/templates/intent-blueprint.template.md added as an edit point: the AC-line guidance gains the latch-first clause (\"seam: latched from the spec when declared; derived when absent\")"
+    },
+    {
+     "defect_id": "bc5-acentry-definition-location-three-way",
+     "action": "fixed",
+     "note": "fixed — one carrier picked: the AC-ENTRY shape DEFINITION lives in arch-design.md §3 (the authoritative contract doc); Fix 1a reworded (SKILL.md REFERENCES it); the Rule-5 SKILL.md item's duplicate claim dropped; the Fix-1 heading names both files"
+    },
+    {
+     "defect_id": "bc5-queue-resync-uncarried",
+     "action": "fixed",
+     "note": "fixed — the re-sync mechanic named in the routing sentence itself, not a parenthetical: after the spec re-freezes, the pd orchestrator performs plan_queue.py sync + the run-record blueprint-ref update at the channel's re-freeze step"
+    },
+    {
+     "defect_id": "bc5-rejected-d-rationale-attribution",
+     "action": "fixed",
+     "note": "fixed — the attribution corrected: \"same rationale as ADR #56 Rejected (a) (frozen anchors replace prose gates, consistent with rule 4), extended here by Fix 2's adversarial seam-quality checks\""
+    }
+   ]
+  },
+  {
+   "round": 6,
+   "same_source_findings": 4,
+   "hetero_findings": 6,
+   "hetero_degraded": false,
+   "blockers": 0,
+   "verdict": "pass",
+   "findings": [
+    {
+     "defect_id": "bc6-queue-sync-misdescribed",
+     "severity": "warning",
+     "kind": "authority-chain-break",
+     "location": "Fix 4(b) routing sentence",
+     "evidence": "The re-sync clause mis-describes plan_queue.py sync: it re-reads the QUEUE FILE's own markdown at queue_ref (plan_queue.py:737-739, plan-driven-mode.md CLI ref), never 'the corrected spec'; the actual re-sync object is the blueprint AC-line re-latch.",
+     "suggestion": "Reword the sync clause to the tool's actual behavior; name the re-latch as the re-sync object."
+    },
+    {
+     "defect_id": "bc6-precedence-vs-refusal",
+     "severity": "warning",
+     "kind": "contradiction",
+     "location": "Fix 1b precedence sentence vs Fix 3 latch sentence",
+     "evidence": "For sub-case (i) internal-helper: the Planner's inferred public boundary differs from the declared internal-helper seam — precedence says the declared seam wins (latch), refusal says refuse to freeze; no discriminator orders the two rules.",
+     "suggestion": "Add a scoping sentence: precedence governs public-boundary choices; criterion violations are refusal cases."
+    },
+    {
+     "defect_id": "bc6-amended-note-overbroad",
+     "severity": "warning",
+     "kind": "contradiction",
+     "location": "Rule 5 audit (ADR #56 second-consequence transmutation)",
+     "evidence": "The amended-note claim 'caught at bc's advisory checks' overstates Fix 2's coverage for sub-case (ii): Fix 2's three checks carry no observability criterion, so a public boundary that cannot observe the outcome passes all three.",
+     "suggestion": "Scope the note per sub-case."
+    },
+    {
+     "defect_id": "bc6-symlink-unverifiable",
+     "severity": "coverage",
+     "kind": "coverage-gap",
+     "location": "Rule 5 audit (agents item)",
+     "evidence": "The in-repo plan-reviewer.agent.md is verified; the installed-plugin symlink state is not verifiable from this environment (low-stakes installation-state claim).",
+     "suggestion": "None required; verify at implementation time."
+    },
+    {
+     "defect_id": "bc6r2-reconvergence-lifecycle-undefined",
+     "severity": "warning",
+     "kind": "structural-gap",
+     "location": "Fix 1b endpoint sentence ('Endpoint, named: …'), Fix 3 pre-freeze limb, Fix 4(b) routing sentence",
+     "evidence": "The doc routes BOTH wrong-seam limbs to a named mechanism used three times: 'the blueprint-defect escalation reaches the bc-side re-convergence lifecycle (re-open the spec, correct the declaration, re-freeze, re-latch)' (Fix 1b); 'escalates directly to the bc-side re-convergence lifecycle' (Fix 3); 'a declared-seam defect escalates to the bc-side re-convergence lifecycle' (Fix 4(b)). No edit point defines it: Fix 1 lands the AC-ENTRY shape + step-4 spawn clause, Fix 2 the reviewer checks, Fixes 3/4 are pd-side sentences. In-repo, bc has no such lifecycle: SKILL.md's only re-convergence notion is the memory-gated note (skills/blueprint-crafting/SKILL.md:61 'read the frozen .run-record.json / .queue.md to judge whether re-converge is needed'), and the Coordination section (SKILL.md:121-125) defines only the frozen-plan-model handshake — no pd-initiated spec-defect entry, no statement of WHO re-invokes bc (the channel's step 3 escalates to 'the Planner + a human', intent-blueprint.md:71 — bc is not an escalation target there). The doc itself states the standard it then fails bc-side: 'Without these edits, the named endpoint in Fix 1b exists only in proposal prose' (Fix 4) and 'rule 8: the gloss must live at the decision-point doc' — Fix 4's routing sentence lands the pd half, leaving the bc-side receiving end exactly the prose-only state the doc flags as the defect.",
+     "suggestion": "Name the carrier: either a bc SKILL.md/arch-design clause defining the re-open path (who re-invokes bc, what re-freeze emits, how the corrected spec propagates to the running pd task), or an explicit statement that the lifecycle is the human re-running bc with its entry point named."
+    },
+    {
+     "defect_id": "bc6r2-advisory-vs-refusal-suspend",
+     "severity": "warning",
+     "kind": "contradiction",
+     "location": "Fix 1b closing sentence ('None of the three is a Blocker (advisory doctrine — rule 4)') vs the same paragraph's wrong-seam limbs",
+     "evidence": "Doc: 'None of the three is a Blocker (advisory doctrine — rule 4)' — where 'the three' includes declared-but-WRONG seam. But the same paragraph's limbs for that state are hard control-flow consequences, not advisory findings: PRE-freeze 'the pd Planner refuses to freeze and escalates directly' (a hard stop of the Phase-0 freeze act), and POST-freeze the channel's suspend — intent-blueprint.md:70 'Raise a suspend with a blueprint-defect flag: loop_state.py mark-suspend --blueprint-defect' (a loop-suspending state). Workspace rule 4 governs heuristic CHECK severities (warning, never Blocker); the refusal and the suspend are not severities at all, so the rule-4 framing does not apply to them. An implementer reading 'never a Blocker' could under-implement the refusal/suspend limbs. The accurate scoping: the bc-side DETECTION (Fix 2) is advisory; the pd-side CONSEQUENCES are a refusal and a suspend.",
+     "suggestion": "Rescope the sentence: advisory applies to the bc detection layer only; the wrong-seam state's pd limbs are a refuse-to-freeze and a blueprint-defect suspend (hard channel states, not advisory findings)."
+    },
+    {
+     "defect_id": "bc6r2-optionb-uncommitted",
+     "severity": "warning",
+     "kind": "authority-chain-break",
+     "location": "Status note, line 3 — Option B quoted as '(already landed)'",
+     "evidence": "Doc: Option B = 'the pd-only choice ADR #56 records as \"Architecture choice (recorded): bc carries NO seam field — the seam is a pd-side DERIVATIVE\" (already landed)'; Context repeats 'ADR #56 (Option B) then recorded the architecture choice with three stated consequences'. git diff on skills/parallel-development/references/design-decisions.md shows that exact sentence (and the three-consequences clause) as a '+' addition present only in the uncommitted working tree; at HEAD (29c5e13, the 'TDD trinity borrows land' commit) ADR #56's Decision (a) contains no 'Architecture choice (recorded)' sentence. The proposal's entire Option A/B framing rests on an ADR state that exists only as a staged edit — accurate in the working tree, unverifiable at the landed state the word 'landed' asserts.",
+     "suggestion": "Either commit the Option-B ADR amendment before/with this proposal's convergence record, or reword to 'staged alongside this proposal (uncommitted)' so the citation does not dangle if the edit is lost."
+    },
+    {
+     "defect_id": "bc6r2-mattpocock-tdd-unsourced",
+     "severity": "warning",
+     "kind": "citation-error",
+     "location": "Rejected (d) quote vs Sources section (first bullet)",
+     "evidence": "Rejected (d) quotes mattpocock's \"names the public boundaries it intends to test at and stops for your confirmation\" — verbatim from the vendored mattpocock-tdd.md snapshot (workspace/csr-seam-tracer-proposal/authority/mattpocock-tdd.md:5: 'it names the public boundaries it intends to test at and stops for your confirmation'). The wiki test-seam page carries only the Chinese formulation ('先命名打算测试的公开边界并等待确认', test-seam.md:20), which the doc quotes separately and correctly. The Sources section's first bullet names only 'wiki test-seam §… + §…; wiki mattpocock-skills §链条与人工确认门 … both vendored at workspace/csr-seam-tracer-proposal/authority/' — mattpocock-tdd.md, the actual source of the English quote, is omitted from the source list (though vendored in the same directory).",
+     "suggestion": "Add mattpocock-tdd.md to the Sources first bullet (the Rejected (d) English quote's actual carrier)."
+    },
+    {
+     "defect_id": "bc6r2-rootgap-expectedvalues",
+     "severity": "warning",
+     "kind": "authority-chain-break",
+     "location": "Fix 2, check (c)",
+     "evidence": "Doc: '(c) an independent truth source exists for the expected values (wiki test-seam §权衡与局限 · 根缺口 …)'. The cited 根缺口 bullet is change-level, not expected-value-level: '接缝纪律决定\"在哪里测\"，不决定\"这个变更值不值得走循环\"。若变更没有可断言的独立真值源，接缝测试仍会退化为同义反复' (test-seam.md:30 — subject is 变更/the change and loop-worthiness). The expected-values formulation the check actually encodes lives in a different section's anti-pattern bullet: '期望值必须来自独立来源：已知字面量、手工算例、规格' (test-seam.md:24, §AI 编码中的接缝纪律 · 三种测试反模式). pd keeps the two distinct as convergent-loop checks (d) tautological-assertion vs (f) no-independent-truth-source (convergent-loop.md:203); the doc's (c) merges them under the 根缺口 citation. Only the parenthetical's second half ('the resolution is 异源-oracle territory') is genuinely 根缺口's ('这与 two-axis-evaluation-separation 要求结果轴由异源 oracle 裁决的约束同构', test-seam.md:30).",
+     "suggestion": "Cite both: the expected-values criterion to the 同义反复 bullet (test-seam §AI 编码中的接缝纪律), the flag-not-resolution + 异源-oracle point to 根缺口 — or reword (c) to the change-level formulation the cited bullet actually states."
+    },
+    {
+     "defect_id": "bc6r2-docaudit-continuation-index",
+     "severity": "warning",
+     "kind": "coverage-gap",
+     "location": "Consistency notes, Rule 5 doc-audit enumeration",
+     "evidence": "The doc's Rule 5 audit enumerates bc SKILL.md, bc arch-design.md §3, agents/plan-reviewer.agent.md, pd template, pd intent-blueprint.md, pd plan-driven-mode.md, pd ADR #56, bc design-decisions.md, and USER_GUIDE.md — but omits skills/parallel-development/docs/tdd-improvement-proposals.md, the established continuation index for this exact proposal chain: 'Continuation: P7–P9 … live in [tdd-seam-tracer-bullet.proposal.md] … and LANDED; see ADR #56' (tdd-improvement-proposals.md:5). The P7 landing itself treated this file as a required rule-5 touch point ('tdd-improvement-proposals.md gains a pointer line to this proposal (P7–P9 continuation)', tdd-seam-tracer-bullet.proposal.md:105), and this proposal is the P7 non-goal lift that ADR #56 names as its Follow-up — the same continuation-pointer convention applies but is neither enumerated nor explicitly deferred.",
+     "suggestion": "Add tdd-improvement-proposals.md's continuation line to the Rule 5 enumeration (pointer to this proposal as the P7 follow-up), or name it as a deferred candidate like the USER_GUIDE entry."
+    }
+   ],
+   "dispositions": [
+    {
+     "defect_id": "bc6-queue-sync-misdescribed",
+     "action": "fixed",
+     "note": "fixed — the re-sync object named as the blueprint AC-line RE-LATCH (the channel's re-freeze re-reads the corrected spec); plan_queue.py sync explicitly NOT named as the mechanic (it re-reads the queue file's own markdown only — verified plan_queue.py:737-739)"
+    },
+    {
+     "defect_id": "bc6-precedence-vs-refusal",
+     "action": "fixed",
+     "note": "fixed — the scoping sentence added: precedence governs differences among legitimate PUBLIC-boundary choices; a declaration failing the public-boundary or observability criterion is a refusal case, not a precedence case"
+    },
+    {
+     "defect_id": "bc6-amended-note-overbroad",
+     "action": "fixed",
+     "note": "fixed — the ADR amendment note scoped per sub-case: internal-helper caught at bc's check (a); cannot-observe caught pre-freeze by the Planner's refusal or post-freeze by check (g); Fix 2's lack of an observability criterion stated, not overclaimed"
+    },
+    {
+     "defect_id": "bc6-symlink-unverifiable",
+     "action": "rejected",
+     "note": "rejected — no artifact change: low-stakes installation-state claim; verify at implementation time"
+    },
+    {
+     "defect_id": "bc6r2-reconvergence-lifecycle-undefined",
+     "action": "fixed",
+     "note": "fixed — the carrier named in Fix 1b: a bc SKILL.md clause defines the re-open path (the pd escalation re-invokes bc on the spec via its normal entry point; the corrected spec propagates via the authority_chain re-read at the re-latch); the receiving end is no longer prose-only"
+    },
+    {
+     "defect_id": "bc6r2-advisory-vs-refusal-suspend",
+     "action": "fixed",
+     "note": "fixed — the severity scoping corrected: rule 4 advisory governs the bc DETECTION layer only; the wrong-seam state's pd limbs (refuse-to-freeze, blueprint-defect suspend) are HARD channel states, not advisory findings"
+    },
+    {
+     "defect_id": "bc6r2-optionb-uncommitted",
+     "action": "fixed",
+     "note": "fixed — the \"already landed\" wording corrected to \"recorded in the working-tree ADR #56 amendment; uncommitted — lands with this proposal's commit\" (the git state is accurate now)"
+    },
+    {
+     "defect_id": "bc6r2-mattpocock-tdd-unsourced",
+     "action": "fixed",
+     "note": "fixed — mattpocock-tdd.md added to the Sources first bullet (the Rejected (d) English quote's actual carrier)"
+    },
+    {
+     "defect_id": "bc6r2-rootgap-expectedvalues",
+     "action": "fixed",
+     "note": "fixed — check (c) split into the two levels with separate citations: expected-values criterion → the 同义反复 bullet; change-level root gap + flag-not-resolution + 异源-oracle → 根缺口"
+    },
+    {
+     "defect_id": "bc6r2-docaudit-continuation-index",
+     "action": "fixed",
+     "note": "fixed — tdd-improvement-proposals.md's continuation line added to the rule-5 audit (pointer to this proposal as the P7 follow-up)"
+    }
+   ]
+  },
+  {
+   "round": 7,
+   "same_source_findings": 3,
+   "hetero_findings": 3,
+   "hetero_degraded": false,
+   "blockers": 1,
+   "verdict": "rewrite",
+   "findings": [
+    {
+     "defect_id": "bc7-novel-1",
+     "severity": "warning",
+     "kind": "contradiction",
+     "location": "Fix 1b severity-scoping sentence",
+     "evidence": "'HARD channel states' over-includes the pre-freeze refusal, which the doc itself says is NOT channel-mediated ('no revision channel applies pre-freeze'); the r6 fix introduced exactly this phrasing as the resolution's carrier.",
+     "suggestion": "Reword to 'HARD control-flow states', reserving 'channel state' for the suspend limb."
+    },
+    {
+     "defect_id": "bc7-novel-2",
+     "severity": "coverage",
+     "kind": "coverage-gap",
+     "location": "Status note (Option-B committed/uncommitted state)",
+     "evidence": "The on-disk ADR #56 contains the quoted sentence; the committed-vs-uncommitted state is not verifiable from this environment (no git tooling; the session-start snapshot may be stale).",
+     "suggestion": "Re-verify with git diff at landing time."
+    },
+    {
+     "defect_id": "bc7-novel-3",
+     "severity": "warning",
+     "kind": "contradiction",
+     "location": "Core claim 3 (run claim set)",
+     "evidence": "Claim 3's 'referenced via item dod_ref' conflicts with the artifact's verified correction (consumed via the authority chain; dod_ref is a DoD pointer per the schema).",
+     "suggestion": "Reword claim 3 to match the artifact."
+    },
+    {
+     "defect_id": "bc7r-1",
+     "severity": "blocker",
+     "kind": "authority-chain-break",
+     "location": "Fix 4(b) (pd intent-blueprint.md Blueprint Revision Channel edits), final sentence: 'The run-record's blueprint ref updates at the channel's re-freeze step — the pd orchestrator act, named here and in the landing edit'",
+     "evidence": "The doc asserts as existing channel behavior: 'The run-record's blueprint ref updates at the channel's re-freeze step'. The cited source carries no such act: intent-blueprint.md channel step 4 reads 'Bump `blueprint_version`; record it: `loop_state.py set-blueprint-version v<n>`' (version only) and step 6 only gestures 'The loop restarts at Phase 1 with the new blueprint ref' without any update mechanism. The tooling cannot perform it either: loop_state.py's CLI surface is 'init / bump-iteration / reset-inner / set-snapshot / add-budget / set-status / mark-escalation / mark-suspend / mark-hard-terminated / mark-converged / set-blueprint-version / record-outer / mark-rollback / run-record' — `--blueprint-ref` is an init-only argument (loop_state.py:446) and `set-blueprint-version` takes a single `version` positional (:495-496), so `blueprint_ref` cannot be updated post-init. Since blueprint files are path-versioned ('docs/intent-blueprints/<task>-v<n>.blueprint.md', intent-blueprint.md:7), the re-freeze's version bump leaves the recorded ref pointing at the stale file. Fix 4's own enumeration is 'Two edits: (a) … (b) …' — the ref-update appears in neither, so landing the proposal as written ships without it.",
+     "suggestion": "Either add the ref-update as a third named Fix 4 edit with its concrete carrier (a loop_state ref-set subcommand, or defined re-init semantics at the channel's re-freeze), or reword the sentence to state the mechanism is currently absent and must be landed with the routing sentence."
+    },
+    {
+     "defect_id": "bc7r-2",
+     "severity": "coverage",
+     "kind": "coverage-gap",
+     "location": "Fix 1b Feathers citation ('a place where you can alter behavior in your program without editing in that place', Working Effectively with Legacy Code 2004 ch.4)",
+     "evidence": "The definitional quote and the ch.4 attribution verify VERBATIM against the vendored wiki snapshot (authority/test-seam.md §定义与机制 and §来源: 'Michael Feathers, Working Effectively with Legacy Code, Prentice Hall, 2004, ch.4 The Seam Model'), which is the review's named authority; the book itself is not fetchable in this environment, so the chapter-level attribution rests on the wiki's rendering. Disclosed, not silenced (rule 3).",
+     "suggestion": "None needed beyond the record; the wiki is the doc's own named carrier for this quote."
+    },
+    {
+     "defect_id": "bc7r-3",
+     "severity": "coverage",
+     "kind": "coverage-gap",
+     "location": "Consistency notes (rule-5 enumeration), claim: 'agents/plan-reviewer.agent.md (repo agents/ dir — the installed plugin is a symlink to this repo, one copy)'",
+     "evidence": "Could not verify the installed-plugin topology from this environment: no solidforge symlink exists under ~/.claude/plugins/ (only an empty 'solidforge-skills-dir/' directory; the marketplaces/ and installed_plugins.json slices show no solidforge entry). If the installed copy is NOT a symlink to this repo, editing only the repo agents/plan-reviewer.agent.md would leave the live plugin copy without Fix 2 — the 'one copy' premise is load-bearing for the edit scope and appears environment-dependent.",
+     "suggestion": "Re-verify the install topology (symlink vs copied snapshot) on the landing machine before relying on the one-copy claim; if copied, enumerate the installed copy as a second edit point."
+    }
+   ],
+   "dispositions": [
+    {
+     "defect_id": "bc7-novel-1",
+     "action": "fixed",
+     "note": "fixed — reworded to \"HARD control-flow states in the loop machinery\"; \"channel state\" reserved for the suspend limb; the pre-freeze refusal explicitly NOT channel-mediated"
+    },
+    {
+     "defect_id": "bc7-novel-2",
+     "action": "rejected",
+     "note": "rejected — no artifact change: verified via git diff at landing time (design-decisions.md carries the amendment as uncommitted working-tree lines; HEAD = 29c5e13); the status note's \"uncommitted — lands with this proposal's commit\" wording is accurate"
+    },
+    {
+     "defect_id": "bc7-novel-3",
+     "action": "fixed",
+     "note": "fixed — claim 3 AMENDED in the run's claim set to the reviewer-verified corrected form (\"consumed via the queue's authority_chain (NOT via item dod_ref — a DoD pointer)\"); the record no longer propagates a mechanism the artifact disclaims (the frozen-set precedent is overridden here because the claim was factually wrong, and the reviewer verified the corrected form)"
+    },
+    {
+     "defect_id": "bc7r-1",
+     "action": "fixed",
+     "note": "fixed — the ref-update claim converted to an honest GAP statement: the mechanism does NOT exist today (--blueprint-ref init-only, set-blueprint-version version-only — verified loop_state.py:446,:495); the landing must add a ref-set subcommand or define re-init semantics — a third named Fix-4 edit, enumerated as an implementation-time open question for the ADR entry, not silent"
+    },
+    {
+     "defect_id": "bc7r-2",
+     "action": "rejected",
+     "note": "rejected — no artifact change: the Feathers quote verifies verbatim against the vendored wiki snapshot (the doc's own named carrier); the book-level attribution rests on the wiki's rendering (standing disclosure)"
+    },
+    {
+     "defect_id": "bc7r-3",
+     "action": "rejected",
+     "note": "rejected — no artifact change: the symlink was verified at ~/.claude/skills/solidforge -> repo (the skill-loading path, ls -la 2026-08-24); the reviewer checked ~/.claude/plugins/ (a different registration surface) — both coexist; the one-copy claim stands for the skill-loading path, and the landing re-verifies"
+    }
+   ]
+  },
+  {
+   "round": 8,
+   "same_source_findings": 1,
+   "hetero_findings": 4,
+   "hetero_degraded": false,
+   "blockers": 2,
+   "verdict": "rewrite",
+   "findings": [
+    {
+     "defect_id": "bc8-novel-1",
+     "severity": "warning",
+     "kind": "contradiction",
+     "location": "Fix 4 opening enumeration vs the GAP sentence",
+     "evidence": "'Two edits' (opening + heading) vs 'a third named Fix-4 edit' (the r7 GAP sentence) — both in the same paragraph; the GAP content is verified accurate, the count word is stale. A landing implementer parsing 'Two edits' as authoritative could treat the GAP as informational only.",
+     "suggestion": "Reword to 'Three edits' (doc edits + the tooling edit)."
+    },
+    {
+     "defect_id": "bc8-1",
+     "severity": "blocker",
+     "kind": "authority-chain-break",
+     "location": "Fix 3 (last paragraph) — '(ADR #55 decision-point inlining: the instruction must live at the doc the dispatcher reads)'",
+     "evidence": "DOC (Fix 3): cites 'ADR #55 decision-point inlining' as the authority for placing the seam-latch carve-out at chaining-loop STEP 3 ('plan-driven-mode.md chaining-loop step 3's rich-path sentence'). SOURCE (pd design-decisions.md ADR #55 entry, line 403 heading): 'Plan-driven Coder dispatch names the `subagent_type` AT the decision point — the platform→agent formula is duplicated inline in `plan-driven-mode.md` step 4 (dispatch table + row-matching + companion routes) rather than trusted to a doc the dispatcher never loads'. ADR #55's entire scope is the Coder subagent_type dispatch table at step 4; it does NOT author any principle about a Planner-facing seam-latch instruction at step 3. The principle (rule 8) generalizes, but ADR #55 is miscited as the source — it covers the wrong decision point and the wrong doc role (Coder-dispatcher vs Planner).",
+     "suggestion": "Drop the '(ADR #55 decision-point inlining: ...)' gloss for the step-3 seam-latch instruction; cite rule 8 directly, or cite the seam-doctrine principle without invoking ADR #55's specific (subagent_type dispatch) content."
+    },
+    {
+     "defect_id": "bc8-2",
+     "severity": "blocker",
+     "kind": "citation-error",
+     "location": "Sources section vs Rejected (d) — Sources enumerates 'wiki `test-seam` §AI 编码中的接缝纪律 · 上游冻结 + §权衡与局限'; Rejected (d) quotes '等待确认；硬规则是'不在未确认的接缝上写测试'' from §预协商接缝",
+     "evidence": "DOC (Rejected (d)): quotes 'the wiki's '等待确认；硬规则是'不在未确认的接缝上写测试'' as the Chinese source for mattpocock's pre-agreed-seam rule. SOURCE (workspace/csr-seam-tracer-proposal/authority/test-seam.md line 19–20): the quote '命名打算测试的公开边界并等待确认；硬规则是\"不在未确认的接缝上写测试\"' lives in the bullet '**预协商接缝（pre-agreed seam）**' which is a SIBLING bullet to (not the same as) '**上游冻结**'. The Sources section enumerates only '§AI 编码中的接缝纪律 · 上游冻结' — listing the §上游冻结 bullet but omitting the §预协商接缝 bullet where the actually-cited quote resides. A landing implementer cross-referencing the Sources enumeration would grep for '上游冻结' (or the documented bullet) and miss the verification anchor.",
+     "suggestion": "Add '§预协商接缝' (or expand to '§AI 编码中的接缝纪律 · 上游冻结 + §预协商接缝') to the Sources enumeration alongside the existing '§权衡与局限'."
+    },
+    {
+     "defect_id": "bc8-3",
+     "severity": "warning",
+     "kind": "structural-gap",
+     "location": "Fix 1b (pre-freeze limb) and Fix 3 (latch sentence) — 'the PRE-freeze limb of the wrong-seam state gains its carrier HERE (the Phase-0 decision point): the latch sentence states the Planner REFUSES to freeze on a declared-but-wrong seam and escalates directly to the bc-side re-convergence lifecycle'",
+     "evidence": "DOC names the latch SENTENCE as the carrier (doc-level change). The DOC-level change is specified. But the PROPOSAL does NOT specify the MECHANISM by which the Planner's pre-freeze refusal reaches bc — intent-blueprint.md Phase 0 (line 38–41: 'the Planner ... converts the request into a blueprint, sets `status: frozen`, and records its path in loop-state ... No GREEN work begins until a frozen blueprint exists') has no refuse-to-freeze path defined. The bc-side re-open path is named as 'a bc SKILL.md clause defines the re-open path' (also doc-level only). The inter-skill escalation — pd Planner's refusal → bc re-convergence — has no documented interface, signal, or state-machine path. The Fix 4 (a)(b) edits give pd's Blueprint Revision Channel a routing sentence, but the proposal explicitly notes the revision channel is 'frozen-blueprint change path only' (line 4a GAP) and 'no revision channel applies pre-freeze' — leaving the pre-freeze escalation interface unspecified.",
+     "suggestion": "Add a structural sub-section defining the pre-freeze escalation interface: which state/signal/exit-code the Planner emits when refusing, and which bc-side entry point consumes it; or explicitly enumerate this as an implementation-time open question with a named owner."
+    },
+    {
+     "defect_id": "bc8-4",
+     "severity": "coverage",
+     "kind": "coverage-gap",
+     "location": "Fix 4 GAP paragraph — 'the landing must either add a `loop_state.py` ref-set subcommand or define re-init semantics at the channel's re-freeze'",
+     "evidence": "DOC offers two mutually exclusive fix paths and declines to commit to either: 'either add a `loop_state.py` ref-set subcommand or define re-init semantics at the channel's re-freeze'. Both paths are viable but have different downstream consequences (a new subcommand widens the loop_state.py surface; re-init semantics couples spec re-read to the channel's re-freeze step). The proposal is honest about the GAP (rule 3) but does not select a path, leaving the landing implementer to choose between architecturally divergent options. Adjacent verification (loop_state.py lines 444–447, 495–496, 632–638): --blueprint-ref is indeed init-only; set-blueprint-version is positional and does NOT update blueprint_ref — the GAP diagnosis is correct; only the choice of remediation is unsettled.",
+     "suggestion": "Record this as a documented resolve-now vs deferred decision in the ADR entry, or pick one path (the new subcommand is the cleaner separation — it doesn't entangle channel re-freeze semantics with the spec re-read mechanism) and enumerate the rejection rationale for the alternative."
+    }
+   ],
+   "dispositions": [
+    {
+     "defect_id": "bc8-novel-1",
+     "action": "fixed",
+     "note": "fixed — the Fix 4 opening reworded to \"Three edits\" and the section heading extended (+ the ref-update tooling edit); the count now matches the third-edit call-out"
+    },
+    {
+     "defect_id": "bc8-1",
+     "action": "fixed",
+     "note": "fixed — the ADR #55 citation replaced with workspace rule 8 (the actual authority) in BOTH the Fix 3 step-3 sentence and the rule-5 audit; ADR #55 explicitly named as the step-4 PRECEDENT instance, not the authority"
+    },
+    {
+     "defect_id": "bc8-2",
+     "action": "fixed",
+     "note": "fixed — §预协商接缝 added to the Sources enumeration (the Rejected (d) Chinese quote's actual bullet, verified a sibling of 上游冻结)"
+    },
+    {
+     "defect_id": "bc8-3",
+     "action": "fixed",
+     "note": "fixed — the pre-freeze escalation interface specified honestly: an AGENT ACT with a defined surface (no init run, defect + spec-AC location reported in the dispatch context, yields; bc re-invocation is a USER act); no signal/state-machine path exists or is claimed"
+    },
+    {
+     "defect_id": "bc8-4",
+     "action": "fixed",
+     "note": "fixed — remediation PICKED: a loop_state.py ref-set subcommand (edit (c)); the re-init-semantics alternative rejected with rationale (entangles spec re-read with the freeze lifecycle, clobbers init-reset status fields)"
+    }
+   ]
+  },
+  {
+   "round": 9,
+   "same_source_findings": 1,
+   "hetero_findings": 4,
+   "hetero_degraded": false,
+   "blockers": 1,
+   "verdict": "rewrite",
+   "findings": [
+    {
+     "defect_id": "bc9-cov-1",
+     "severity": "coverage",
+     "kind": "coverage-gap",
+     "location": "Rule 5 doc-audit (agents/ symlink claim)",
+     "evidence": "The repo agents/ file is present (22 agent files); the install-side symlink claim has no in-repo anchor and the reviewer could not verify it — a rule-8 reachability concern at landing time, not a proposal-logic defect.",
+     "suggestion": "Anchor the one-copy claim to the install mechanism's doc or verify the live symlink before landing."
+    },
+    {
+     "defect_id": "bc9-1",
+     "severity": "blocker",
+     "kind": "contradiction",
+     "location": "Rule 5 doc-audit, ADR #56 amendment scope, 'second consequence sentence becomes false under Fix 2' clause",
+     "evidence": "Proposal states (line 53, doc-audit): 'the second consequence sentence ... becomes false under Fix 2, SCOPED per sub-case: the internal-helper wrong-seam AC is caught at bc's advisory check (a) WHEN the spec is provided'. But the same proposal earlier states (line 53, Severity scoping): 'rule 4's advisory doctrine governs the bc-side DETECTION layer (Fix 2's checks, warning severity)' — and `agents/plan-reviewer.agent.md` lines 47-49 confirm: 'warning — a suspected defect or an advisory that does not block convergence'. So bc's check (a) emits a WARNING, not a Blocker; the wrong-seam AC still PASSES bc's plan-reviewer (the L1 Constitution's 'no Blocker-on-a-guess' rule forces this). The original ADR #56 consequence 'a wrong-boundary AC survives bc's plan-reviewer (no seam-quality dimension there) and surfaces only at pd's reviewer check (g), one stage later' is therefore only PARTIALLY false: the 'no seam-quality dimension there' half is false (a dimension now exists, advisory); the 'survives bc's plan-reviewer' half is still TRUE (advisory warnings do not block). The proposal's flat claim 'becomes false' overstates Fix 2's effect — the wrong-seam AC is DETECTED at bc with a warning, not blocked.",
+     "suggestion": "Reframe as 'partially transmuted': the 'no seam-quality dimension' clause becomes false; the 'survives bc's plan-reviewer' clause remains true. Or state the consequence as 'detected earlier (advisory warning at bc) but still passes bc's plan-reviewer'."
+    },
+    {
+     "defect_id": "bc9-2",
+     "severity": "warning",
+     "kind": "coverage-gap",
+     "location": "Fix 1b amendment scope — intent-blueprint.md line 34's refactoring paragraph",
+     "evidence": "`skills/parallel-development/references/intent-blueprint.md:34` (the rich-path paragraph the proposal flags as now-false) contains FOUR sentences beyond the 'bc carries no seam field' and 'derive-instruction' clauses the proposal enumerates: 'Refactoring runs freeze blueprints whose ACs are the existing behavior-locking tests ([refactoring.md](refactoring.md) Phase 0 — the acceptance criteria = the existing tests, which Phase 2 produces; if tests are missing at freeze, Phase 2 writes them first). The seam derives from the locked tests' observed boundary (the tests themselves are the seam evidence); refactoring Phase 0 writes the derived seam onto the AC lines at freeze. When the locking tests do not yet exist at freeze, the seam is declared from the boundary the Phase-2 tests will lock.' The proposal's amendment enumerates ONLY the 'bc carries no seam field (bc is out of scope)' + 'derive-instruction' clauses ('one paragraph, both clauses') and never reconciles refactoring runs with Option A's latch-first carve-out. Under Option A, a refactoring spec AC must also carry a declared seam tail (the proposal's Fix 1a makes ACs under product-spec require it), but refactoring ACs are derived from existing tests (whose observed boundary IS the seam) — neither the 'spec declares' path nor the 'Planner derives' path cleanly fits the refactoring case the existing paragraph documents.",
+     "suggestion": "Add a paragraph (or rule-5 amendment line) addressing the refactoring path explicitly: either (a) refactoring specs declare the seam from the locked tests' observed boundary (extending the spec-declares principle), or (b) refactoring keeps the derive-from-tests fallback as an exception named in the proposal."
+    },
+    {
+     "defect_id": "bc9-3",
+     "severity": "warning",
+     "kind": "structural-gap",
+     "location": "Fix 1b, Carrier paragraph (line 30): 'a bc `SKILL.md` clause defines the re-open path'",
+     "evidence": "The proposal states: 'a bc `SKILL.md` clause defines the re-open path — the pd escalation re-invokes bc on the spec via its normal entry point (author-a-spec convergence), which re-freezes; the corrected spec propagates to the running pd task via the authority_chain re-read at the re-latch'. But `skills/blueprint-crafting/SKILL.md` Quick Start (lines 49-61) defines a 4-step new-artifact convergence (`produce.py plan-model.json`), with NO documented re-open path. The proposal itself acknowledges: 'Carrier, named (bc has no such lifecycle in-repo today): a bc `SKILL.md` clause defines the re-open path'. Yet the clause's content (what triggers it, how it differs from new-artifact authoring, what status fields it carries, how the re-frozen spec propagates) is unspecified in this proposal. The 're-invokes bc on the spec via its normal entry point (author-a-spec convergence)' sentence leaves the re-open semantics UNDEFINED — invoking a normal-entry-point against an existing frozen spec is ambiguous (does the spec re-enter as a fresh artifact? does the existing `.run-record.json` reset?). The fix relies on a clause that does not yet exist and whose content this proposal does not specify.",
+     "suggestion": "Add the bc-side re-open clause as part of this proposal's Fix 1b content (or defer to a follow-up), explicitly stating: (1) re-open triggers, (2) status-field semantics, (3) re-freeze and re-propagation mechanics. Without this, the named endpoint in Fix 1b is unsupported in proposal prose."
+    },
+    {
+     "defect_id": "bc9-4",
+     "severity": "warning",
+     "kind": "coverage-gap",
+     "location": "Fix 1b sub-case (ii) + Fix 2 check coverage",
+     "evidence": "Proposal says (line 30): 'Fix 2's three checks carry no observability criterion — stated, not overclaimed'. But Fix 1b sub-case (ii) IS observability: 'boundary the AC's observable outcome cannot be observed at — POST-freeze, the Coder/reviewer discovers it via check (g) (tests must go elsewhere to observe the outcome, forcing non-conformance)'. The sub-case's defining property is unobservability at the declared seam — yet the proposal's Fix 2 checks (a) public-boundary + (c) independent-truth-source + catch/miss note have no observability check. So sub-case (ii) has NO bc-side detection path. The proposal routes it to: PRE-freeze pd Planner refusal (LLM act) OR POST-freeze check (g). But check (g) per `convergent-loop.md:203` is 'do the tests sit at the seam declared on the blueprint AC line' — for the cannot-observe sub-case, tests CONFORM to the declared seam (which is wrong but exists); the failure surfaces only when tests need to go elsewhere, which check (g) does not directly detect (it tests seam-conformance, not outcome-observability). The proposal's claim that POST-freeze 'the Coder/reviewer discovers it via check (g)' is over-claimed: check (g) detects the wrong-boundary only when tests happen to land elsewhere, not as a structural check on observability.",
+     "suggestion": "Either (a) add an observability check to Fix 2's check set (and clarify that bc's plan-reviewer can perform it as a heuristic advisory), or (b) rename the POST-freeze detection mechanism for sub-case (ii) — it surfaces as a test-infrastructure mismatch (cannot observe the AC at the declared seam), not as a check-(g) seam-conformance violation."
+    }
+   ],
+   "dispositions": [
+    {
+     "defect_id": "bc9-cov-1",
+     "action": "rejected",
+     "note": "rejected — no artifact change: the symlink was verified DIRECTLY twice (ls -la 2026-08-24/25: /Users/solosus/.claude/skills/solidforge -> /Users/solosus/dev/ws-ai/solidforge — the skill-loading surface, distinct from ~/.claude/plugins which the reviewer checked); the landing re-verifies per the standing note"
+    },
+    {
+     "defect_id": "bc9-1",
+     "action": "fixed",
+     "note": "fixed — the second-consequence amendment reframed as PARTIAL transmutation: \"no seam-quality dimension\" half becomes false; \"survives bc's plan-reviewer\" half remains TRUE (warning-severity detects earlier but does not block — detected-earlier-but-not-blocked, stated precisely)"
+    },
+    {
+     "defect_id": "bc9-2",
+     "action": "fixed",
+     "note": "fixed — the refactoring reconciliation added to the Fix 1b carrier paragraph: refactoring spec ACs DECLARE the seam from the locked tests' observed boundary (the spec-declares principle extended, not the derive fallback)"
+    },
+    {
+     "defect_id": "bc9-3",
+     "action": "fixed",
+     "note": "fixed — the bc re-open clause content specified: three stated semantics (TRIGGER = the pd wrong-seam escalation naming the spec AC; RE-OPEN = a REVISION not a fresh artifact — run-record re-open entry, produce.py re-run, version bump; PROPAGATION = authority_chain re-read at the re-latch)"
+    },
+    {
+     "defect_id": "bc9-4",
+     "action": "fixed",
+     "note": "fixed — sub-case (ii) post-freeze mechanism restated honestly: INDIRECT (tests relocate to observe the outcome → the relocation is the (g) conformance violation); check (g) tests conformance, not observability — no direct observability check exists at either skill, stated not overclaimed"
+    }
+   ]
+  },
+  {
+   "round": 10,
+   "same_source_findings": 3,
+   "hetero_findings": 6,
+   "hetero_degraded": false,
+   "blockers": 2,
+   "verdict": "rewrite",
+   "findings": [
+    {
+     "defect_id": "bc10-novel-1",
+     "severity": "blocker",
+     "kind": "contradiction",
+     "location": "Rule 5 audit — the second-consequence PARTIAL-transmutation clause",
+     "evidence": "The bc9-1 fix's elaboration re-overstated the pd half: check (g) is warning-severity and never blocks (convergent-loop.md:203 + ADR #56), so 'blocking-stage net' is wrong; and for sub-case (i) check (g) does not even fire (the catch is the pre-freeze refusal).",
+     "suggestion": "Amend: check (g) = WARNING finding (never blocks); the blocking limbs are refuse-to-freeze + channel suspend; (g) fires only for sub-case (ii)."
+    },
+    {
+     "defect_id": "bc10-novel-2",
+     "severity": "warning",
+     "kind": "coverage-gap",
+     "location": "Rule 5 audit — intent-blueprint.md split enumeration",
+     "evidence": "Line 34's rich-path paragraph also carries refactoring-derive sentences that go stale under latch-first for spec-driven refactoring runs; the enumeration's 'both clauses' leaves them out of the amendment set.",
+     "suggestion": "Extend the amendment enumeration to the paragraph's refactoring-derive sentences."
+    },
+    {
+     "defect_id": "bc10-novel-3",
+     "severity": "warning",
+     "kind": "coverage-gap",
+     "location": "Fix 1b carrier paragraph — RE-OPEN semantics vs bc run-record schema",
+     "evidence": "The bc9-3 fix's carriers ('run-record gains a re-open entry', 're-freeze bumps the spec version') require run-record schema changes that appear in no edit point — the schema is closed (additionalProperties: false, no re-open/spec-version field).",
+     "suggestion": "Restate the carriers to ride existing open fields (coverage/caveats strings; spec-file frontmatter) with the limitation named."
+    },
+    {
+     "defect_id": "bc10-1-controlflow-vs-agentact",
+     "severity": "blocker",
+     "kind": "contradiction",
+     "location": "Fix 1b severity-scoping sentence + Fix 3 escalation-interface paragraph (proposal line 30)",
+     "evidence": "Fix 1b: 'the wrong-seam state's pd-side limbs are HARD control-flow states in the loop machinery, not advisory findings — the pre-freeze refuse-to-freeze and the post-freeze blueprint-defect suspend'. Fix 3 (same line 30): 'the pre-freeze phase has NO loop-state machinery (init + `--blueprint-ref` run AT freeze), so the refusal is an AGENT ACT with a defined surface — the Planner does not run `loop_state.py init`, reports the named seam defect + the spec AC location back to the orchestrator/user in its dispatch context, and yields'. The proposal labels the pre-freeze refusal BOTH 'a HARD control-flow state in the loop machinery' AND 'an AGENT ACT with no loop-state machinery'. An LLM convention that may not run is not deterministic control-flow. The same-family bc10-novel-1 caught the check (g) severity and the sub-case (i) catch, but did NOT catch this self-contradiction about the refusal's classification.",
+     "suggestion": "Pick one: either call the pre-freeze refusal an advisory LLM convention (downgrading it to 'best-effort, no guarantee — coverage-noted per rule 3') OR add a deterministic refuse-to-freeze signal (e.g. a Planner-side pre-flight script that scans spec AC seams against a public-boundary catalog)."
+    },
+    {
+     "defect_id": "bc10-2-fix4c-missing-from-audit",
+     "severity": "warning",
+     "kind": "coverage-gap",
+     "location": "Rule 5 doc-audit enumeration (line 53)",
+     "evidence": "Fix 4 body (line 48): 'The landing ADDS a `loop_state.py ref-set subcommand (edit (c) — the third named Fix-4 edit, enumerated here, not silent). Rejected alternative: re-init semantics at the channel's re-freeze — entangles the spec re-read with the channel's freeze lifecycle and clobbers status fields init resets; the subcommand is the cleaner separation (one field, one explicit act)'. The Rule 5 audit (line 53) enumerates: bc SKILL.md, bc arch-design.md §3, agents/plan-reviewer.agent.md, pd intent-blueprint.template.md, pd intent-blueprint.md, pd plan-driven-mode.md, pd design-decisions.md ADR #56, bc design-decisions.md, facade docs, continuation index. The audit does NOT enumerate `loop_state.py` (the new subcommand is a script-level change). This is a different defect than bc10-novel-3 (which was about run-record schema): here the gap is on the AUDIT'S completeness for a code-side edit explicitly declared as 'enumerated here, not silent'.",
+     "suggestion": "Add `pd infra/scripts/loop_state.py` to the Rule 5 audit table with the new ref-set subcommand as the touch point; or state explicitly that script changes are out-of-audit-scope (consistent with the audit's doc-only framing)."
+    },
+    {
+     "defect_id": "bc10-3-fix4a-missing-from-audit",
+     "severity": "warning",
+     "kind": "coverage-gap",
+     "location": "Rule 5 doc-audit enumeration for pd intent-blueprint.md Blueprint Revision Channel (line 53)",
+     "evidence": "Fix 4 has three sub-edits: (a) trigger bullet amendment, (b) routing sentence, (c) new loop_state.py subcommand. Rule 5 audit enumerates: 'the Blueprint Revision Channel (the routing sentence is ADDED, edit point 4)'. Fix 4(a) 'the third trigger bullet gains an explicit wrong-declared-seam case — \"has acceptance criteria that cannot be satisfied (incl. an AC whose declared seam boundary cannot observe its outcome)\"' is NOT explicitly enumerated. The audit's phrasing ('the routing sentence is ADDED, edit point 4') could be read as the whole of edit-point 4, but the trigger-bullet amendment is a distinct edit at the same location and is silently subsumed.",
+     "suggestion": "Split the audit entry: 'Blueprint Revision Channel: (a) third trigger bullet gains the wrong-declared-seam parenthetical, (b) step 3 routing sentence gains the bc re-convergence lifecycle clause, (c) loop_state.py ref-set subcommand added'."
+    },
+    {
+     "defect_id": "bc10-4-bc-specs-no-frontmatter",
+     "severity": "warning",
+     "kind": "structural-gap",
+     "location": "Fix 1b RE-OPEN sub-clause (2) — spec version bump carrier (proposal line 30)",
+     "evidence": "Proposal: 'the spec version bump rides the spec file's own frontmatter (specs are free-form bc artifacts; frontmatter is theirs to carry)'. Verified against `skills/blueprint-crafting/docs/arch-design.md` (no frontmatter, line 1 starts `# blueprint-crafting`) and `skills/blueprint-crafting/docs/iteration-plan.md` (no frontmatter, line 1 starts `# blueprint-crafting — Iteration Plan`). pd `intent-blueprint.template.md` line 1-6 does use YAML frontmatter, but bc's authoritative docs do not. The proposal ASSUMES bc specs carry frontmatter but never specifies the field name (e.g. `spec_version: v2`), the convention for bumping, or how `produce.py`'s normalizer/constraints-checker would honor it. The same-family bc10-novel-3 covered the run-record-schema side; this is the SPEC-file-frontmatter side of the same carrier pair.",
+     "suggestion": "Specify the frontmatter shape (field name, where it lives, how produce.py's normalizer detects the bump) OR name the alternate carrier (e.g. a comment-marker convention in spec body) that doesn't require introducing a new frontmatter convention to bc."
+    },
+    {
+     "defect_id": "bc10-5-fix4c-cli-shape-unspecified",
+     "severity": "warning",
+     "kind": "structural-gap",
+     "location": "Fix 4 GAP remediation (proposal line 48)",
+     "evidence": "Proposal: 'The landing ADDS a `loop_state.py ref-set subcommand (edit (c) — the third named Fix-4 edit, enumerated here, not silent)'. Verified against `skills/parallel-development/infra/scripts/loop_state.py:495-496` (set-blueprint-version takes a single `version` positional; no ref argument) and line 446 (--blueprint-ref is on init only). The proposal names the subcommand but does not specify (a) argument shape (positional `<ref>` vs `--blueprint-ref <path>`, mirroring init's convention vs set-blueprint-version's positional), (b) which channel step invokes it (channel step 6 says 'The loop restarts at Phase 1 with the new blueprint ref' but does not name a tool), (c) whether it preserves `blueprint_revision` / event-log semantics that `set-blueprint-version` records (`loop_state.py:634-636` records `blueprint-revised` event + bumps `blueprint_revision.new_version`). Without this, the new subcommand is a partial design and the integration with the existing channel's bookkeeping is left implicit.",
+     "suggestion": "Specify the subcommand's argument shape, the channel step that invokes it, and whether it preserves the `blueprint-revised` event-log + `blueprint_revision` shape that `set-blueprint-version` records."
+    },
+    {
+     "defect_id": "bc10-6-rule5-audit-tdd-prop-not-named",
+     "severity": "coverage",
+     "kind": "coverage-gap",
+     "location": "Fix 3 + Rule 5 doc-audit",
+     "evidence": "Honest disclosure (rule 3): I could not verify whether the proposal's `tdd-improvement-proposals.md` continuation-index pointer is itself a NEW rule-5 touch point that the rule requires to be enumerated in the audit TABLE rather than just in the body. The proposal says 'Continuation index: pd `tdd-improvement-proposals.md`'s continuation line gains a pointer to this proposal as the P7 follow-up (the P7 landing established this file as a required rule-5 touch point for proposal-chain pointers)' — it is named in the audit text but not itemized as a separate audit bullet alongside the other touch points. This may be intentional (audit text vs audit table); I cannot tell from the workspace rules whether rule 5 demands itemization or enumeration by reference. Reported honestly per rule 3; not asserted as a defect.",
+     "suggestion": "Either itemize the tdd-improvement-proposals.md pointer in the audit table OR drop the parenthetical '(the P7 landing established this file as a required rule-5 touch point for proposal-chain pointers)' if the body's reference is sufficient."
+    }
+   ],
+   "dispositions": [
+    {
+     "defect_id": "bc10-novel-1",
+     "action": "fixed",
+     "note": "fixed — the pd half restated with severity honesty: check (g) = a WARNING finding (never blocks, convergent-loop.md + ADR #56); the blocking limbs are the pre-freeze refuse-to-freeze + the channel suspend; (g) fires only for sub-case (ii) via relocation"
+    },
+    {
+     "defect_id": "bc10-novel-2",
+     "action": "fixed",
+     "note": "fixed — the amendment enumeration extended to the full line-34 paragraph incl. the refactoring-derive sentences (stale under latch-first for spec-driven refactoring runs; rewritten by the same amendment: the spec declares from the locked tests, pd latches)"
+    },
+    {
+     "defect_id": "bc10-novel-3",
+     "action": "fixed",
+     "note": "fixed — the RE-OPEN carriers restated to ride existing open fields: the re-open entry rides the run-record's coverage/caveats strings (schema closed, no schema change claimed — stated); the spec version bump rides the spec file's own frontmatter"
+    },
+    {
+     "defect_id": "bc10-1-controlflow-vs-agentact",
+     "action": "fixed",
+     "note": "fixed — the classification contradiction resolved: the pre-freeze refuse-to-freeze is an LLM-act convention (best-effort, no guarantee, coverage-noted per rule 3 — nothing deterministic enforces it); the ONE deterministic machinery state is the post-freeze blueprint-defect suspend"
+    },
+    {
+     "defect_id": "bc10-2-fix4c-missing-from-audit",
+     "action": "fixed",
+     "note": "fixed — pd infra/scripts/loop_state.py added to the rule-5 audit as its one script entry (the set-blueprint-ref subcommand touch point)"
+    },
+    {
+     "defect_id": "bc10-3-fix4a-missing-from-audit",
+     "action": "fixed",
+     "note": "fixed — the audit's Blueprint Revision Channel entry split into the three sub-edits (a) trigger-bullet parenthetical (b) step-3 routing sentence (c) the loop_state.py subcommand"
+    },
+    {
+     "defect_id": "bc10-4-bc-specs-no-frontmatter",
+     "action": "fixed",
+     "note": "fixed — the frontmatter assumption corrected: bc's authoritative docs carry NO frontmatter (verified); the version-bump carrier is DEFINED by the bc SKILL.md re-open clause at landing (e.g. a spec-version: line produce.py re-reads) — the convention's exact shape is the clause's landing content, not this proposal's"
+    },
+    {
+     "defect_id": "bc10-5-fix4c-cli-shape-unspecified",
+     "action": "fixed",
+     "note": "fixed — the subcommand shape specified: set-blueprint-ref <path> (positional, mirroring set-blueprint-version); invoked at channel step 4; records a blueprint-ref-updated event preserving the blueprint-revised/blueprint_revision bookkeeping shape"
+    },
+    {
+     "defect_id": "bc10-6-rule5-audit-tdd-prop-not-named",
+     "action": "rejected",
+     "note": "rejected — no artifact change: the audit is prose-form in this proposal (no table); the continuation-index item IS itemized as its own labeled audit item (\"Continuation index: ...\") — the reviewer's either/or presupposes a table form this proposal does not use"
+    }
+   ]
+  },
+  {
+   "round": 11,
+   "same_source_findings": 3,
+   "hetero_findings": 5,
+   "hetero_degraded": false,
+   "blockers": 0,
+   "verdict": "pass",
+   "findings": [
+    {
+     "defect_id": "bc11-novel-1",
+     "severity": "warning",
+     "kind": "coverage-gap",
+     "location": "Rule 5 audit (bc SKILL.md entry) vs Fix 1b carrier",
+     "evidence": "Fix 1b declares a fourth SKILL.md edit (the re-open clause — the largest single SKILL.md addition) the audit does not enumerate; the same silent-subsumption class bc10-3 fixed for the revision channel.",
+     "suggestion": "Extend the audit's SKILL.md entry."
+    },
+    {
+     "defect_id": "bc11-novel-2",
+     "severity": "warning",
+     "kind": "contradiction",
+     "location": "Fix 1b RE-OPEN (2) vs the audit's one-script-entry claim",
+     "evidence": "'produce.py's re-run reads' names machinery that exists in no edit point (no bc script parses a per-spec version — normalizer.py/plan_model.py hardcode plan_model_version v1); either an unnamed script edit or a wrong reader attribution.",
+     "suggestion": "Name produce.py as a second script entry or re-attribute the consumer to the re-latch agent."
+    },
+    {
+     "defect_id": "bc11-cov-1",
+     "severity": "coverage",
+     "kind": "coverage-gap",
+     "location": "Rule 5 audit (symlink claim)",
+     "evidence": "The install topology is outside this repo; not verifiable with read-only tools (standing disclosure).",
+     "suggestion": "Confirm at landing time."
+    },
+    {
+     "defect_id": "bc11-h-1",
+     "severity": "warning",
+     "kind": "structural-gap",
+     "location": "Fix 1b, RE-OPEN semantics (2) — \"`produce.py` re-runs on the corrected spec\"",
+     "evidence": "Doc: \"(2) RE-OPEN: the existing frozen spec re-enters bc's convergence loop as a REVISION … `produce.py` re-runs on the corrected spec, convergence re-checks\". But produce.py's own contract says the spec markdown is NOT its input — produce.py:21-22: \"Author the Markdown artifact and the plan-model's anchors/items: the LLM. `produce.py` takes an already-authored bare `plan-model.json`\"; produce.py:33: \"CLI: produce.py <plan-model.json> …\"; bc SKILL.md Quick Start makes normalization (source → plan-model) a separate author act (step 2) BEFORE produce.py (step 3). The RE-OPEN sequence as stated names no re-normalization step (corrected spec markdown → regenerated plan-model.json), so taken literally it re-converges the STALE plan-model. Distinct from bc11-novel-2 (that finding is about the spec-version reader attribution, not the missing regen step).",
+     "suggestion": "Add the re-normalization step to the RE-OPEN sequence (corrected spec → re-normalize → produce.py re-run), or state that \"re-enters the convergence loop\" subsumes it."
+    },
+    {
+     "defect_id": "bc11-h-2",
+     "severity": "warning",
+     "kind": "contradiction",
+     "location": "Rule 5 audit (pd template entry) vs \"Proposed fix (4 edit points)\" §3",
+     "evidence": "The audit declares: \"pd `infra/templates/intent-blueprint.template.md` — the template's AC-line guidance … gains the latch-first clause: 'seam: latched from the spec when declared; derived when absent' (edit point; the slot's provenance forks under Option A)\" — but no Fix section carries this edit: Fix 3 (\"pd `intent-blueprint.md` rich path\") names only the intent-blueprint.md rich-path seeding section and the plan-driven-mode.md step-3 carve-out as landing points. Every other audit entry has a fix-side carrier (Fix 1 ↔ SKILL.md/arch-design; Fix 2 ↔ plan-reviewer; Fix 4(c) ↔ loop_state.py, explicitly \"named in the audit\"), making the template entry the lone audit-only edit point — the mirror image of the class bc11-novel-1 caught. The P7 precedent put the same edit IN the fix body: tdd-seam-tracer-bullet.proposal.md:47: \"The canonical AC-line carrier — `infra/templates/intent-blueprint.template.md` … gains the same `— seam:` tail, else newly authored blueprints default to the absent-seam degrade.\"",
+     "suggestion": "Name the template edit in Fix 3 (with the P7-style \"else newly authored blueprints default to the absent-seam\" rationale), so the audit entry has a fix-side carrier."
+    },
+    {
+     "defect_id": "bc11-h-3",
+     "severity": "warning",
+     "kind": "coverage-gap",
+     "location": "Rule 5 audit — pd design-decisions.md ADR #56 amendment scope",
+     "evidence": "ADR #56 records THREE consequences: \"Consequences, stated: derivation quality = one LLM act …; a wrong-boundary AC survives bc's plan-reviewer …; bc author and pd Planner share the same-family blind spot.\" The amendment scope states the fate of only two: \"the FIRST consequence clause transmutes ('derivation quality = one LLM act' → 'declaration quality = one LLM act, still coverage-noted'), AND the second consequence sentence … PARTIALLY TRANSmutes under Fix 2 …\". The third consequence (the shared same-family blind spot) is never addressed — whether it REMAINS true under Option A (plausibly yes, since Fix 2 is same-family advisory and the doc says \"same-family ceiling unchanged\") or transmutes with the derive→declare shift is left unstated in an amendment scope that otherwise itemizes every clause's fate.",
+     "suggestion": "Add the third consequence's status to the amendment scope (e.g. \"the third consequence REMAINS — declaration quality is still same-family\")."
+    },
+    {
+     "defect_id": "bc11-h-4",
+     "severity": "warning",
+     "kind": "citation-error",
+     "location": "Fix 1b, RE-OPEN semantics (2) — run-record carrier description",
+     "evidence": "Doc: \"the re-open entry rides the run-record's `coverage`/`caveats` string fields (the schema is closed, `additionalProperties: false`, with no re-open or spec-version field — stated)\". In bc run-record.schema.json both fields are ARRAYS of strings, not string fields: `\"coverage\": {\"type\": \"array\", \"items\": {\"type\": \"string\"}, \"description\": \"Which checks ran / were skipped / degraded …\"}` and `\"caveats\": {\"type\": \"array\", \"items\": {\"type\": \"string\"}, …}` (run-record.schema.json:26-35). The closed-schema claim is accurate; the field-shape description is not — a landing implementer reading \"string fields\" would expect scalar fields.",
+     "suggestion": "Re-word to \"rides an entry in the run-record's `coverage`/`caveats` string-ARRAY fields\"."
+    },
+    {
+     "defect_id": "bc11-h-5",
+     "severity": "warning",
+     "kind": "citation-error",
+     "location": "Sources section — wiki `test-seam` §预协商接缝",
+     "evidence": "Doc: \"wiki `test-seam` §AI 编码中的接缝纪律 · 上游冻结 + §预协商接缝 (the Rejected (d) Chinese confirmation quote's carrier) + §权衡与局限\". In the vendored snapshot (workspace/csr-seam-tracer-proposal/authority/test-seam.md) 预协商接缝 is NOT a section — the sections are 定义与机制 / 为什么在接缝处测试 / AI 编码中的接缝纪律 / 权衡与局限 / 来源, and 预协商接缝 is a bolded bullet UNDER §AI 编码中的接缝纪律 (snapshot line 20: \"**预协商接缝（pre-agreed seam）**：在写任何测试之前先命名打算测试的公开边界并等待确认…\"). The doc's own citation convention for bullets is parent·child (\"§AI 编码中的接缝纪律 · 上游冻结\", \"§权衡与局限 · 接缝选择摩擦\"), which this pointer breaks. The quoted content itself is accurate.",
+     "suggestion": "Re-point as \"§AI 编码中的接缝纪律 · 预协商接缝\"."
+    }
+   ],
+   "dispositions": [
+    {
+     "defect_id": "bc11-novel-1",
+     "action": "fixed",
+     "note": "fixed — the audit's SKILL.md entry extended: + the re-open clause (TRIGGER / RE-OPEN / PROPAGATION + the spec-version convention it defines at landing)"
+    },
+    {
+     "defect_id": "bc11-novel-2",
+     "action": "fixed",
+     "note": "fixed — the consumer re-attributed: the spec-version line is read by the pd re-latch AGENT reading the spec text; no bc script edit claimed (normalizer.py/plan_model.py hardcode v1 — verified), keeping the audit's one-script-entry scope"
+    },
+    {
+     "defect_id": "bc11-cov-1",
+     "action": "rejected",
+     "note": "rejected — no artifact change: standing symlink disclosure; confirmed at landing"
+    },
+    {
+     "defect_id": "bc11-h-1",
+     "action": "fixed",
+     "note": "fixed — the RE-OPEN sequence gains the named re-normalization step (corrected spec markdown -> regenerated plan-model.json; produce.py takes an already-authored plan-model, not the spec — verified produce.py:21-33)"
+    },
+    {
+     "defect_id": "bc11-h-2",
+     "action": "fixed",
+     "note": "fixed — the template edit now has a fix-side carrier: Fix 3 names infra/templates/intent-blueprint.template.md's AC-line latch-first clause with the P7-style rationale (else newly authored blueprints default to the absent-seam degrade)"
+    },
+    {
+     "defect_id": "bc11-h-3",
+     "action": "fixed",
+     "note": "fixed — the THIRD consequence added to the ADR #56 amendment scope: REMAINS as stated (declaration quality is still same-family; Fix 2 advisory; ceiling unchanged)"
+    },
+    {
+     "defect_id": "bc11-h-4",
+     "action": "fixed",
+     "note": "fixed — the carrier description corrected to string-ARRAY fields (run-record.schema.json: coverage/caveats are arrays of strings)"
+    },
+    {
+     "defect_id": "bc11-h-5",
+     "action": "fixed",
+     "note": "fixed — the citation re-pointed to the parent-child convention: §AI 编码中的接缝纪律 · 预协商接缝"
+    }
+   ]
+  },
+  {
+   "round": 12,
+   "same_source_findings": 1,
+   "hetero_findings": 2,
+   "hetero_degraded": false,
+   "blockers": 0,
+   "verdict": "pass",
+   "findings": [
+    {
+     "defect_id": "bc12-cov-1",
+     "severity": "coverage",
+     "kind": "coverage-gap",
+     "location": "Rule 5 audit (agents/ symlink claim)",
+     "evidence": "Standing disclosure (the r11 rejected disposition maintains it): the install topology is outside this repo, not verifiable with read-only tools; the repo-side agent file is verified.",
+     "suggestion": "Confirm at landing time, as the r11 disposition records."
+    },
+    {
+     "defect_id": "bc12-h-1",
+     "severity": "warning",
+     "kind": "coverage-gap",
+     "location": "Fix 1b carrier semantics (2) RE-OPEN / (3) PROPAGATION (line 30) + Fix 4(b) re-sync object (line 48)",
+     "evidence": "The re-open lifecycle states \"then the FULL loop re-runs on the corrected spec: re-normalize (corrected spec markdown → regenerated plan-model.json …), `produce.py` re-runs, convergence re-checks\" while Fix 4(b) bounds propagation: \"The re-sync object is the blueprint AC-line RE-LATCH … not the queue structure — `plan_queue.py sync` … is NOT the spec re-read; it is not named as the re-sync mechanic.\" But the FULL re-run regenerates the plan-model and re-freezes the queue (bc freeze.py: \"Emits the two frozen artifacts … the projected `.queue.md` + the spec `.run-record.json`\"), so a structurally different re-frozen queue.md (items/deps changed by the re-convergence) has no named propagation path: the doc names carriers only for the seam (re-latch) and spec content (authority_chain re-read), excludes plan_queue.py sync, and states no invariant that the correction is seam-local. pd DOES have a structural re-read path the doc never connects or rules out — plan-driven-mode.md:150: \"Then `plan_queue.py sync` to pick up structural changes while preserving status.\" The structural identity of the re-frozen queue is an unstated load-bearing premise of the re-open lifecycle.",
+     "suggestion": "In the RE-OPEN clause, either state the invariant (correction is seam-local; the re-frozen queue.md must be structurally identical) or name the fallback for the divergent case (pd queue revision channel + plan_queue.py sync)."
+    },
+    {
+     "defect_id": "bc12-h-2",
+     "severity": "warning",
+     "kind": "citation-error",
+     "location": "Sources, line 74 (wiki `test-seam` section enumeration)",
+     "evidence": "Sources enumerates \"wiki `test-seam` §AI 编码中的接缝纪律 · 上游冻结 + §AI 编码中的接缝纪律 · 预协商接缝 (the Rejected (d) Chinese confirmation quote's carrier) + §权衡与局限\" — the bullet annotates carrier sections for the two confirmation quotes, but Fix 1b's load-bearing definition quote \"Feathers: 'a place where you can alter behavior in your program without editing in that place', *Working Effectively with Legacy Code* 2004 ch.4\" is carried ONLY at test-seam §定义与机制 — vendored snapshot test-seam.md line 7: \"Michael Feathers《Working Effectively with Legacy Code》(2004) 第 4 章：seam 是 'a place where you can alter behavior in your program without editing in that place'\" — a section absent from the Sources enumeration (page level is listed, so the quote stays traceable; the section-level pointer is incomplete under the bullet's own carrier-annotation convention).",
+     "suggestion": "Add §定义与机制 to the test-seam enumeration in Sources with the same carrier annotation (the Fix 1b Feathers definition quote's carrier)."
+    }
+   ],
+   "dispositions": [
+    {
+     "defect_id": "bc12-cov-1",
+     "action": "rejected",
+     "note": "rejected — no artifact change: standing symlink disclosure, confirmed at landing (the r11 disposition precedent)"
+    },
+    {
+     "defect_id": "bc12-h-1",
+     "action": "fixed",
+     "note": "fixed — the STRUCTURAL INVARIANT stated (correction is seam-local; the re-frozen queue must be structurally identical) + the divergence fallback named (pd queue Revision Channel + plan_queue.py sync — the structural path, distinct from the seam-local default)"
+    },
+    {
+     "defect_id": "bc12-h-2",
+     "action": "fixed",
+     "note": "fixed — §定义与机制 added to the Sources test-seam enumeration with the carrier annotation (the Fix 1b Feathers definition quote)"
+    }
+   ]
+  }
+ ],
+ "substantive_converged": true,
+ "coverage": [
+  "core-claims-coverage: 7/7",
+  "cap=12, rounds=12",
+  "different-family provider history: bigmodel (glm-5.3) rounds 1-7; minimax rounds 8-10; qwen3 sole at the first R11 attempt returned hetero-stream-no-result (zero findings, 1 synthetic event — the 12-round standing malformation); qwen-token-plan-cn from the R11 re-run onward (first contribution: R11 pass / 5 findings, R12 pass / 2 findings) after the credential var-name fix (hyphens -> underscores, per the install.md sanitize convention)",
+  "qwen3 malformed hetero-stream-no-result in every multi-provider round it shared (R1-R10) — zero contributions throughout; recorded per ADR #41",
+  "three human escalations at cap boundaries, each authorizing continuation: cap 7->9 (2026-08-25), 9->11, 11->12; the fourth decision (at R10, streak math already broken) switched the different-family profile to qwen3/qwen-token-plan-cn",
+  "run-bookkeeping incidents, honest: R3 disposition key truncated (renamed in place); R8/R10 disposition keys mismatched the renamed finding ids (remapped in place) — all 1:1 verified by the engine before the record was accepted",
+  "R11 hetero first attempted under the broken hyphenated token var (degraded, zero findings) and once killed by a foreground timeout mid-stream; the recorded R11 hetero is the completed re-run",
+  "relocated 2026-08-25: record lives at skills/blueprint-crafting/docs/seam-upstream-anchor.convergence-record.json; authority snapshots vendored at workspace/csr-seam-tracer-proposal/authority/ (gitignored)"
+ ],
+ "stalemate": false,
+ "rightness": "human_confirm_required",
+ "cap": 12,
+ "core_claims": [
+  "The gap claims are accurate: bc docs carry zero Feathers-seam content, plan-model.schema.json has no seam/boundary/observable field, and plan-reviewer.agent.md's four defect kinds have no seam-quality dimension.",
+  "The upstream-anchoring rationale is correctly sourced: the wiki test-seam page's 上游冻结 point anchors the seam negotiation at the spec stage (mattpocock's to-spec), and bc is the spec stage of the specify-then-implement pipeline.",
+  "Fix 1's landing point is correct: the spec's acceptance-criteria section is free-form content authored by bc and consumed via the queue's authority_chain (NOT via item dod_ref — a DoD pointer), so the seam declaration lands there without a schema change.",
+  "Fix 2 keeps the review-findings schema untouched: the seam check folds into the existing gap/blind-spot kinds, no new enum value.",
+  "Fix 3's latch-vs-derive change matches the extraction-mode doctrine (Latch = structural, high confidence).",
+  "The non-goal/rejected rationale is sound: no plan-model seam field (lossless contract duplication), no checker edit (rule 2), pd's check (g) unchanged.",
+  "The rule-compliance claims (4/5/6/7/10/1) are accurate as stated."
+ ],
+ "authority_ref": "wiki test-seam snapshot (workspace/csr-seam-tracer-proposal/authority/test-seam.md) + pd ADR #56 + pd tdd-seam-tracer-bullet.proposal.md + in-repo anchors (bc SKILL.md, bc plan-model.schema.json, agents/plan-reviewer.agent.md, pd intent-blueprint.md)",
+ "size_tier": "long"
+}

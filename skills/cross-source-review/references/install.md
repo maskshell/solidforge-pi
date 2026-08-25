@@ -118,11 +118,15 @@ The token var is derived BY CONVENTION from the profile filename:
 `<UPPERCASE-FILENAME>_ANTHROPIC_AUTH_TOKEN`. Non-alphanumeric chars in the filename
 collapse to `_` before uppercasing.
 
-| profile filename | token env var |
-| --- | --- |
-| `deepseek.json` | `DEEPSEEK_ANTHROPIC_AUTH_TOKEN` |
-| `qwen3.json` | `QWEN3_ANTHROPIC_AUTH_TOKEN` |
-| `openai-compat.json` | `OPENAI_COMPAT_ANTHROPIC_AUTH_TOKEN` |
+| profile filename (ROUTE) | `_family` (FAMILY) | token env var |
+| --- | --- | --- |
+| `zai-coding-cn.json` | glm | (auth.json route — `_token_env` empty; fallback `ZAI_CODING_CN_API_KEY`) |
+| `deepseek.json` | deepseek | `DEEPSEEK_ANTHROPIC_AUTH_TOKEN` (bridged to `DEEPSEEK_API_KEY`) |
+| `minimax-cn.json` | minimax | `MINIMAX_ANTHROPIC_AUTH_TOKEN` (via `_token_env`; bridged to `MINIMAX_CN_API_KEY`) |
+| `qwen-token-plan-cn.json` | qwen | `QWEN_TOKEN_PLAN_CN_API_KEY` (subscription key) |
+| `qwen-bailian.json` | qwen | `QWEN3_ANTHROPIC_AUTH_TOKEN` (the Bailian pay-per-use key; route registered by sf-providers) |
+
+**Naming — the three-level doctrine** (the profile FILENAME names the credential+endpoint ROUTE; the `_family` field names the MODEL LINEAGE — the same/different-family judgment unit; the `model` field is the pinned per-generation id, never part of the filename). One family rides many routes (qwen: token-plan subscription + bailian pay-per-use; glm: pi's zai-coding-cn coding route); a multi-family route's `_family` names the PINNED model's lineage. Pick review routes across FAMILIES, not across routes of one family. Full doctrine: parallel-development's model-routing.md. CC-era profile names (`bigmodel`, `minimax`, `qwen3`) resolve via the wrappers' alias map.
 
 Override the var name via the profile's optional `_token_env` field (rarely needed — e.g.
 a profile that must read a non-conventional var).
