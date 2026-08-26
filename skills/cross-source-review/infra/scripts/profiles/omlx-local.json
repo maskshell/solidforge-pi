@@ -1,0 +1,7 @@
+{
+  "_comment": "PI hetero profile — LOCAL qwen-family leg via the oMLX OpenAI-compatible endpoint (route `omlx-local` in the user's ~/.pi/agent/models.json: http://127.0.0.1:8000/v1, openai-completions, model Qwen3.8-27B-4bit, samplingParams temperature 0 / repetition_penalty 1.05 / thinking_budget 2048, compat supportsDeveloperRole+supportsReasoningEffort false — the oMLX CC-config equivalents folded into pi-native fields). FILENAME=ROUTE. _family = MODEL LINEAGE (qwen — a Qwen3.8; different-family vs a glm orchestrator, SAME family as the qwen cloud routes — pick across FAMILIES, not routes, for blind-spot crossing). _token_env EMPTY: the apiKey is a literal in models.json (no env credential; fail-fast skipped). LOCAL-INFERENCE NOTE: a 27B on local accel is slow — the oMLX CC guidance sets API_TIMEOUT_MS=3000000; the pi-side equivalents are retry.provider.timeoutMs=3000000 (settings.json) and a RAISED wrapper wall-clock: run with --timeout 1800 or HETERO_TIMEOUT=1800 (default 600s is tuned for cloud legs). Cost is honest-zero (local). CONTEXT/COMPACTION (the oMLX CC config's window+80% intent, pi-native): contextWindow 32768 rides the models.json model entry (per-model — no global window env needed); auto-compact fires at window-reserveTokens with settings.json reserveTokens=8192 => 24576 tok (75%, response-room-safe; CC's 80% is unreachable in pi because reserve also guarantees the 8192 maxTokens response).",
+  "_provider": "omlx-local",
+  "model": "Qwen3.8-27B-4bit",
+  "_family": "qwen",
+  "_token_env": ""
+}

@@ -339,7 +339,12 @@ def _resolve_token_var(name, template):
     drop in `profiles/<name>.json` with ROUTING ONLY (no `_token_env`, no `${...}`) and
     the wrapper resolves the token var from the filename — zero ceremony per provider.
     """
-    if template.get("_token_env"):
+    if "_token_env" in template:
+        # An EXPLICIT empty string disables the env credential entirely (the
+        # route authenticates via models.json/auth.json — e.g. omlx-local's
+        # literal apiKey). `if template.get(...)` treated "" as absent and fell
+        # through to the convention var, defeating the documented empty=skip
+        # semantics (caught live with the omlx-local profile).
         return template["_token_env"]
     sanitized = re.sub(r"[^A-Za-z0-9]", "_", name).upper()
     return f"{sanitized}_ANTHROPIC_AUTH_TOKEN"
