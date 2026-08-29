@@ -458,3 +458,18 @@ What landed:
 - e2e verified offline via `dryRun` (C5): content = canned result JSON verbatim, zero
   stderr/progress leakage, isError false; one transient spawn failure surfaced honestly as
   isError exit-2 (empty-output path). tsc strict clean; csr gates 8/8 green post-rewrite.
+
+## Post-M4 addendum — adopt-pi-namespace retired; single-line consolidation (2026-08-29, final)
+
+The `adopt-pi-namespace` branch is RETIRED and deleted. Its raison d'être — invoking
+`/solidforge:arm-tools` via the pi-native `pi.namespace` manifest field — is delivered on
+master by the pre-existing literal-colon filename (`prompts/solidforge:arm-tools.md`): same
+outcome, zero gate. The branch's merge precondition (an upstream earendil-works/pi release
+containing the namespace feature, PR from fork maskshell/pi branch package-namespace) never
+landed, and with the design-lineage governance decision (top of this document) the
+port/sync-era branch structure stopped earning its keep. All six real-work commits from the
+branch were cherry-picked onto master verbatim (conflict resolutions: package.json kept
+master's compact style and NO namespace field; PORTING-PLAN addenda re-based; .gitignore
+re-introduced by its content owner commits). If pi ever ships native namespace support,
+re-adoption is a fresh two-file change (manifest field + prompt rename), not a branch
+resurrection.

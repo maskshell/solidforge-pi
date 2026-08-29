@@ -10,7 +10,7 @@
 ## Install
 
 ```bash
-pi install git:github.com/<you>/solidforge-pi      # or: pi install ./solidforge-pi
+pi install git:github.com/maskshell/solidforge-pi      # or: pi install ./solidforge-pi
 ```
 
 Requires `python3` on `$PATH` (all gate/policy scripts are Python stdlib-only CLIs).
