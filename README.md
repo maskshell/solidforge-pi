@@ -13,7 +13,7 @@
 pi install git:github.com/maskshell/solidforge-pi      # or: pi install ./solidforge-pi
 ```
 
-Requires `python3` on `$PATH` (all gate/policy scripts are Python stdlib-only CLIs).
+Requires `python3` on `$PATH` (all gate/policy scripts are Python stdlib-only CLIs). Release gate: `python3 tools/pi_loader_smoke.py` asserts the package loads under pi's REAL resource loaders (exact 5-skill set, zero diagnostics, manifest paths resolve) — the cross-harness frontmatter regression class per-skill gates cannot see.
 
 **Optional prerequisite — [pi-mcp-adapter](https://www.npmjs.com/package/pi-mcp-adapter)**, only for the Playwright E2E trio and Graphiti memory:
 
