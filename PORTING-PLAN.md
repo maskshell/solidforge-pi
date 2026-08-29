@@ -5,6 +5,21 @@
 
 ---
 
+## 与 solidforge-internal 的关系（2026-08-29 定案，取代"port/sync"心智）
+
+**solidforge-internal 不是本仓库的 git 上游。** 它是**设计上游**（design lineage）：ADR 编号仍是双方共享的设计权威，知识双向流动（其 ADR #57 明言"borrowed from the pi + dsh ports"），但代码共享只按三层契约窄通道进行，永不 git 跟踪：
+
+- **设计层**（ADR/proposal/方法论）：双向引用，谁的好流谁；
+- **substrate-neutral 代码层**（纯 stdlib 引擎、schemas、agents）：允许 verbatim 对齐，方向按内容定；
+- **substrate 层**（CC hooks/settings/Task ↔ pi extensions/JSONL/UI 面板）：永不互相同步代码，只交换问题清单。
+
+证据与台账：[docs/upstream-watch.md](docs/upstream-watch.md)（每笔流入/流出/拒绝吸收都有记录；含 ⚠️ 待吸收候选）。实测依据：共享 substrate-neutral 文件分叉 0.1–3.3%，而 csr wrapper 到 12.4% 恰好是 pi 原生观测栈落点——结构性不可回流；历史 sync-1（`51bb3ca`）已是 hand-merge 而非 git merge。
+
+**本文档自本节起冻结为 lineage + divergence ledger**：增量只记 divergence 决策与里程碑（见尾部 addenda），不再承担"同步计划"职能。
+
+---
+
+
 ## 0. 结论速览
 
 **无根本性障碍。** SolidForge 的灵魂——确定性收敛策略引擎（`converge.py` / `produce.py` / `loop_state.py` / `plan_queue.py` 等纯 stdlib Python CLI）和协议文本——完全 harness 无关，约 70% 资产可直接复用。Claude Code 插件外壳（agents / hooks / command / MCP 四件套）需按 Pi 的扩展模型重建，其中 **4 处为实质重写点**。

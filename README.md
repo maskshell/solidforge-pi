@@ -1,6 +1,6 @@
 # SolidForge-pi
 
-**SolidForge for the [Pi](https://github.com/earendil-works/pi-mono) coding agent** — the pi port of the [SolidForge](../solidforge) Claude Code plugin: a Loop Engineering system bundling the **converge → specify → implement** pipeline plus two additive **outcome-axis** layers (cited-source verification + uncited prior-art collision).
+**SolidForge for the [Pi](https://github.com/earendil-works/pi-mono) coding agent** — an independent, pi-native implementation of the SolidForge Loop Engineering system: the **converge → specify → implement** pipeline plus two additive **outcome-axis** layers (cited-source verification + uncited prior-art collision). Design lineage: [solidforge-internal](https://github.com/maskshell/solidforge-internal) (the Claude Code reference implementation) — its ADRs remain the shared design authority and knowledge flows both ways, but there is **no git upstream/sync relationship**; code sharing is narrow, deliberate, and ledgered in [docs/upstream-watch.md](docs/upstream-watch.md).
 
 - **Skills (5)** — `cross-source-review`, `blueprint-crafting`, `parallel-development`, `primary-source-verification`, `prior-art-search` (invoke `/skill:<name>`)
 - **Agents (22)** — plugin-scoped as `solidforge:<name>`, dispatched via the bundled `subagent` tool (isolated context; single / parallel / chain)
@@ -72,4 +72,4 @@ solidforge-pi/
     └── sf-hetero/            # the hetero_doc_review tool — the different-family leg as a first-class tool (live per-provider panel; stdout verbatim as content)
 ```
 
-Port provenance and per-milestone decisions: [PORTING-PLAN.md](PORTING-PLAN.md) (M0 spike → M4). Each skill's `docs/` retains the upstream convergence trail; substrate divergences are logged in the skills' `*.divergence.md`.
+Port provenance and per-milestone decisions: [PORTING-PLAN.md](PORTING-PLAN.md) (M0 spike → M4; now frozen as the lineage + divergence ledger). Live relationship contract with the CC reference implementation: [docs/upstream-watch.md](docs/upstream-watch.md). Each skill's `docs/` retains the upstream convergence trail; substrate divergences are logged in the skills' `*.divergence.md`.
