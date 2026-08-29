@@ -68,7 +68,8 @@ solidforge-pi/
     ├── sf-subagents/         # subagent tool + package agents discovery (16/8 concurrency, env-tunable); live streaming of child internals (tool calls / turns / elapsed / idle / text tail)
     ├── sf-hooks/             # tool_call/tool_result → python hook bridge (CLAUDE_PROJECT_DIR env)
     ├── sf-providers/         # credential bridge + the qwen-bailian route registration
-    └── sf-progress/          # csr run-progress footer strip (tails the ADR #61 sidecar; ambient run-level status)
+    ├── sf-progress/          # csr run-progress footer strip (tails the ADR #61 sidecar; ambient run-level status)
+    └── sf-hetero/            # the hetero_doc_review tool — the different-family leg as a first-class tool (live per-provider panel; stdout verbatim as content)
 ```
 
 Port provenance and per-milestone decisions: [PORTING-PLAN.md](PORTING-PLAN.md) (M0 spike → M4). Each skill's `docs/` retains the upstream convergence trail; substrate divergences are logged in the skills' `*.divergence.md`.

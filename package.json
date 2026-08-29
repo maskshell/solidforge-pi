@@ -5,7 +5,7 @@
   "keywords": ["pi-package"],
   "license": "MIT",
   "pi": {
-    "extensions": ["./extensions/sf-subagents", "./extensions/sf-hooks", "./extensions/sf-providers", "./extensions/sf-progress"],
+    "extensions": ["./extensions/sf-subagents", "./extensions/sf-hooks", "./extensions/sf-providers", "./extensions/sf-progress", "./extensions/sf-hetero"],
     "skills": ["./skills"],
     "prompts": ["./prompts"]
   }

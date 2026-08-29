@@ -506,6 +506,9 @@ def run():
     sec_text = sec.group(0) if sec else ""
     ok9 = (
         bool(bullet)
+        and "hetero_doc_review" in bullet_text
+        and "progressFile" in bullet_text
+        and "FALLBACK" in bullet_text
         and "--progress-file" in bullet_text
         and "leg-progress" in bullet_text
         and "sf-progress" in sec_text
@@ -515,14 +518,18 @@ def run():
     _check(
         "live-disclosure-contract",
         ok9,
-        "step-2 different-family bullet: --progress-file / leg-progress live "
-        "stderr / status --watch; sidecar section: sf-progress strip; "
-        "CC-era run_in_background absent — some missing",
+        "step-2 different-family bullet: hetero_doc_review tool primary + "
+        "progressFile / bash FALLBACK with --progress-file / leg-progress stderr "
+        "/ status --watch; sidecar section: sf-progress strip; CC-era "
+        "run_in_background absent — some missing",
         "the pi zero-interaction disclosure contract lives in the step-2 "
-        "different-family bullet + the sidecar section: --progress-file wired, "
-        "leg-progress stderr streamed live by the bash tool, sidecar status "
-        "watchable externally, sf-progress footer strip; the upstream ADR #62 "
-        "narration loop (run_in_background polling) is deliberately NOT ported",
+        "different-family bullet + the sidecar section: the hetero_doc_review "
+        "tool as the primary path (its own live stderr-derived panel, stdout "
+        "verbatim as content), the bash invocation as the documented fallback "
+        "(--progress-file wired, leg-progress stderr streamed live, "
+        "parse-last-JSON), sidecar status watchable externally, sf-progress "
+        "footer strip; the upstream ADR #62 narration loop (run_in_background "
+        "polling) is deliberately NOT ported",
         findings,
         coverage,
         file_="SKILL.md",

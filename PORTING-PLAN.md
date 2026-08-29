@@ -413,3 +413,33 @@ green (behavior-identical without the new flag). Deferred: the `sf-hetero`
 dedicated tool (separates wrapper stderr/stdout channels properly + structured
 per-provider panel) — rides a csr convergence round before landing, per the
 skill's own discipline.
+
+---
+
+## Post-M4 addendum — sf-hetero: the different-family leg as a first-class tool (2026-08-29, later)
+
+The deferred third layer, landed AFTER its proposal converged through csr itself (dogfood —
+the artifact `extensions/sf-hetero/docs/sf-hetero.proposal.md` was reviewed by 2× same-family
+(fresh-context doc-reviewer) + 2× different-family (minimax-cn/MiniMax-M3) legs;
+**substantive_converged: true, 2 rounds, 0 new blockers each** — record
+`extensions/sf-hetero/docs/sf-hetero.convergence-record.json`, trail `.convergence.md`;
+9 different-family-only findings escalated per the reconcile table with amendments applied —
+human confirmation pending, veto = revert the matching proposal hunk + implementation).
+
+What landed:
+
+- `extensions/sf-hetero/` — the `hetero_doc_review` tool, a pure CLIENT of the wrapper (no
+  wrapper change): stdout = tool `content` VERBATIM on exit 0 (stream separation — progress
+  stderr never enters LLM context, fixing the bash path's parse-last-JSON convention);
+  structured live per-provider panel (model/turns/idle/currentTool/costUsd?/heartbeats from
+  leg-progress + heartbeat stderr events, 5s ticker); completion semantics per the wrapper's
+  exit contract (0 = usable incl. rewrite/degraded — no isError; 1 = fingerprint+tail or
+  stderr-verbatim fail-fast; 2 = tail); abort = SIGKILL to the detached process group (exact
+  killProcessTree POSIX parity; grandchild inherits the group). Registered in package.json.
+- SKILL.md step-2: the tool is the primary path (`artifact`/`authority`/`priorFindings`/
+  `progressFile`); the bash invocation stays the documented FALLBACK (harnesses without the
+  extension). csr_progress_gates check 9 extended: asserts tool-primary + progressFile +
+  FALLBACK + the old assertions.
+- e2e verified offline via `dryRun` (C5): content = canned result JSON verbatim, zero
+  stderr/progress leakage, isError false; one transient spawn failure surfaced honestly as
+  isError exit-2 (empty-output path). tsc strict clean; csr gates 8/8 green post-rewrite.
