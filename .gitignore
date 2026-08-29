@@ -1,4 +1,7 @@
-
-skills/**/infra/scripts/__pycache__/
+__pycache__/
+*.pyc
 workspace/
+.env
+.env.solidforge
+.DS_Store
 extensions/**/*.js
