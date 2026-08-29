@@ -65,9 +65,10 @@ solidforge-pi/
 ├── prompts/solidforge:arm-tools.md
 ├── agents/                   # 22 solidforge:<name> agent definitions (loaded by sf-subagents)
 └── extensions/
-    ├── sf-subagents/         # subagent tool + package agents discovery (16/8 concurrency, env-tunable)
+    ├── sf-subagents/         # subagent tool + package agents discovery (16/8 concurrency, env-tunable); live streaming of child internals (tool calls / turns / elapsed / idle / text tail)
     ├── sf-hooks/             # tool_call/tool_result → python hook bridge (CLAUDE_PROJECT_DIR env)
-    └── sf-providers/         # credential bridge + the qwen-bailian route registration
+    ├── sf-providers/         # credential bridge + the qwen-bailian route registration
+    └── sf-progress/          # csr run-progress footer strip (tails the ADR #61 sidecar; ambient run-level status)
 ```
 
 Port provenance and per-milestone decisions: [PORTING-PLAN.md](PORTING-PLAN.md) (M0 spike → M4). Each skill's `docs/` retains the upstream convergence trail; substrate divergences are logged in the skills' `*.divergence.md`.

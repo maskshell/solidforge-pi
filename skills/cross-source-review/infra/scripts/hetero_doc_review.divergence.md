@@ -240,3 +240,37 @@ Live verification: qwen3 alias -> qwen-bailian/qwen3.8-max, full review pass
 (68.6s, 3 turns, release-freeze contradiction blocker caught, malformation '').
 All four hetero routes now live-verified: zai-coding-cn/glm-5.3, minimax-cn/
 MiniMax-M3, deepseek/deepseek-v4-flash, qwen-bailian/qwen3.8-max.
+
+
+---
+
+## PI PORT v2.2 — run-progress sidecar + leg-progress live disclosure (2026-08-29)
+
+Two ADDITIVE observability surfaces, ported/extended from upstream csr's
+ADR #61 (upstream commit carrying `csr_progress.py` + `--progress-file`; the pi
+port had regressed to neither — heartbeats lived only in bash-tool-captured
+stderr):
+
+1. **`--progress-file <path>`** (upstream #61, ported): leg boundaries
+   (`hetero-leg-start`/`hetero-leg-end`) + every heartbeat tee'd as JSONL into
+   the csr run-progress sidecar (`csr_progress.py status --watch` externally).
+   Best-effort by contract — an unwritable path warns once, never fails the
+   review. Module-global `_PROGRESS_PATH` (NOT a `run_claude` kwarg), so the
+   preserved function-signature contract above stays untouched.
+2. **`leg-progress` stderr events** (PI ADDITION beyond upstream): one compact
+   stderr line per grandchild `tool_execution_start` (`read docs/x.md`, `bash
+   <cmd>` preview) + one per assistant turn (`turn 3 · $0.0123`). Rationale:
+   pi's bash tool streams child stderr LIVE into the running tool panel (100ms
+   throttle), so event-granularity disclosure reaches the session mid-run —
+   upstream's 30s heartbeat only proves liveness, and upstream's ADR #62
+   narration loop (CC `run_in_background` + 2-minute orchestrator polls) has NO
+   pi equivalent (pi has no background bash) and is NOT ported. Deliberately
+   NOT written to the sidecar — the sidecar keeps upstream's strict
+   boundary+heartbeat vocabulary (csr_progress.py EVENT_REGISTRY parity; the
+   registry-sync gate blocks drift in either direction).
+
+New module surface: `_progress_append` / `_emit_leg_progress` / `_tool_preview`
+/ `_PROGRESS_PATH` / `_PROGRESS_WARNED` + the `--progress-file` argparse flag.
+stdout stays the single result JSON; without the flag both surfaces are inert
+(behavior-identical to pre-v2.2 — verified by the unchanged hetero_doc_guards
+checks 1–8).

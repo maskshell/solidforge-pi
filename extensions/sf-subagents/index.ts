@@ -35,6 +35,14 @@ const MAX_CONCURRENCY = Number(process.env.SF_SUBAGENT_MAX_CONCURRENCY ?? 8);
 const COLLAPSED_ITEM_COUNT = 10;
 const PER_TASK_OUTPUT_CAP = 50 * 1024;
 
+// Live disclosure (L1): tick cadence for silent-stretch updates (elapsed/idle tick
+// even when the child emits nothing — long provider latency stops being
+// indistinguishable from a hang), and the child message_update prefix probe (one
+// event per token delta — probe by prefix and only PAY the JSON parse for
+// text_delta lines, the live "what is it saying" tail).
+const LIVE_TICK_MS = Math.max(1000, Number(process.env.SF_SUBAGENT_TICK_MS ?? 5000));
+const PARTIAL_EVENT_PREFIX = '{"type":"message_update"';
+
 function formatTokens(count: number): string {
 	if (count < 1000) return count.toString();
 	if (count < 10000) return `${(count / 1000).toFixed(1)}k`;
@@ -158,6 +166,15 @@ interface SingleResult {
 	stopReason?: string;
 	errorMessage?: string;
 	step?: number;
+	// Live-disclosure fields (populated while running; frozen into the final
+	// details as a run record — currentToolCall/streamPreview are cleared at turn
+	// boundaries, so a completed result carries no stale tails).
+	running?: boolean;
+	startedAt?: number;
+	endedAt?: number;
+	lastEventAt?: number;
+	currentToolCall?: { name: string; args: Record<string, unknown> };
+	streamPreview?: string;
 }
 
 interface SubagentDetails {
@@ -182,6 +199,39 @@ function getFinalOutput(messages: Message[]): string {
 
 function isFailedResult(result: SingleResult): boolean {
 	return result.exitCode !== 0 || result.stopReason === "error" || result.stopReason === "aborted";
+}
+
+function formatDurationMs(ms: number): string {
+	const s = Math.max(0, Math.round(ms / 1000));
+	if (s < 60) return `${s}s`;
+	const m = Math.floor(s / 60);
+	return `${m}m${String(s % 60).padStart(2, "0")}s`;
+}
+
+// The live status block for a still-running leg: elapsed · in-flight turn ·
+// current child tool call (or idle age when silent) · output tokens so far, plus
+// the streaming text tail when one exists. Rendered by every mode's partial
+// view — the L1 answer to "Working..."-only opacity.
+function renderLiveBlock(r: SingleResult, themeFg: (color: any, text: string) => string): string {
+	const now = Date.now();
+	const started = r.startedAt ?? now;
+	const elapsed = formatDurationMs((r.endedAt ?? now) - started);
+	const parts = [elapsed, `turn ${r.usage.turns + 1}`];
+	if (r.currentToolCall) {
+		const preview = JSON.stringify(r.currentToolCall.args);
+		const short = preview.length > 48 ? `${preview.slice(0, 48)}...` : preview;
+		parts.push(`→ ${r.currentToolCall.name} ${short}`);
+	} else {
+		const idleMs = now - (r.lastEventAt ?? started);
+		if (idleMs > 8000) parts.push(`idle ${formatDurationMs(idleMs)}`);
+	}
+	if (r.usage.output > 0) parts.push(`↓${formatTokens(r.usage.output)}`);
+	let text = themeFg("warning", "⏳ ") + themeFg("muted", parts.join(" · "));
+	if (r.streamPreview) {
+		const tail = r.streamPreview.replace(/\s+/g, " ").slice(-100);
+		text += `\n${themeFg("dim", `  ${tail}`)}`;
+	}
+	return text;
 }
 
 function getResultOutput(result: SingleResult): string {
@@ -320,6 +370,9 @@ async function runSingleAgent(
 		usage: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, cost: 0, contextTokens: 0, turns: 0 },
 		model,
 		step,
+		running: true,
+		startedAt: Date.now(),
+		lastEventAt: Date.now(),
 	};
 
 	const emitUpdate = () => {
@@ -351,20 +404,79 @@ async function runSingleAgent(
 			});
 			let buffer = "";
 
+			// Silent-stretch ticker (L1): re-emit on LIVE_TICK_MS even when the child
+			// emits nothing, so elapsed/idle keep moving — long provider latency stops
+			// being indistinguishable from a hang. Cleared on settle/finally.
+			let ticker: ReturnType<typeof setInterval> | undefined;
+			const startTicker = () => {
+				if (ticker || !onUpdate) return;
+				ticker = setInterval(() => {
+					if (currentResult.running) emitUpdate();
+				}, LIVE_TICK_MS);
+			};
+			const stopTicker = () => {
+				if (ticker) {
+					clearInterval(ticker);
+					ticker = undefined;
+				}
+			};
+			const settle = (code: number) => {
+				currentResult.running = false;
+				currentResult.endedAt = Date.now();
+				stopTicker();
+				resolve(code);
+			};
+
 			const processLine = (line: string) => {
 				if (!line.trim()) return;
+
+				// message_update deltas: one event per token. Probe by prefix; only
+				// text_delta lines pay the JSON parse (the live text tail). Deltas never
+				// emit directly — the ticker coalesces them into the next tick.
+				if (line.startsWith(PARTIAL_EVENT_PREFIX)) {
+					if (line.includes('"text_delta"')) {
+						try {
+							const deltaEvent = JSON.parse(line);
+							const delta = deltaEvent?.assistantMessageEvent?.delta;
+							if (typeof delta === "string" && delta.trim()) {
+								currentResult.streamPreview = (currentResult.streamPreview ?? "") + delta;
+								if (currentResult.streamPreview.length > 400)
+									currentResult.streamPreview = currentResult.streamPreview.slice(-400);
+							}
+						} catch {
+							/* torn tail line — the next tick carries on */
+						}
+					}
+					currentResult.lastEventAt = Date.now();
+					return;
+				}
+
 				let event: any;
 				try {
 					event = JSON.parse(line);
 				} catch {
 					return;
 				}
+				currentResult.lastEventAt = Date.now();
+
+				// The child's tool call at START time — the "what is it doing NOW"
+				// signal, one event before any result exists.
+				if (event.type === "tool_execution_start") {
+					currentResult.currentToolCall = {
+						name: typeof event.toolName === "string" ? event.toolName : "tool",
+						args: (event.args as Record<string, unknown>) ?? {},
+					};
+					emitUpdate();
+					return;
+				}
 
 				if (event.type === "message_end" && event.message) {
 					const msg = event.message as Message;
 					currentResult.messages.push(msg);
+					currentResult.currentToolCall = undefined;
 
 					if (msg.role === "assistant") {
+						currentResult.streamPreview = undefined;
 						currentResult.usage.turns++;
 						const usage = msg.usage;
 						if (usage) {
@@ -382,8 +494,11 @@ async function runSingleAgent(
 					emitUpdate();
 				}
 
+				// Legacy child wire format (older pi): tool results as tool_result_end.
+				// Current pi emits message_end with role "toolResult" (handled above).
 				if (event.type === "tool_result_end" && event.message) {
 					currentResult.messages.push(event.message as Message);
+					currentResult.currentToolCall = undefined;
 					emitUpdate();
 				}
 			};
@@ -401,12 +516,14 @@ async function runSingleAgent(
 
 			proc.on("close", (code) => {
 				if (buffer.trim()) processLine(buffer);
-				resolve(code ?? 0);
+				settle(code ?? 0);
 			});
 
 			proc.on("error", () => {
-				resolve(1);
+				settle(1);
 			});
+
+			startTicker();
 
 			if (signal) {
 				const killProc = () => {
@@ -624,6 +741,8 @@ export default function (pi: ExtensionAPI) {
 						messages: [],
 						stderr: "",
 						usage: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, cost: 0, contextTokens: 0, turns: 0 },
+						running: true,
+						startedAt: Date.now(),
 					};
 				}
 
@@ -790,7 +909,11 @@ export default function (pi: ExtensionAPI) {
 			if (details.mode === "single" && details.results.length === 1) {
 				const r = details.results[0];
 				const isError = isFailedResult(r);
-				const icon = isError ? theme.fg("error", "✗") : theme.fg("success", "✓");
+				const icon = r.running
+					? theme.fg("warning", "⏳")
+					: isError
+						? theme.fg("error", "✗")
+						: theme.fg("success", "✓");
 				const displayItems = getDisplayItems(r.messages);
 				const finalOutput = getFinalOutput(r.messages);
 
@@ -799,6 +922,8 @@ export default function (pi: ExtensionAPI) {
 					let header = `${icon} ${theme.fg("toolTitle", theme.bold(r.agent))}${theme.fg("muted", ` (${r.agentSource})`)}`;
 					if (isError && r.stopReason) header += ` ${theme.fg("error", `[${r.stopReason}]`)}`;
 					container.addChild(new Text(header, 0, 0));
+					if (r.running)
+						container.addChild(new Text(renderLiveBlock(r, theme.fg.bind(theme)), 0, 0));
 					if (isError && r.errorMessage)
 						container.addChild(new Text(theme.fg("error", `Error: ${r.errorMessage}`), 0, 0));
 					container.addChild(new Spacer(1));
@@ -833,6 +958,7 @@ export default function (pi: ExtensionAPI) {
 				}
 
 				let text = `${icon} ${theme.fg("toolTitle", theme.bold(r.agent))}${theme.fg("muted", ` (${r.agentSource})`)}`;
+				if (r.running) text += `\n${renderLiveBlock(r, theme.fg.bind(theme))}`;
 				if (isError && r.stopReason) text += ` ${theme.fg("error", `[${r.stopReason}]`)}`;
 				if (isError && r.errorMessage) text += `\n${theme.fg("error", `Error: ${r.errorMessage}`)}`;
 				else if (displayItems.length === 0) text += `\n${theme.fg("muted", "(no output)")}`;
@@ -876,7 +1002,11 @@ export default function (pi: ExtensionAPI) {
 					);
 
 					for (const r of details.results) {
-						const rIcon = r.exitCode === 0 ? theme.fg("success", "✓") : theme.fg("error", "✗");
+						const rIcon = r.running
+							? theme.fg("warning", "⏳")
+							: r.exitCode === 0
+								? theme.fg("success", "✓")
+								: theme.fg("error", "✗");
 						const displayItems = getDisplayItems(r.messages);
 						const finalOutput = getFinalOutput(r.messages);
 
@@ -888,6 +1018,8 @@ export default function (pi: ExtensionAPI) {
 								0,
 							),
 						);
+						if (r.running)
+							container.addChild(new Text(renderLiveBlock(r, theme.fg.bind(theme)), 0, 0));
 						container.addChild(new Text(theme.fg("muted", "Task: ") + theme.fg("dim", r.task), 0, 0));
 
 						// Show tool calls
@@ -928,9 +1060,14 @@ export default function (pi: ExtensionAPI) {
 					theme.fg("toolTitle", theme.bold("chain ")) +
 					theme.fg("accent", `${successCount}/${details.results.length} steps`);
 				for (const r of details.results) {
-					const rIcon = r.exitCode === 0 ? theme.fg("success", "✓") : theme.fg("error", "✗");
+					const rIcon = r.running
+						? theme.fg("warning", "⏳")
+						: r.exitCode === 0
+							? theme.fg("success", "✓")
+							: theme.fg("error", "✗");
 					const displayItems = getDisplayItems(r.messages);
 					text += `\n\n${theme.fg("muted", `─── Step ${r.step}: `)}${theme.fg("accent", r.agent)} ${rIcon}`;
+					if (r.running) text += `\n${renderLiveBlock(r, theme.fg.bind(theme))}`;
 					if (displayItems.length === 0) text += `\n${theme.fg("muted", "(no output)")}`;
 					else text += `\n${renderDisplayItems(displayItems, 5)}`;
 				}
@@ -965,7 +1102,11 @@ export default function (pi: ExtensionAPI) {
 					);
 
 					for (const r of details.results) {
-						const rIcon = isFailedResult(r) ? theme.fg("error", "✗") : theme.fg("success", "✓");
+						const rIcon = r.running
+							? theme.fg("warning", "⏳")
+							: isFailedResult(r)
+								? theme.fg("error", "✗")
+								: theme.fg("success", "✓");
 						const displayItems = getDisplayItems(r.messages);
 						const finalOutput = getFinalOutput(r.messages);
 
@@ -1017,9 +1158,14 @@ export default function (pi: ExtensionAPI) {
 								: theme.fg("success", "✓");
 					const displayItems = getDisplayItems(r.messages);
 					text += `\n\n${theme.fg("muted", "─── ")}${theme.fg("accent", r.agent)} ${rIcon}`;
-					if (displayItems.length === 0)
-						text += `\n${theme.fg("muted", r.exitCode === -1 ? "(running...)" : "(no output)")}`;
-					else text += `\n${renderDisplayItems(displayItems, 5)}`;
+					if (r.exitCode === -1 || r.running) {
+						text += `\n${renderLiveBlock(r, theme.fg.bind(theme))}`;
+						if (displayItems.length > 0) text += `\n${renderDisplayItems(displayItems, 3)}`;
+					} else if (displayItems.length === 0) {
+						text += `\n${theme.fg("muted", "(no output)")}`;
+					} else {
+						text += `\n${renderDisplayItems(displayItems, 5)}`;
+					}
 				}
 				if (!isRunning) {
 					const usageStr = formatUsageStats(aggregateUsage(details.results));
