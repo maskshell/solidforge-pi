@@ -375,6 +375,70 @@ solidforge-pi/
 
 **验证**：14 个消费点矩阵全 OK（dry-check）；dsh `_materialize_profile` fail-fast 实测读通共享文件；pi qwen3 alias 实弹（认证+路由+模型解析正常；该次运行的 no-structured-output 为 provider 输出形态波动，`_parse_pi_stream` 最小回归测试证明解析器无回归——多 part/fence/前后 prose 均正确提取）；csr 6/6 + pd wiring 绿。
 
+## 17. DeepSeek Responses API 表面评估——不注册定案（2026-08-29）
+
+**问题**：deepseek profile 改走 DeepSeek 的 Responses API（官方指南 `api-docs.deepseek.com/zh-cn/guides/responses_api`）并覆盖端点/参数，可行吗？落点在哪？对 pd/csr 双 wrapper 同构生效（同一 profiles 机制、同一 `--model <_provider>/<model>` 组合规则）。
+
+**分层论证（定案核心）**：
+
+- 跨 harness 共享契约只在 **credential 层**（§16 的 `.env.solidforge` + `*_ANTHROPIC_AUTH_TOKEN` 约定）；profile 内容本来就 per-harness（CC：`env.ANTHROPIC_BASE_URL` + 别名 vs pi：`_provider`/`model`）。同名 route `deepseek` **今天已跨 harness 表面不同**（CC `/anthropic` vs pi openai-completions @ `api.deepseek.com`）——API 表面是 per-harness registry 的实现细节，不是契约。
+- Responses API 只能是 OpenAI 兼容表面 → **CC 结构性不可用**（CC 只说 Anthropic Messages）；pi-only route 名会制造 CC 下无意义的 profile 词汇。token 是账号级、表面无关（同一 `DEEPSEEK_ANTHROPIC_AUTH_TOKEN` 桥接后三表面通吃），共享 `.env.solidforge` 目标在任何方案下都不受影响。
+- `_family` 仍为 `deepseek` → **异源盲spot轴零增量**（传输表面换皮，非新家族）→ 不满足 sf-providers 注册准则（对照 qwen-bailian：那是凭证通道缺失的 catalog 新信息；responses 表面不缺凭证不缺家族）。
+- **定案：仓库零改动**（无 sf-providers 注册、无新 profile 文件、README 不动）。sanctioned 实验路径 = 用户本地 `~/.pi/agent/models.json` 对内置 `deepseek` provider 同 id upsert（solidforge 树完全不触碰、单文件可回滚、`deepseek.json` profile 原样工作）。
+
+**代码核验的 upsert 合并语义**（pi `provider-composer.js` `modelFromJson`/`applyModelsJson`，防 M1 类静默失实）：
+
+- 同 id = **整条替换而非字段合并**：仅 `api`/`baseUrl` 回退内置条目；省略时 `reasoning`→false、`contextWindow`→128000、`maxTokens`→16384、`cost`→全零（budget breaker 失明）、`thinkingLevelMap`/`compat`→丢。最小 `{id, api}` 补丁是静默陷阱，必须完整 facts 快照。
+- 变体均被源码排除：provider 级 `api` 不重标记存量模型（对存量只合并 `baseUrl`/`compat`），api-only 配置过不了校验；`modelOverrides` schema 无 `api` 字段。**不存在无漂移最小写法**。
+- 附带效应：表面切换是**账号全局**（交互用 `deepseek/*` 一并走 responses）；catalog 更新（调价/新代/窗口）不跟进快照，需手动 re-sync。
+
+**官方文档复核**（2026-08-29 版，逐项对 pi `openai-responses` 适配器源码）：
+
+- base_url `https://api.deepseek.com`；模型 id `deepseek-v4-flash`/`-pro`/`-flash-vision-exp` 与 pi catalog **逐字同名**（非 deepseek-chat/reasoner 旧命名）。该表面本为 Codex（OpenAI 协议客户端家族）而生——pi 属该家族，CC 不属于。
+- 无状态对口：`previous_response_id`/`conversation`/`store` 不支持（恒 `store:false`）↔ pi 硬编码 `store:false`。
+- `include` 不支持（静默忽略）↔ pi 所发 `include:["reasoning.encrypted_content"]` 无害；多轮 reasoning 回放走**明文 content 归并**（`encrypted_content` 不支持）↔ pi 将整个 reasoning item 原样存储/verbatim 回放（`openai-responses-shared.js:582` 存储 / `:138` 回放）→ 恰好命中明文机制。
+- `reasoning.effort` 支持（`summary` 可传但不生成摘要，pi 传 `summary:"auto"` 无害）；`temperature`/`top_p` **思考模式下不生效**（samplingParams 里放 top_p 是惰性的——有效字段是 `max_output_tokens`/`top_logprobs` 类）；`developer` 视同 `user`（`instructions` 才是 system 语义）→ 维持 `supportsDeveloperRole:false` 走 system 原生语义。
+- tools：`function` 支持（`custom` 仅 `apply_patch` 他名 400；pi `supportsOpenAIGrammarTools` 默认 false → 纯 function 不踩）；`parallel_tool_calls` 忽略（恒开启）；输入超窗显式 400（wrapper 按 hetero-api-error 上浮）；`usage.input_tokens_details.cached_tokens`（硬盘缓存自动管理）与 cost 遥测字段对齐。
+- **未验证项**：effort 枚举档位（该页未列；错值显式报错、可观察）；responses 表面价格是否与 completions 同价（以"模型 & 价格"页为准，快照 cost 手动同步）。
+
+**最终 upsert 模板**（`~/.pi/agent/models.json`，整块删除即回滚）：
+
+```json
+{
+  "providers": {
+    "deepseek": {
+      "api": "openai-responses",
+      "models": [
+        {
+          "id": "deepseek-v4-flash",
+          "name": "DeepSeek V4 Flash",
+          "reasoning": true,
+          "input": ["text"],
+          "cost": { "input": 0.14, "output": 0.28, "cacheRead": 0.0028, "cacheWrite": 0 },
+          "contextWindow": 1000000,
+          "maxTokens": 384000,
+          "thinkingLevelMap": { "minimal": null, "low": "low", "high": "high", "max": "max" },
+          "compat": { "supportsDeveloperRole": false, "supportsStore": false }
+        }
+      ]
+    }
+  }
+}
+```
+
+（provider 级 `api` 使模型条目免带 `api`；`baseUrl` 自动继承内置 `https://api.deepseek.com`；auth 不动——`envApiKeyAuth("DEEPSEEK_API_KEY")` 照吃 sf-providers 桥接的共享 token。compat 为**重推导**而非照抄 catalog：`thinkingFormat:"deepseek"`/`maxTokensField`/`requiresReasoningContentOnAssistantMessages` 是 completions 专属语义，responses 走 `thinkingLevelMap→reasoning.effort`。）
+
+**升级判据**：dogfood 出可测操作性收益（工具调用可靠性/流式行为/多轮回放质量）且证据形态对齐 qwen-bailian 的 observed-live 标准时，才迁 sf-providers 注册——届时漂移面不变（同为 verbatim facts 硬拷），收益仅打包分发 vs 每机手配；upsert 期试出的结论可直接迁移。
+
+**实弹验证（2026-08-29，upsert 已落 `~/.pi/agent/models.json`）**：
+
+- 路由生效：`--model deepseek/deepseek-v4-flash` 解析为 `api=openai-responses, provider=deepseek`；凭证走共享 `.env.solidforge` 桥接（`DEEPSEEK_ANTHROPIC_AUTH_TOKEN`→`DEEPSEEK_API_KEY`）。
+- 单轮 PONG：reasoning 流式（`response.reasoning_text.delta` 路径）+ 文本输出正常；cost 遥测实数（2774 in / 11 out / 8 reasoning，$0.00039）——快照 cost 字段工作正常。
+- **多轮工具回放通过**（reviewer 形态完整环）：turn1 `thinking`+`toolCall`（bash）→ `toolResult` 回传 → turn2 收敛文本。turn1 的 reasoning item（含 encrypted_content）与 function_call 配对回放均被接受，无 400。
+- **Observed-live 修正文档兼容表**：实测响应的 reasoning item **携带** `encrypted_content`（含 `summary:[]`）——与兼容表“include/encrypted_content 不支持”相悖；正确解读为：`include` 参数被忽略，但字段无条件返回且回放可用。pi 的 verbatim item 回放两条路径（明文 content / encrypted_content）全部命中，多轮机制比文档承诺的更宽。
+- 未尽事项：`thinkingLevelMap` 档位（low/high/max）显式映射未单独实测（本次走默认 effort）；cacheRead=0 为冷启动首次调用，符合预期（硬盘缓存自动管理，第二轮起命中）。
+- 附带提醒：交互式 pi 直选 `deepseek/*` 需 shell 有 `DEEPSEEK_API_KEY` 或 `/login`（auth.json 无 deepseek 条目）；hetero 腿不受影响（sf-providers 桥接）。
+
 ## Post-M4 addendum — csr live-progress disclosure (2026-08-29)
 
 Upstream's ADR #61/#62 (run-progress sidecar + in-session narration) had NOT been
@@ -473,16 +537,6 @@ master's compact style and NO namespace field; PORTING-PLAN addenda re-based; .g
 re-introduced by its content owner commits). If pi ever ships native namespace support,
 re-adoption is a fresh two-file change (manifest field + prompt rename), not a branch
 resurrection.
-## Post-M4 addendum — pi-loader smoke gate (2026-08-29)
-
-`tools/pi_loader_smoke.py` institutionalizes the release-blocker check born from the
-install-path verification: psv/pas frontmatter descriptions (plain YAML scalars containing
-`': '`) parsed fine under CC's lenient loader and were SILENTLY DROPPED by pi's strict one
-(3/5 skills shipped as no-ops; found only via `pi -e git:` end-to-end). The gate runs pi's
-own `loadSkillsFromDir` and asserts the EXACT 5-skill set with ZERO diagnostics, plus
-manifest-path resolution and the literal-colon prompt file — the class of harness-gap
-regression per-skill structural gates cannot see. Dev-skip when pi/node absent (lint_self
-precedent); release CI must run it for real.
 
 **Re-adopted 2026-08-29 (later)**: pi 0.84.5-namespace.0 landed pi.namespace support
 (dist/core/pi-manifest.js); the documented fresh two-file change was applied —
