@@ -1,0 +1,372 @@
+{
+  "artifact": "extensions/sf-hetero/docs/sf-hetero.proposal.md",
+  "rounds": [
+    {
+      "round": 1,
+      "same_source_findings": 7,
+      "hetero_findings": 5,
+      "hetero_degraded": false,
+      "blockers": 0,
+      "verdict": "pass",
+      "findings": [
+        {
+          "defect_id": "sfh-1",
+          "severity": "warning",
+          "kind": "contradiction",
+          "location": "§6 core claim C2 vs §2 'Completion semantics'",
+          "evidence": "C2 states unconditionally: \"the orchestrator-visible `content` is the wrapper's stdout verbatim; stderr progress lines are display-only and never enter LLM context\" (and §2's stream-separation paragraph likewise: \"stdout accumulates silently and is returned VERBATIM as the tool's `content`\"). But §2's own completion semantics define: \"exit 1 → `isError: true`, content = the parsed `malformation` fingerprint + stderr tail\" and \"exit 2 → `isError: true`, content = stderr tail\" — on both error paths content is NOT stdout-verbatim, and stderr-derived material (a tail that can include heartbeat/leg-progress lines) does enter LLM context. The error-path behavior is deliberate rule-3 disclosure, but the core claim C2 as written is contradicted by the doc's own §2 and would be checked ambiguously by the convergence coverage prong.",
+          "suggestion": "Scope C2 (and the §2 invariant) to the usable-result/exit-0 path, stating the exit-1/exit-2 fingerprint+stderr-tail composition as the explicit rule-3 exception."
+        },
+        {
+          "defect_id": "sfh-2",
+          "severity": "warning",
+          "kind": "structural-gap",
+          "location": "§2 'Live panel (fixes P2)' — details.providers[] field `costUsd`",
+          "evidence": "The panel spec promises per-provider `{name, model?, elapsedS, turns, idleS, currentTool?, costUsd, heartbeats}`, and §2 lists resolution sources only for model (\"from the first heartbeat that carries it\"), turns/currentTool (\"from `leg-progress` phases `turn`/`tool`\"), idleS, and the ticker — `costUsd` has no stated source. Verified against the wrapper (infra/scripts/hetero_doc_review.py): `_emit_heartbeat` emits fields provider/elapsed_s/stream_bytes/events/assistant_events/model/idle_s/killed — NO cost field — and cost exists on stderr only inside the turn-phase leg-progress free-text detail: `f\"turn {tele['assistant_events']}\" + (f\" · ${tele['cost_usd']:.4f}\" ...)`. So costUsd (and turns/currentTool) can only be derived by string-parsing the unstructured `detail` field, which the doc never acknowledges and which strains C4's \"derives solely from the wrapper's documented stderr events\" reading.",
+          "suggestion": "Name the `detail`-text parse (turn N · $X.XXXX) as the costUsd/turns source explicitly, or drop costUsd from the panel fields."
+        },
+        {
+          "defect_id": "sfh-3",
+          "severity": "warning",
+          "kind": "citation-error",
+          "location": "§3 final sentence — 'the wrapper owns them from env defaults (`HETERO_DOC_*`)'",
+          "evidence": "The doc: \"NOT exposed: budget/turns/bytes/timeout caps — the wrapper owns them from env defaults (`HETERO_DOC_*`)\". Verified in hetero_doc_review.py main(): `--timeout` default `int(os.environ.get(\"HETERO_DOC_TIMEOUT\", \"600\"))`, `--max-turns` default `int(os.environ.get(\"HETERO_DOC_MAX_TURNS\", \"60\"))`, `--max-stream-bytes` default `int(os.environ.get(\"HETERO_DOC_MAX_STREAM_BYTES\", ...))` — but `--budget-usd` is `default=12.0` with NO env var. One of the four named caps has no HETERO_DOC_* env default; the parenthetical over-claims.",
+          "suggestion": "Drop budget from the env-defaults claim or note its hardcoded 12.0 default."
+        },
+        {
+          "defect_id": "sfh-4",
+          "severity": "warning",
+          "kind": "citation-error",
+          "location": "§7 Testing — 'the repo's temp-tsconfig pattern'",
+          "evidence": "The doc: \"`tsc` typecheck (the repo's temp-tsconfig pattern)\" — phrased as an existing repo precedent. Verified: a repo-wide search of the tracked tree finds ZERO `tsconfig*.json` files (find `**/tsconfig*.json` → none) and no occurrence of `tsc`/`temp-tsconfig` anywhere outside this proposal itself (the only other tsconfig mentions are skills/parallel-development references describing gate patterns for USER projects, not repo-internal tooling). The existing extensions (sf-subagents/index.ts etc.) ship with no visible in-repo typecheck harness. The cited pattern is unverifiable in the repo.",
+          "suggestion": "Define the pattern (e.g., 'generate a temp tsconfig covering extensions/*.ts') as a new step instead of citing it as an existing convention."
+        },
+        {
+          "defect_id": "sfh-5",
+          "severity": "warning",
+          "kind": "coverage-gap",
+          "location": "§2 Design (first sentence) + §7 Testing — extension registration step absent",
+          "evidence": "§2: \"A new bundled extension `extensions/sf-hetero/` registering ONE tool, `hetero_doc_review`\" — but neither §2 nor §7 mentions adding `./extensions/sf-hetero` to package.json's `pi.extensions`. Verified package.json currently lists exactly `[\"./extensions/sf-subagents\", \"./extensions/sf-hooks\", \"./extensions/sf-providers\", \"./extensions/sf-progress\"]` (sf-hetero absent), and §7's e2e loads the extension explicitly (\"`pi --mode json -p` with the extension loaded\"), so every listed test can pass via `-e` while the manifest registration is missing and interactive sessions silently lack the tool. The landing steps for a 'bundled' extension (manifest entry, and any layout-gate enumeration ripple) are never addressed.",
+          "suggestion": "Add the package.json pi.extensions registration (and any layout-gate enumeration updates) to §2/§7 as an explicit landing step."
+        },
+        {
+          "defect_id": "sfh-6",
+          "severity": "warning",
+          "kind": "structural-gap",
+          "location": "§2 'Spawn' abort handling + §6 C3 — process-group kill parity claim",
+          "evidence": "The design: \"spawn(\\\"python3\\\", [...]) with `detached: true` ... kill the process GROUP (`process.kill(-pgid)`)\" and C3: \"matching (not exceeding) the bash tool's existing process-tree kill\". Verified pi's killProcessTree (dist/utils/shell.js): on win32 it runs `taskkill.exe /F /T /PID` (and bash spawns with `detached: process.platform !== \"win32\"`); only the non-win32 branch does `process.kill(-pid, \"SIGKILL\")`. The proposal's unconditional `detached: true` + `process.kill(-pgid)` is POSIX-only, so the claimed parity does not hold on win32 where bash still kills the tree. (POSIX parity itself is exact — verified.)",
+          "suggestion": "Scope the C3 parity claim to POSIX, or mirror the platform branch (taskkill on win32) as bash does."
+        },
+        {
+          "defect_id": "sfh-7",
+          "severity": "coverage",
+          "kind": "citation-error",
+          "location": "reviewer disclosure — search scope",
+          "evidence": "Could not fully verify one citation class: my file searches respect .gitignore, so untracked/gitignored tooling was not searched — an uncommitted or gitignored 'temp-tsconfig' helper script could exist and would soften finding sfh-4 (though a pattern only present untracked would still not be a citable repo convention). All other citations were verified directly against sources read in full or in the relevant regions: dist/core/tools/bash.js (merged-stream quote, 'Command exited with code N', BASH_PREVIEW_LINES, killProcessTree), hetero_doc_review.py (sequential provider loop, stdout single result JSON, exit codes, leg-progress/hetero-heartbeat fields and 30s interval, argparse flags and env defaults, dry-run canned findings), SKILL.md step 2 + three-view disclosure, csr_progress_gates.py check 9, csr_progress.py status --watch, PORTING-PLAN.md 'csr live-progress disclosure' addendum (L1/L2 landed, sf-hetero deferred), sf-subagents (5s LIVE_TICK_MS ticker, execute(signal,onUpdate)/renderResult API), and ADRs #41/#43/#52 in pd's design-decisions.md.",
+          "suggestion": "If a temp-tsconfig helper exists untracked, commit it or reword §7 to define the pattern."
+        },
+        {
+          "defect_id": "sfh-d1",
+          "severity": "warning",
+          "kind": "contradiction",
+          "location": "§3 'NOT exposed: budget/turns/bytes/timeout caps' — primary reviewer's sfh-3 evidence contradicts the doc's actual text",
+          "evidence": "Primary reviewer sfh-3 quotes the doc as: 'NOT exposed: budget/turns/bytes/timeout caps — the wrapper owns them from env defaults (`HETERO_DOC_*`)'. The actual proposal §3 text (verified verbatim from extensions/sf-hetero/docs/sf-hetero.proposal.md, line 'NOT exposed: ...'): 'NOT exposed: budget/turns/bytes/timeout caps — the wrapper owns them from its own defaults (timeout / max-turns / max-stream-bytes env-overridable via `HETERO_DOC_TIMEOUT` / `HETERO_DOC_MAX_TURNS` / `HETERO_DOC_MAX_STREAM_BYTES`; `--budget-usd` has a hardcoded 12.0 default with no env var)'. The parenthetical EXPLICITLY distinguishes the three env-overridable caps from budget's hardcoded 12.0 default. The reviewer's quoted text is a paraphrase that drops the parenthetical; the underlying claim 'the parenthetical over-claims' contradicts the doc — it correctly acknowledges the budget caveat.",
+          "suggestion": "Drop sfh-3 — the doc accurately names the budget caveat; the reviewer's evidence quote does not match the doc's actual text."
+        },
+        {
+          "defect_id": "sfh-d2",
+          "severity": "warning",
+          "kind": "contradiction",
+          "location": "§7 'Registration is an explicit landing step' — primary reviewer's sfh-5 evidence contradicts the doc's actual text",
+          "evidence": "Primary reviewer sfh-5 claims: 'neither §2 nor §7 mentions adding `./extensions/sf-hetero` to package.json's `pi.extensions`'. The actual proposal §7 text (verified verbatim): 'Registration is an explicit landing step: `package.json` → `pi.extensions` gains `./extensions/sf-hetero` (the extension is inert without it), and the e2e below loads it via `-e`.' §7 EXPLICITLY identifies the manifest entry as a landing step. Verified package.json currently lists [\"./extensions/sf-subagents\", \"./extensions/sf-hooks\", \"./extensions/sf-providers\", \"./extensions/sf-progress\"] (sf-hetero absent) so the landing step is genuinely needed, but the proposal addresses it. The reviewer's secondary concern 'layout-gate enumeration ripple' is also unfounded — searched all infra/test/*.py, no gate enumerates the extension list (csr_progress_gates.py check 9's bullet regex is SKILL.md-scoped, disconnect_check.py's REQUIRED_FILES is skill-specific, plugin_layout.py is skill-scoped).",
+          "suggestion": "Drop sfh-5 — the proposal's §7 explicitly lists package.json registration as a landing step; the 'layout-gate enumeration ripple' concern has no evidence in the gate scripts."
+        },
+        {
+          "defect_id": "sfh-d3",
+          "severity": "warning",
+          "kind": "structural-gap",
+          "location": "§2 'Stream separation (fixes P1)' + §6 C2",
+          "evidence": "Proposal §2: 'stderr is parsed line-by-line as progress events — the wrapper's documented stderr surface'. Proposal §6 C2: 'stderr progress lines are display-only and never enter LLM context'. The wrapper source emits non-progress stderr lines too: line 244 (`_progress_append` OSError branch): 'warning: progress file unwritable (...); continuing without it'; line 328 (`_load_prior` FileNotFoundError branch): 'warn: prior-findings file not found: ...; ignoring'. The proposal specifies behavior for 'progress lines' only. On exit 0 (the usable-result path), the proposal does not say whether non-progress stderr lines: (a) enter content alongside stdout verbatim, (b) are silently discarded, (c) are surfaced in the live panel but not in content, or (d) cause parser failure. The §2 design relies on every stderr line being JSON — a real but rare edge case the doc leaves unaddressed.",
+          "suggestion": "Specify behavior for non-progress stderr lines on exit 0 (recommended: silently drop — surfacing them only on error paths via 'stderr tail' as §2 already does for exit 1/2)."
+        },
+        {
+          "defect_id": "sfh-d4",
+          "severity": "warning",
+          "kind": "structural-gap",
+          "location": "§2 'Live panel (fixes P2)' — details.providers[] field `heartbeats`",
+          "evidence": "Proposal §2 lists `heartbeats` in the panel shape: 'details.providers[] — {name, model?, elapsedS, turns, idleS, currentTool?, costUsd, heartbeats}'. The `heartbeats` field is undefined: the wrapper's `_emit_heartbeat` emits 8 fields per event (provider/elapsed_s/stream_bytes/events/assistant_events/model/idle_s/killed — verified lines 608-622), but the proposal does not specify (i) which subset of fields the panel keeps, (ii) the array's max length (the only hint is 'expanded adds the heartbeat history tail' which implies a bound but does not name it), (iii) update semantics (append-only? circular buffer? last-N?), (iv) freeze behavior on the final result. The panel renderer cannot implement this field without inventing the contract. sfh-2 covered costUsd/turns/currentTool sources but did not address `heartbeats` (which is a separate field with the same kind of undefined-contract problem).",
+          "suggestion": "Define the `heartbeats` field, e.g., 'append-only array of recent heartbeat events (full event payload), capped at the most recent20; frozen into the final details.result on run end'."
+        },
+        {
+          "defect_id": "sfh-d5",
+          "severity": "warning",
+          "kind": "coverage-gap",
+          "location": "§2 'Spawn' abort handling + §6 C3",
+          "evidence": "Proposal §2: 'kill the process GROUP (`process.kill(-pgid)`)'. Node's `process.kill(pid, signal)` defaults to SIGTERM (verified against Node API). bash's `killProcessTree` (verified at /opt/homebrew/lib/node_modules/@earendil-works/pi-coding-agent/dist/utils/shell.js line 196, POSIX branch): `process.kill(-pid, 'SIGKILL')` — explicit SIGKILL. Proposal §6 C3 claims 'matching (not exceeding) the bash tool's existing killProcessTree behavior'. The proposal's signal is unspecified — SIGTERM (graceful, allows Python atexit handlers and the wrapper's stdout buffer to flush) vs bash's SIGKILL (forceful, no cleanup). A concrete edge case: a long-blocking provider API call on the wrapper's pi grandchild would receive SIGTERM under sf-hetero (and might handle it gracefully, surviving the abort) instead of bash's SIGKILL (force-kill). sfh-6 caught the win32 parity question (process.kill(-pgid) doesn't work on win32) but did not catch this POSIX signal-strength question — a different dimension of the same C3 claim.",
+          "suggestion": "Name the signal explicitly — either 'process.kill(-pgid, \"SIGKILL\")' (exact bash parity) or 'process.kill(-pgid, \"SIGTERM\")' (admits a graceful window) — and reconcile the C3 'matching' claim against the chosen signal."
+        }
+      ],
+      "dispositions": [
+        {
+          "defect_id": "sfh-1",
+          "action": "fixed",
+          "note": "C2 scoped to exit-0 path; rule-3 exception stated"
+        },
+        {
+          "defect_id": "sfh-2",
+          "action": "fixed",
+          "note": "costUsd source named (leg-progress turn detail text)"
+        },
+        {
+          "defect_id": "sfh-3",
+          "action": "fixed",
+          "note": "cap defaults corrected: 3 env vars + hardcoded budget 12.0"
+        },
+        {
+          "defect_id": "sfh-4",
+          "action": "fixed",
+          "note": "tsconfig step defined, not cited as repo convention"
+        },
+        {
+          "defect_id": "sfh-5",
+          "action": "fixed",
+          "note": "package.json pi.extensions landing step added (§7)"
+        },
+        {
+          "defect_id": "sfh-6",
+          "action": "fixed",
+          "note": "C3 scoped POSIX; win32 out of scope"
+        },
+        {
+          "defect_id": "sfh-7",
+          "action": "rejected",
+          "note": "coverage disclosure (gitignore-blinded search) — carried in coverage notes, not a defect"
+        },
+        {
+          "defect_id": "sfh-d1",
+          "action": "rejected",
+          "note": "stale-prior noise: quotes pre-revision text; underlying issue = sfh-3, already fixed in-round"
+        },
+        {
+          "defect_id": "sfh-d2",
+          "action": "rejected",
+          "note": "stale-prior noise: underlying issue = sfh-5, already fixed in-round"
+        },
+        {
+          "defect_id": "sfh-d3",
+          "action": "escalated",
+          "note": "different-family-only: non-progress stderr behavior unspecified — amendment applied (display-only stderrTail), human confirmation pending"
+        },
+        {
+          "defect_id": "sfh-d4",
+          "action": "escalated",
+          "note": "different-family-only: heartbeats field undefined — amendment applied (count of parsed heartbeats), human confirmation pending"
+        },
+        {
+          "defect_id": "sfh-d5",
+          "action": "escalated",
+          "note": "different-family-only: kill signal unspecified — amendment applied (explicit SIGKILL, exact bash parity), human confirmation pending"
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "same_source_findings": 7,
+      "hetero_findings": 6,
+      "hetero_degraded": false,
+      "blockers": 0,
+      "verdict": "pass",
+      "findings": [
+        {
+          "defect_id": "exit1-failfast-fingerprint-gap",
+          "severity": "warning",
+          "kind": "structural-gap",
+          "location": "§2 Completion semantics (fixes P3), exit-1 bullet",
+          "evidence": "Doc: \"exit 1 → `isError: true`, content = the parsed `malformation` fingerprint + stderr tail\". But the wrapper's documented pre-leg fail-fasts exit 1 with EMPTY stdout: `_resolve_profile_path` calls `sys.exit(f\"error: unknown provider profile '{name}' (no {p})...\")` and `_load_profile` calls `sys.exit(f\"error: provider '{name}' needs the env var ${token_var}...\")` — Python `sys.exit(str)` prints to stderr and exits 1 with no result JSON on stdout, so there is no `malformation` field to parse. SKILL.md explicitly documents this class: \"a pre-leg fail-fast (missing token / unknown profile) surfaces as a non-zero exit with the cause in that same output\". The doc's unparsable-stdout escape hatch is specified only \"on exit 0\" (\"Non-UTF8 or unparsable stdout on exit 0 → isError: true with the raw tail\"), leaving the exit-1-with-empty-stdout composition step undefined.",
+          "suggestion": "Spec exit-1 content as \"malformation fingerprint WHEN stdout parses; stderr tail always\" — mirror the exit-0 unparsable clause for exit 1."
+        },
+        {
+          "defect_id": "exit0-degrade-omitted",
+          "severity": "warning",
+          "kind": "citation-error",
+          "location": "§1 P3 (echoed by §2 \"the wrapper's own exit contract says so\")",
+          "evidence": "Doc: \"The wrapper's exit contract is 0 = usable result (pass OR rewrite-due-to-blocker), 1 = malformation, 2 = argument/IO error.\" The wrapper's operative exit-code comment says: \"Exit code: 0 = the wrapper produced a usable result (pass OR rewrite-due-to-blocker OR degrade — read the structured fields for which).\" The doc's restatement narrows exit 0 and drops the degrade case; consequently §2/§3 never say how a degraded-but-exit-0 run surfaces (`degraded`/`degraded_providers` envelope fields are absent from the details.result field list \"verdict, findings_count, provider_runs[]\").",
+          "suggestion": "Restate exit 0 verbatim including \"OR degrade\", and have details.result (or the panel) surface the envelope's `degraded`/`degraded_providers` fields."
+        },
+        {
+          "defect_id": "p2-model-cost-overclaim",
+          "severity": "warning",
+          "kind": "contradiction",
+          "location": "§1 P2",
+          "evidence": "Doc: \"There is no per-provider aggregation (...), no resolved-model line, no cost-so-far.\" This conflicts with the cited current disclosure surface: SKILL.md step-2 view (1) — which §4 preserves and cites — says the live stderr stream carries \"`turn 3 · $0.0123`\" (cost-so-far) and a heartbeat \"every 30s (elapsed / stream bytes / assistant events / the RESOLVED model / idle)\". The model and running cost DO appear in the bash panel's raw tail; what is missing is a pinned/aggregated per-provider render, not the data itself.",
+          "suggestion": "Reword P2 to \"no pinned/aggregated model+cost display — the data lives only in scrolling raw JSONL lines\"."
+        },
+        {
+          "defect_id": "c3-win32-rationale-ungrounded",
+          "severity": "warning",
+          "kind": "citation-error",
+          "location": "§6 C3 parenthetical",
+          "evidence": "Doc: \"win32 is out of scope for this substrate (the package requires `python3` on `$PATH` and its wrappers spawn POSIX-shaped argv)\". The second leg is unsupported: the wrapper spawns argv LISTS via `subprocess.Popen(argv, ...)` (platform-neutral), and pi's own `utils/shell.js` resolves bash on win32 (Git Bash paths + `findExecutableOnPath('where')`) — argv shape is not a POSIX property. The load-bearing POSIX dependence is the TOOL's own `detached: true` process-group + `process.kill(-pgid, \"SIGKILL\")` semantics (the killProcessTree non-win32 branch), which the doc already states.",
+          "suggestion": "Ground the win32 exclusion in process-group kill semantics (`detached` + negative-pid SIGKILL), dropping the \"POSIX-shaped argv\" leg."
+        },
+        {
+          "defect_id": "costusd-not-marked-optional",
+          "severity": "warning",
+          "kind": "contradiction",
+          "location": "§2 Live panel, provider-state field list",
+          "evidence": "Doc lists `{name, model?, elapsedS, turns, idleS, currentTool?, costUsd, heartbeats}` — `model` and `currentTool` are marked optional but `costUsd` is not — while the same paragraph defines costUsd as \"parsed from the `leg-progress` turn line's `detail` text\". The wrapper emits that text conditionally: `f\"turn {tele['assistant_events']}\" + (f\" · ${tele['cost_usd']:.4f}\" if tele['cost_usd'] else \"\")` — a backend reporting no `usage.cost.total` (or zero) produces no cost surface on stderr for the entire run, so costUsd can be undefined even though the field list implies it is always present.",
+          "suggestion": "Mark it `costUsd?` — absent parse = cost not reported by the backend."
+        },
+        {
+          "defect_id": "tsconfig-precedent-unverifiable",
+          "severity": "coverage",
+          "kind": "coverage-gap",
+          "location": "§7 Typecheck step",
+          "evidence": "Doc: \"the pattern used for `sf-subagents`/`sf-progress` during the 2026-08-29 increment — a /tmp-generated config, not a committed repo convention\". I could not verify this historical claim from any committed source: PORTING-PLAN.md's \"Post-M4 addendum — csr live-progress disclosure (2026-08-29)\" records the L1/L2 mechanics and gates but contains no typecheck/tsconfig step (grep for tsconfig|tsc|typecheck in PORTING-PLAN.md: no matches), and no tsconfig file exists anywhere in the repo. The \"not a committed repo convention\" half checks out; the \"pattern used during the 2026-08-29 increment\" half has no record I can check.",
+          "suggestion": "Either cite the prior increment's record for the /tmp-tsconfig pattern, or present it as a new one-off convention for this landing."
+        },
+        {
+          "defect_id": "static-review-only",
+          "severity": "coverage",
+          "kind": "coverage-gap",
+          "location": "whole doc (review disclosure)",
+          "evidence": "This leg verified every citation STATICALLY (read/grep of hetero_doc_review.py, SKILL.md, csr_progress_gates.py, PORTING-PLAN.md, package.json, sf-subagents/index.ts, pi dist/core/tools/bash.js + dist/utils/shell.js + docs/extensions.md). I did not execute the csr gate suite, a typecheck, or the proposed offline e2e, so runtime-behavior claims (extension `-e` loading of the not-yet-written tool, panel rendering, gate re-run green after the §4 rewrite) are unverified by execution.",
+          "suggestion": "None — execution-based verification belongs to the §7 landing steps."
+        },
+        {
+          "defect_id": "panel-no-provider-end-signal",
+          "severity": "warning",
+          "kind": "structural-gap",
+          "location": "§2 Live panel (fixes P2) + §6 C4",
+          "evidence": "Doc §2: \"Each parsed stderr event updates a per-provider state map keyed by the event's `provider` field (both event kinds carry it)\". Doc §6 C4: \"the live panel derives solely from the wrapper's documented stderr events (`leg-progress` + `hetero-heartbeat`); no new event kind, no stdout peeking mid-run\". But the wrapper's documented stderr surface contains NO provider-end event: `_run_streamed` only emits `leg-progress` (per tool/turn) and `_emit_heartbeat` (every 30s, with `killed: None|timeout|bytes-cap` — explicitly NOT set on normal completion per the wrapper docstring at line ~265: 'NO idle-kill: a legitimately long single response can be line-silent for minutes'). Provider boundaries only land in the `--progress-file` sidecar as `hetero-leg-start`/`hetero-leg-end` (hetero_doc_review.py lines 1276-1292) — which C4 bars the panel from reading. The main loop in `hetero_doc_review.py` runs providers sequentially (`for name in provider_names`) with no stderr emit between providers; the only transition signal is the first heartbeat of the NEXT provider carrying `provider=Y`. So during a multi-provider run, after provider X finishes the panel has no event to mark X as done — it will show X's last leg-progress state with an ever-growing `idleS` until the next event of any kind arrives, and the doc defines no completion-detection heuristic.",
+          "suggestion": "Either (a) explicitly specify a gap-detection heuristic in §2 (e.g., 'no event for provider X for >N seconds → mark X as completed'), (b) soften C4 to allow the panel to read `--progress-file` for `hetero-leg-end`, or (c) commit to a wrapper stderr emit at provider boundary as a step-C1 follow-up."
+        },
+        {
+          "defect_id": "c2-overclaims-exit12-composition",
+          "severity": "warning",
+          "kind": "contradiction",
+          "location": "§6 C2 parenthetical",
+          "evidence": "Doc §6 C2: \"(The exit-1/exit-2 paths deliberately compose `content` from the malformation fingerprint + stderr tail — the rule-3 never-silent exception, stated in §2.)\". Doc §2 actual specification: \"exit 1 → `isError: true`; content = the parsed `malformation` fingerprint + stderr tail WHEN stdout parses, else stderr VERBATIM (the pre-leg fail-fast shape: empty stdout, cause on stderr — never silent, rule 3). exit 2 → `isError: true`, content = stderr tail.\" The C2 composition claim holds only for the exit-1+stdout-parses case. The exit-1+stdout-empty case (pre-leg fail-fast via `sys.exit(...)` in `_resolve_profile_path`/`_load_profile`) and exit 2 (argparse errors raise `parser.error()` → exit 2 with no result JSON printed) have NO `malformation` fingerprint to compose — the wrapper only sets `result['malformation']` from `malform_fps` after the per-provider loop, which neither pre-leg fail-fasts nor argparse errors reach. So C2's stated composition is wrong for two of the three exit-1 sub-cases and for exit 2 entirely.",
+          "suggestion": "Restate C2 as \"exit-1+stdout-parses → malformation fingerprint + stderr tail; exit-1+stdout-empty → stderr verbatim; exit 2 → stderr tail\" — match §2's actual branching."
+        },
+        {
+          "defect_id": "details-result-providers-omitted",
+          "severity": "coverage",
+          "kind": "coverage-gap",
+          "location": "§2 Completion semantics (details.result field list)",
+          "evidence": "Doc §2: \"`details.result` carries the parsed envelope (`verdict`, `findings_count`, `provider_runs[]`)\". But the wrapper envelope (hetero_doc_review.py main(), lines ~1378-1404) constructs result with 9 keys: \"verdict\", \"degraded\", \"degraded_providers\", \"findings_count\", \"findings\", \"coverage\", \"malformation\", \"providers\", \"provider_runs\". Primary-reviewer finding `exit0-degrade-omitted` caught the omission of `degraded`/`degraded_providers`. The same field list also omits `providers` — the list of provider names that ran — which is the only envelope field that names the panel rows the user sees (multi-different-family runs); the panel cannot label rows \"deepseek\" vs \"qwen-bailian\" without surfacing this list somewhere beyond `content`. `findings` and `coverage` legitimately belong in `content` (verbatim stdout) and need not repeat, but `providers` is panel-display metadata that the doc does not address.",
+          "suggestion": "Add `providers` to the `details.result` field list (or define a top-level `details.providersRun` parallel to `details.providers[]`)."
+        },
+        {
+          "defect_id": "onupdate-content-undefined",
+          "severity": "coverage",
+          "kind": "structural-gap",
+          "location": "§2 Live panel, onUpdate call description",
+          "evidence": "Doc §2: \"Each parsed stderr event updates a per-provider state map keyed by the event's `provider` field (both event kinds carry it), then calls `onUpdate` with `details.providers[]`\". The doc specifies the `details.providers[]` half of the onUpdate payload but says nothing about the `content` half — which is required by pi's tool contract (sf-subagents/index.ts line 379-382 sets `content: [{ type: \"text\", text: getFinalOutput(currentResult.messages) || \"(running...)\" }]`; the chain-mode callback at line 680 propagates `partial.content`). During streaming, the proposal returns `content = stdout verbatim` ONLY on exit 0; there is no spec for what `content` should contain during the run when stdout is incomplete (or empty). Without this, an implementer has no contract for the `content` text the LLM sees during streaming updates.",
+          "suggestion": "Specify \"`onUpdate` content during streaming = empty (or a static `(running... ${elapsedS}s)` placeholder); `content` is populated only at completion\" — matching sf-subagents' `(running...)` pattern."
+        },
+        {
+          "defect_id": "skilldir-resolution-conflation",
+          "severity": "warning",
+          "kind": "citation-error",
+          "location": "§2 Spawn section",
+          "evidence": "Doc §2: \"`<skill-dir>` resolves from the extension's own location (`extensions/sf-hetero/ → ../../skills/cross-source-review/`), the same package-relative resolution the wrapper uses for sf-providers (`_sf_providers_dir`)\". Wrapper's `_sf_providers_dir()` (hetero_doc_review.py lines 297-309) does FIVE-dirname stripping from `<pkg>/skills/cross-source-review/infra/scripts/hetero_doc_review.py` to land at `<pkg>`, then joins `extensions/sf-providers`. The new tool at `<pkg>/extensions/sf-hetero/index.ts` would need TWO-dirname stripping to reach `<pkg>`, then join `skills/cross-source-review`. The doc compares resolving the WRAPPER SCRIPT PATH (new tool's need) to resolving the SF-PROVIDERS DIR (wrapper's `_sf_providers_dir` need) — they are different resolutions (different target, different depth, different file→dir transition). The \"same package-relative resolution\" framing is true at the conceptual level (both anchor at `<pkg>`) but the cited comparison is to a different resolution in the cited source.",
+          "suggestion": "Cite the wrapper's own self-location resolution (the file `__file__` is `<pkg>/skills/cross-source-review/infra/scripts/hetero_doc_review.py`) and note \"the new tool's extension-root to package-root is the analogous strip\" — drop the `_sf_providers_dir` comparison."
+        },
+        {
+          "defect_id": "kill-grandchild-assumption-unverified",
+          "severity": "coverage",
+          "kind": "structural-gap",
+          "location": "§2 Spawn section (kill semantics)",
+          "evidence": "Doc §2: \"kill the process GROUP with an EXPLICIT `SIGKILL` (`process.kill(-pgid, \"SIGKILL\")`) so the wrapper AND its grandchild `pi` die together — exact parity with the bash tool's existing `killProcessTree` POSIX branch (which sends `SIGKILL`, not the Node default `SIGTERM`)\". The bash-tool parity claim is accurate (shell.js line 203: `process.kill(-pid, \"SIGKILL\")`; bash.js line 67: `detached: process.platform !== \"win32\"`). BUT the doc assumes the wrapper's grandchild `pi` inherits the wrapper's process group. The wrapper spawns the grandchild via `subprocess.Popen(argv, stdin=DEVNULL, stdout=PIPE, stderr=PIPE, text=True)` with NO `preexec_fn` (hetero_doc_review.py `_run_streamed`, lines ~686-693). On Linux, a child without `preexec_fn=os.setsid` inherits the parent's pgid — so the doc's assumption holds at the grandchild level. The doc does NOT verify or state this assumption, and it does not address whether the GRANDCHILD `pi`'s own tool-spawned children (the sf-subagents child `pi`, the bash child `sh`, etc.) inherit the same pgid — if any grandchild layer sets its own session/process group, the SIGKILL on the wrapper's pgid will NOT reach them. The doc claims \"the wrapper AND its grandchild `pi` die together\" but only guarantees the wrapper's direct descendants.",
+          "suggestion": "Either (a) add a sentence stating \"the wrapper's `Popen` (no `preexec_fn`) inherits its pgid to the grandchild, and any grandchild-spawned process inherits that pgid unless it explicitly creates its own session — verified for the current bash/subagents surface\" or (b) loosen the claim to \"the wrapper AND its DIRECT grandchild `pi` die together; deeper descendants rely on inherited-pgid behavior that the doc assumes holds\"."
+        }
+      ],
+      "dispositions": [
+        {
+          "defect_id": "exit1-failfast-fingerprint-gap",
+          "action": "fixed",
+          "note": "exit-1 branch split: fingerprint+tail when stdout parses, else stderr verbatim"
+        },
+        {
+          "defect_id": "exit0-degrade-omitted",
+          "action": "fixed",
+          "note": "P3 contract includes degraded-included exit 0; isError not set for degraded"
+        },
+        {
+          "defect_id": "p2-model-cost-overclaim",
+          "action": "fixed",
+          "note": "P2 reworded: data present as raw lines, aggregation/derivation missing"
+        },
+        {
+          "defect_id": "c3-win32-rationale-ungrounded",
+          "action": "fixed",
+          "note": "POSIX-shaped-argv claim dropped; grounded on python3-on-PATH dogfood surface"
+        },
+        {
+          "defect_id": "costusd-not-marked-optional",
+          "action": "fixed",
+          "note": "costUsd? optional — wrapper omits $ segment at cumulative 0"
+        },
+        {
+          "defect_id": "tsconfig-precedent-unverifiable",
+          "action": "rejected",
+          "note": "coverage disclosure: precedent is untracked /tmp config; §7 already reworded to define the step"
+        },
+        {
+          "defect_id": "static-review-only",
+          "action": "rejected",
+          "note": "coverage disclosure: whole-doc static verification, no dynamic run — carried in coverage notes"
+        },
+        {
+          "defect_id": "panel-no-provider-end-signal",
+          "action": "escalated",
+          "note": "different-family-only: no stderr provider-end signal — amendment applied (C4 known-derived-limit stated), human confirmation pending"
+        },
+        {
+          "defect_id": "c2-overclaims-exit12-composition",
+          "action": "escalated",
+          "note": "different-family-only: C2 parenthetical restated to match §2 branching, human confirmation pending"
+        },
+        {
+          "defect_id": "details-result-providers-omitted",
+          "action": "escalated",
+          "note": "different-family-only: details.result = full nine-key envelope, human confirmation pending"
+        },
+        {
+          "defect_id": "onupdate-content-undefined",
+          "action": "escalated",
+          "note": "different-family-only: partial content specified (one-line running placeholder), human confirmation pending"
+        },
+        {
+          "defect_id": "skilldir-resolution-conflation",
+          "action": "escalated",
+          "note": "different-family-only: same-principle-different-depth wording, human confirmation pending"
+        },
+        {
+          "defect_id": "kill-grandchild-assumption-unverified",
+          "action": "escalated",
+          "note": "different-family-only: pgroup-inheritance grounding added (Popen sets no start_new_session), human confirmation pending"
+        }
+      ]
+    }
+  ],
+  "substantive_converged": true,
+  "coverage": [
+    "core-claims-coverage: 6/6",
+    "cap=5, rounds=2"
+  ],
+  "stalemate": false,
+  "rightness": "human_confirm_required",
+  "cap": 5,
+  "core_claims": [
+    "C1",
+    "C2",
+    "C3",
+    "C4",
+    "C5",
+    "C6"
+  ],
+  "authority_ref": "",
+  "size_tier": "long"
+}
