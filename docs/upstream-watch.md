@@ -1,6 +1,6 @@
-# upstream-watch — the solidforge-internal design-lineage ledger
+# upstream-watch — the solidforge (CC reference implementation) design-lineage ledger
 
-> **Relationship contract (2026-08-29, supersedes the port/sync framing):** [solidforge-internal](https://github.com/maskshell/solidforge-internal) (the Claude Code reference implementation) is **NOT a git upstream** of this repo. It is the **design lineage**: its ADR numbering remains the shared design authority, and knowledge flows BOTH ways (upstream ADR #57 is explicitly "borrowed from the pi + dsh ports"). There is no merge tracking, no shared remote, no sync obligation — this ledger is the replacement: a deliberate, reviewable record of what design content flowed, which direction, and what was consciously declined.
+> **Relationship contract (2026-08-29, supersedes the port/sync framing):** [solidforge](https://github.com/maskshell/solidforge) (the Claude Code reference implementation) is **NOT a git upstream** of this repo. It is the **design lineage**: its ADR numbering remains the shared design authority, and knowledge flows BOTH ways (upstream ADR #57 is explicitly "borrowed from the pi + dsh ports"). There is no merge tracking, no shared remote, no sync obligation — this ledger is the replacement: a deliberate, reviewable record of what design content flowed, which direction, and what was consciously declined.
 >
 > Maintained on every cross-repo absorption/outflow. An entry is evidence, not intent — "pending" rows are candidates discovered by watching upstream's ADR log, not commitments.
 

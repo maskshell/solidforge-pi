@@ -2,11 +2,23 @@
   "name": "solidforge-pi",
   "version": "0.1.0",
   "description": "SolidForge — loop-engineering skills for the Pi coding agent: converge → specify → implement pipeline + outcome-axis verification layers. Pi port of the Claude Code plugin.",
-  "keywords": ["pi-package"],
-  "license": "MIT",
+  "keywords": [
+    "pi-package"
+  ],
+  "license": "Apache-2.0",
   "pi": {
-    "extensions": ["./extensions/sf-subagents", "./extensions/sf-hooks", "./extensions/sf-providers", "./extensions/sf-progress", "./extensions/sf-hetero"],
-    "skills": ["./skills"],
-    "prompts": ["./prompts"]
+    "extensions": [
+      "./extensions/sf-subagents",
+      "./extensions/sf-hooks",
+      "./extensions/sf-providers",
+      "./extensions/sf-progress",
+      "./extensions/sf-hetero"
+    ],
+    "skills": [
+      "./skills"
+    ],
+    "prompts": [
+      "./prompts"
+    ]
   }
 }

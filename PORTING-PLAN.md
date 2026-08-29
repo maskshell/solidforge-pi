@@ -5,9 +5,9 @@
 
 ---
 
-## 与 solidforge-internal 的关系（2026-08-29 定案，取代"port/sync"心智）
+## 与 solidforge（CC 参照实现）的关系（2026-08-29 定案，取代"port/sync"心智）
 
-**solidforge-internal 不是本仓库的 git 上游。** 它是**设计上游**（design lineage）：ADR 编号仍是双方共享的设计权威，知识双向流动（其 ADR #57 明言"borrowed from the pi + dsh ports"），但代码共享只按三层契约窄通道进行，永不 git 跟踪：
+**[solidforge](https://github.com/maskshell/solidforge) 不是本仓库的 git 上游。** 它是**设计上游**（design lineage）：ADR 编号仍是双方共享的设计权威，知识双向流动（其 ADR #57 明言"borrowed from the pi + dsh ports"），但代码共享只按三层契约窄通道进行，永不 git 跟踪：
 
 - **设计层**（ADR/proposal/方法论）：双向引用，谁的好流谁；
 - **substrate-neutral 代码层**（纯 stdlib 引擎、schemas、agents）：允许 verbatim 对齐，方向按内容定；
