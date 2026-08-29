@@ -140,6 +140,14 @@ the spawned `pi` child's environment (the wrapper loads it into `os.environ`; th
 `HETERO_DOC_PROFILE=<name>` (or `--profile <name>` on the substrate CLI), with
 `<UPPERCASE_NAME>_ANTHROPIC_AUTH_TOKEN` set. Done — no code change.
 
+## Observability — watching a review run live
+
+csr runs are observable at three layers, none needing setup:
+
+- **In-session, per-leg (live)** — pi's `bash` tool streams the wrapper's stderr into the running tool panel as it arrives: `leg-progress` lines at event granularity (every reviewer tool call — `read docs/x.md` — and every turn — `turn 3 · $0.0123`) plus an ADR #52 `hetero-heartbeat` every 30s (elapsed / bytes / assistant events / the RESOLVED model / idle). The same-family leg streams its own internals via the `subagent` tool.
+- **In-session, run-level (ambient)** — the bundled `sf-progress` extension tails the newest `workspace/cross-source-review/runs/*/progress.jsonl` and renders a condensed footer strip (round k/cap · phase · findings · terminal state) for the whole session.
+- **External** — any second terminal: `tail -f <run-dir>/progress.jsonl`, or `python3 <skill-dir>/infra/scripts/csr_progress.py status <run-dir> --watch 5` for a one-screen render. The sidecar is written by the orchestrator (run/round boundaries via `csr_progress.py append`) and by the wrapper (`--progress-file <run-dir>/progress.jsonl` — pass it on every hetero invocation; best-effort, never fails the review).
+
 ## What needs no arming
 
 - The same-family leg (`solidforge:doc-reviewer`) — a local fresh-context agent; needs nothing

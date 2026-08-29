@@ -54,6 +54,9 @@ REQUIRED_FILES = {
         "the substrate divergence log (rule 7 copy-pattern trail)"
     ),
     "infra/scripts/converge.py": "the deterministic convergence-policy engine",
+    "infra/scripts/csr_progress.py": (
+        "the run-progress sidecar writer + status renderer (ADR #61)"
+    ),
     "infra/scripts/profiles/deepseek.json": "the default different-family provider template",
     "infra/scripts/converge_fixtures/converged.json": "fixture: BOTH prongs pass",
     "infra/scripts/converge_fixtures/stalemate.json": "fixture: prong_b fails",
@@ -70,6 +73,9 @@ REQUIRED_FILES = {
     "infra/test/findings_shape_check.py": "the findings shape-contract gate",
     "infra/test/convergence_policy_check.py": "the offline convergence-policy gate",
     "infra/test/hetero_doc_guards.py": "the different-family substrate guard gate (ADR #52)",
+    "infra/test/csr_progress_gates.py": (
+        "the run-progress sidecar + live-disclosure gate (ADR #61)"
+    ),
     "infra/test/lint_self.py": "the dogfood lint gate",
     "infra/test/plugin_layout.py": "the plugin-layout gate",
     "infra/test/dogfood.py": "the dogfood convergence-loop gate (skip path)",

@@ -359,3 +359,57 @@ solidforge-pi/
 **落地**：① pi 两个 qwen profile `_token_env` 对齐 upstream 文件名约定；sf-providers 桥表加 `QWEN_TOKEN_PLAN_CN_`→`..._API_KEY`、Bailian 现行名 `QWEN_BAILIAN_` + legacy `QWEN3_` 双认；example 模板同步。② dsh 四个 DSH-NATIVE/外部 profile（zai/minimax-cn/qwen，pd+csr 双拷贝）加 `_token_env`/`_credential_env` 指向共享文件的 CC 约定名（dsh 的 escape-hatch 字段，语义即为此）。③ **部署**：一份物理文件 `solidforge/.env.solidforge` + symlink（pi 根 `../solidforge/.env.solidforge`；dsh preset 根绝对链接）。
 
 **验证**：14 个消费点矩阵全 OK（dry-check）；dsh `_materialize_profile` fail-fast 实测读通共享文件；pi qwen3 alias 实弹（认证+路由+模型解析正常；该次运行的 no-structured-output 为 provider 输出形态波动，`_parse_pi_stream` 最小回归测试证明解析器无回归——多 part/fence/前后 prose 均正确提取）；csr 6/6 + pd wiring 绿。
+
+## Post-M4 addendum — csr live-progress disclosure (2026-08-29)
+
+Upstream's ADR #61/#62 (run-progress sidecar + in-session narration) had NOT been
+ported — under pi a csr review showed only the `Working...` spinner for both legs.
+This increment lands a three-layer disclosure stack that is STRICTLY stronger than
+the upstream mechanics (event granularity, zero LLM-behavior dependence, both legs
+covered, ambient run-level strip — none of which CC offers):
+
+**L1 — per-leg live panels (event-driven).**
+- `sf-subagents` (同源): the child `pi --mode json` stream is now consumed at
+  event granularity — `tool_execution_start` (current action), throttled
+  `message_update` text_delta probes (live text tail; prefix-check before the
+  JSON parse, hot-path preserved), and a `SF_SUBAGENT_TICK_MS` ticker (5s) that
+  re-emits elapsed/idle during silent stretches (long provider latency stops
+  being indistinguishable from a hang — ADR #52's concern, moved client-side).
+  Renderers in all three modes (single/chain/parallel) show a live block
+  (`⏳ 42s · turn 3 · → read docs/x.md · ↓2.1k`) and running-aware icons (the old
+  partial showed a misleading ✓). `running/startedAt/lastEventAt/endedAt/
+  currentToolCall/streamPreview` ride the details; frozen in the final result.
+- `hetero_doc_review.py` (异源): NEW `leg-progress` stderr events beyond upstream
+  — one compact line per grandchild `tool_execution_start` + one per assistant
+  turn (with running cost). pi's bash tool streams child stderr live (100ms
+  throttle) into the running tool panel, so the reviewer's actual process (not
+  just 30s liveness) is visible mid-run through PLAIN bash — no new tool needed.
+
+**L2 — run-progress sidecar (upstream #61 ported verbatim + ambient strip).**
+- `csr_progress.py` ported verbatim (pure stdlib, zero CC surface; EVENT_REGISTRY
+  identical → sidecar files are cross-readable with upstream).
+- wrapper `--progress-file` (upstream semantics: leg boundaries + heartbeat tee,
+  best-effort, module-global seam — function-signature contract untouched;
+  divergence logged in `hetero_doc_review.divergence.md` v2.2).
+- NEW `extensions/sf-progress/`: polls the newest
+  `workspace/cross-source-review/runs/<run>/progress.jsonl` (3s; torn-tail-safe
+  incremental read) and renders ONE condensed footer line via `ctx.ui.setStatus`
+  — round k/cap · phase (+live idle/model from heartbeats) · findings · reconcile
+  totals · terminal outcome. Fades 30min after the last event. Read-only,
+  best-effort; inert without a runs dir.
+
+**Deliberately NOT ported**: upstream ADR #62's narration loop (CC
+`run_in_background` + ~2-minute orchestrator polls + assistant-text narration) —
+pi has no background bash, the loop burns orchestrator context, and it is pure
+LLM-behavior contract; every layer above is substrate. The
+`csr_progress_gates.py` check 9 asserts `run_in_background` stays ABSENT
+(anti-blind-sync guard for future upstream merges).
+
+**Gates**: new `csr_progress_gates.py` (10 checks — upstream 1–8 adapted to the pi
+wrapper/wire format + the pi disclosure contract as check 9);
+`disconnect_check.py` REQUIRED_FILES + SKILL.md self-check list + install.md
+observability section updated (rule 5); `hetero_doc_guards.py` unchanged and
+green (behavior-identical without the new flag). Deferred: the `sf-hetero`
+dedicated tool (separates wrapper stderr/stdout channels properly + structured
+per-provider panel) — rides a csr convergence round before landing, per the
+skill's own discipline.
