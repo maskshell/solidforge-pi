@@ -46,7 +46,7 @@ EXPECTED_SKILLS = {
     "primary-source-verification",
     "prior-art-search",
 }
-EXPECTED_PROMPT = os.path.join("prompts", "solidforge:arm-tools.md")
+EXPECTED_PROMPT = os.path.join("prompts", "arm-tools.md")
 PI_PKG_NAME = "@earendil-works/pi-coding-agent"
 
 # The node harness: loads skills with pi's real loader, prints one JSON line.
@@ -100,12 +100,13 @@ def resolve_pi_root():
                             break
                 except (OSError, json.JSONDecodeError):
                     continue
-    for common in (
+    candidates += [
         "/opt/homebrew/lib/node_modules/@earendil-works/pi-coding-agent",
         "/usr/local/lib/node_modules/@earendil-works/pi-coding-agent",
-        os.path.expanduser("~/.npm-global/lib/node_modules/@earendil-works/pi-coding-agent"),
-    ):
-        candidates.append(common)
+        os.path.expanduser(
+            "~/.npm-global/lib/node_modules/@earendil-works/pi-coding-agent"
+        ),
+    ]
     for c in candidates:
         if os.path.isfile(os.path.join(c, "dist", "core", "skills.js")):
             return c
@@ -114,10 +115,12 @@ def resolve_pi_root():
 
 def main():
     coverage = [
-        "pi-loader-smoke (release BLOCKER; dev-skip when pi/node absent): the "
-        "package loads under pi's REAL resource loaders — the harness-gap "
-        "incident class (frontmatter that one harness parses and another "
-        "silently drops)."
+        (
+            "pi-loader-smoke (release BLOCKER; dev-skip when pi/node absent): the "
+            "package loads under pi's REAL resource loaders — the harness-gap "
+            "incident class (frontmatter that one harness parses and another "
+            "silently drops)."
+        )
     ]
     findings = []
 
@@ -131,7 +134,10 @@ def main():
                     "gate": GATE,
                     "passed": True,
                     "skipped": True,
-                    "coverage": coverage + [f"SKIP: {missing} not found — dev machine without pi; release CI must run this for real"],
+                    "coverage": coverage
+                    + [
+                        f"SKIP: {missing} not found — dev machine without pi; release CI must run this for real"
+                    ],
                     "findings": [],
                 },
                 indent=2,
@@ -142,10 +148,16 @@ def main():
 
     loader = os.path.join(pi_root, "dist", "core", "skills.js")
     proc = subprocess.run(
-        [node_bin, "--input-type=module", "-e", _NODE_HARNESS % (loader, os.path.join(REPO, "skills"))],
+        [
+            node_bin,
+            "--input-type=module",
+            "-e",
+            _NODE_HARNESS % (loader, os.path.join(REPO, "skills")),
+        ],
         capture_output=True,
         text=True,
         timeout=120,
+        check=False,
     )
     loaded = None
     if proc.returncode == 0:
@@ -190,11 +202,13 @@ def main():
         )
 
     _check(
-        "prompt-colon-file",
+        "prompt-namespace-file",
         os.path.isfile(os.path.join(REPO, EXPECTED_PROMPT)),
         f"missing {EXPECTED_PROMPT}",
-        "the literal-colon filename IS the /solidforge:arm-tools invocation "
-        "surface on stock pi (the namespace manifest field is not adopted)",
+        "the prompt is namespace-composed (/solidforge:arm-tools) on "
+        "pi.namespace-capable builds (pi-manifest.js) — the literal-colon "
+        "filename retired with the 2026-08-29 re-adoption; the package now "
+        "requires a namespace-capable pi",
         findings,
         coverage,
     )
@@ -205,7 +219,14 @@ def main():
         pi_manifest = manifest.get("pi") or {}
     except (OSError, json.JSONDecodeError) as exc:
         pi_manifest = None
-        _check("manifest-parses", False, str(exc), "package.json must be valid JSON", findings, coverage)
+        _check(
+            "manifest-parses",
+            False,
+            str(exc),
+            "package.json must be valid JSON",
+            findings,
+            coverage,
+        )
     if pi_manifest is not None:
         missing_paths = []
         for key in ("extensions", "skills", "prompts"):
@@ -225,7 +246,12 @@ def main():
     passed = not any(f.get("severity") == "blocker" for f in findings)
     print(
         json.dumps(
-            {"gate": GATE, "passed": passed, "coverage": coverage, "findings": findings},
+            {
+                "gate": GATE,
+                "passed": passed,
+                "coverage": coverage,
+                "findings": findings,
+            },
             indent=2,
             ensure_ascii=False,
         )

@@ -30,7 +30,7 @@ Without the adapter, the playwright agents fall back to the Playwright CLI (`npx
 Enabling the package does NOT mutate host-project build files. In a target project run:
 
 ```
-/solidforge:arm-tools              # provision arch-configs + constitution + templates
+/solidforge:arm-tools              # (namespace-composed; requires a pi.namespace-capable build) provision arch-configs + constitution + templates
 /solidforge:arm-tools --with-tools # also add version-matched gate tools to dev deps
 ```
 
@@ -62,7 +62,7 @@ The `subagent` tool and the hetero wrappers spawn `pi --mode json -p` children. 
 solidforge-pi/
 ├── package.json              # pi manifest (pi.extensions / pi.skills / pi.prompts)
 ├── skills/                   # 5 skills (SKILL.md + stdlib python infra + self-gates)
-├── prompts/solidforge:arm-tools.md
+├── prompts/arm-tools.md           # /solidforge:arm-tools via pi.namespace
 ├── agents/                   # 22 solidforge:<name> agent definitions (loaded by sf-subagents)
 └── extensions/
     ├── sf-subagents/         # subagent tool + package agents discovery (16/8 concurrency, env-tunable); live streaming of child internals (tool calls / turns / elapsed / idle / text tail)

@@ -483,3 +483,23 @@ own `loadSkillsFromDir` and asserts the EXACT 5-skill set with ZERO diagnostics,
 manifest-path resolution and the literal-colon prompt file — the class of harness-gap
 regression per-skill structural gates cannot see. Dev-skip when pi/node absent (lint_self
 precedent); release CI must run it for real.
+
+**Re-adopted 2026-08-29 (later)**: pi 0.84.5-namespace.0 landed pi.namespace support
+(dist/core/pi-manifest.js); the documented fresh two-file change was applied —
+manifest field `"namespace": "solidforge"` + `prompts/solidforge:arm-tools.md` →
+`prompts/arm-tools.md` (pure rename, content identical). Live-verified: skills
+expose as `solidforge:<name>`, `/solidforge:arm-tools` resolves. The package now
+REQUIRES a namespace-capable pi (stock builds ignore the field and the renamed
+prompt does not resolve); pi_loader_smoke's prompt check tracks the new
+contract (`prompt-namespace-file`).
+
+## Post-M4 addendum — pi-loader smoke gate (2026-08-29)
+
+`tools/pi_loader_smoke.py` institutionalizes the release-blocker check born from the
+install-path verification: psv/pas frontmatter descriptions (plain YAML scalars containing
+`': '`) parsed fine under CC's lenient loader and were SILENTLY DROPPED by pi's strict one
+(3/5 skills shipped as no-ops; found only via `pi -e git:` end-to-end). The gate runs pi's
+own `loadSkillsFromDir` and asserts the EXACT 5-skill set with ZERO diagnostics, plus
+manifest-path resolution and the literal-colon prompt file — the class of harness-gap
+regression per-skill structural gates cannot see. Dev-skip when pi/node absent (lint_self
+precedent); release CI must run it for real.

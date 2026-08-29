@@ -5,3 +5,4 @@ workspace/
 .env.solidforge
 .DS_Store
 extensions/**/*.js
+.claude/
