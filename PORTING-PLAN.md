@@ -554,6 +554,7 @@ install-path verification: psv/pas frontmatter descriptions (plain YAML scalars 
 `': '`) parsed fine under CC's lenient loader and were SILENTLY DROPPED by pi's strict one
 (3/5 skills shipped as no-ops; found only via `pi -e git:` end-to-end). The gate runs pi's
 own `loadSkillsFromDir` and asserts the EXACT 5-skill set with ZERO diagnostics, plus
-manifest-path resolution and the literal-colon prompt file — the class of harness-gap
-regression per-skill structural gates cannot see. Dev-skip when pi/node absent (lint_self
+manifest-path resolution and the prompt-file contract (namespace-era: plain
+`arm-tools.md` + `pi.namespace`; previously the literal-colon filename) — the class of
+harness-gap regression per-skill structural gates cannot see. Dev-skip when pi/node absent (lint_self
 precedent); release CI must run it for real.

@@ -1,6 +1,6 @@
 ---
 name: cross-source-review
-description: cross-source-review — a same-family (同源, fresh-context) + different-family (异源) cross multi-round review engine that drives a doc-shaped artifact to SUBSTANTIVE convergence. Use it when a high-quality document needs adversarial cross-source review to convergence — "cross-review this requirements doc", "converge this design doc", "异源 review this spec/wiki page", "drive 同源+异源 review on this artifact". Produces a converged artifact + an honest convergence-record. NOT for code review (route to parallel-development), spec/arch-design authoring (blueprint-crafting), or research gathering (blueprint-crafting researcher). Does NOT judge whether the doc is "right" (outcome-axis — human). Phase A activation is EXPLICIT invocation (`/cross-source-review`); auto-routing is deferred.
+description: cross-source-review — a same-family (同源, fresh-context) + different-family (异源) cross multi-round review engine that drives a doc-shaped artifact to SUBSTANTIVE convergence. Use it when a high-quality document needs adversarial cross-source review to convergence — "cross-review this requirements doc", "converge this design doc", "异源 review this spec/wiki page", "drive 同源+异源 review on this artifact". Produces a converged artifact + an honest convergence-record. NOT for code review (route to parallel-development), spec/arch-design authoring (blueprint-crafting), or research gathering (blueprint-crafting researcher). Does NOT judge whether the doc is "right" (outcome-axis — human). Phase A activation is EXPLICIT invocation (`/skill:cross-source-review`); auto-routing is deferred.
 ---
 
 # Cross Source Review
@@ -32,7 +32,7 @@ The same-family leg (fresh-context, same family) is PRIMARY and always runs. The
 - Deliverable is authoring/rewriting a spec, arch-design, iteration-plan, or research → route to `blueprint-crafting`.
 - The request is "is this the right requirement / right conclusion?" → outcome-axis, human only.
 
-The guard is soft (remind + route, not refuse). Phase A relies on **explicit invocation** (`/cross-source-review`); the 3-way `trigger_check` activation partition is DEFERRED to maturation (proposal §9 Q4) — explicit invocation minimizes, but does not zero, routing collision, which is why a Scope Guard still ships.
+The guard is soft (remind + route, not refuse). Phase A relies on **explicit invocation** (`/skill:cross-source-review`); the 3-way `trigger_check` activation partition is DEFERRED to maturation (proposal §9 Q4) — explicit invocation minimizes, but does not zero, routing collision, which is why a Scope Guard still ships.
 
 ## Quick Start
 

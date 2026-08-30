@@ -2,7 +2,7 @@
 
 **SolidForge for the [Pi](https://github.com/earendil-works/pi-mono) coding agent** — an independent, pi-native implementation of the SolidForge Loop Engineering system: the **converge → specify → implement** pipeline plus two additive **outcome-axis** layers (cited-source verification + uncited prior-art collision). Design lineage: [solidforge](https://github.com/maskshell/solidforge) (the Claude Code reference implementation) — its ADRs remain the shared design authority and knowledge flows both ways, but there is **no git upstream/sync relationship**; code sharing is narrow, deliberate, and ledgered in [docs/upstream-watch.md](docs/upstream-watch.md).
 
-- **Skills (5)** — `cross-source-review`, `blueprint-crafting`, `parallel-development`, `primary-source-verification`, `prior-art-search` (invoke `/skill:<name>`)
+- **Skills (5)** — `cross-source-review`, `blueprint-crafting`, `parallel-development`, `primary-source-verification`, `prior-art-search` (invoke `/skill:solidforge:<name>` or the bare `/solidforge:<name>` on a pi.namespace-capable pi; `/skill:<name>` on stock pi)
 - **Agents (22)** — plugin-scoped as `solidforge:<name>`, dispatched via the bundled `subagent` tool (isolated context; single / parallel / chain)
 - **Guards** — the convergence-loop hooks (`blueprint_guard` / `counters` / `fast_gate`) bridged to pi's `tool_call` / `tool_result` events by the `sf-hooks` extension
 - **Heterogeneous (异源) review substrate** — the different-family review legs spawn stateless `pi --mode json` subprocesses on provider routes **different** from the orchestrator's family, with wrapper-side budget/turn/bytes/wall-clock breakers (ADR #41/#43/#52 semantics preserved)
@@ -30,9 +30,12 @@ Without the adapter, the playwright agents fall back to the Playwright CLI (`npx
 Enabling the package does NOT mutate host-project build files. In a target project run:
 
 ```
-/solidforge:arm-tools              # (namespace-composed; requires a pi.namespace-capable build) provision arch-configs + constitution + templates
-/solidforge:arm-tools --with-tools # also add version-matched gate tools to dev deps
+/solidforge:arm-tools              # pi.namespace-capable pi — provision arch-configs + constitution + templates
+/solidforge:arm-tools --with-tools # …also add version-matched gate tools to dev deps
+/arm-tools                         # stock-pi fallback (no namespace: template name = filename)
 ```
+
+The namespace form requires a pi build with `pi.namespace` support (this package declares `"namespace": "solidforge"`; see the proposal + implementation at [maskshell/pi, branch `package-namespace`](https://github.com/maskshell/pi/tree/package-namespace), tracked in [earendil-works/pi#8834](https://github.com/earendil-works/pi/issues/8834)).
 
 `arm.py` appends the L1 Constitution to the project's **AGENTS.md** (when present) or **CLAUDE.md** — pi loads either. Reversible: `arm.py --revert` (dry-run; `--apply` to execute).
 
