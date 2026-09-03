@@ -7,3 +7,4 @@ workspace/
 extensions/**/*.js
 .claude/
 __pycache__/
+node_modules/

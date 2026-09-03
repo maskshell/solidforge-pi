@@ -1,5 +1,5 @@
 ---
-name: "solidforge:plan-reviewer"
+name: "plan-reviewer"
 description: "Adversarial outer-ring reviewer for the blueprint-crafting skill. Reviews a frozen plan-model for gaps, over-engineering, contradictions, and blind spots that the deterministic inner-ring constraints-checker cannot catch. Use when the convergence loop reaches the outer ring (after the inner checker passes). Runs in a fresh independent context and reports schema'd findings only — never edits or fixes. Spawn at the outer ring of each converge cycle."
 tools: read, grep, find
 ---

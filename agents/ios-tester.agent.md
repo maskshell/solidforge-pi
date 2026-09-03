@@ -1,5 +1,5 @@
 ---
-name: "solidforge:ios-tester"
+name: "ios-tester"
 description: "Expert iOS/macOS QA engineer for XCUITest UI/E2E and result analysis. Use when: (1) XCUITest UI/E2E tests, (2) Parsing .xcresult bundles, (3) Diagnosing flaky UI tests, (4) iOS E2E test-strategy design, (5) Snapshot tests. XCTest UNIT tests ride with ios-developer (the implementer), like backend-developer — route here only for UI/E2E."
 ---
 

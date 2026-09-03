@@ -13,10 +13,15 @@ Checks:
   1. skills — pi's loadSkillsFromDir over <repo>/skills: the loaded name set
      equals the expected 5 EXACTLY, and diagnostics == 0 (a warning diagnostic
      is a silent drop in the making — fail it now, not in a user's install).
-  2. prompts — the literal-colon prompt file exists (pi loads prompts/ *.md by
-     glob; the colon filename is load-bearing for /solidforge:arm-tools).
+  2. prompts — prompts/arm-tools.md exists (plain filename; pi composes the
+     invocation /solidforge:arm-tools from pi.namespace on namespace-capable
+     builds — the literal-colon filename was retired 2026-08-29).
   3. manifest — package.json parses; every pi.extensions / pi.skills /
      pi.prompts path exists on disk.
+  4. agents — every agents/*.agent.md frontmatter name is BARE lowercase-hyphen
+     and pi.namespace is valid (sf-subagents prefixes the namespace at load
+     time per the pi packages spec); a hardcoded "solidforge:" prefix in a
+     name is the double-source-of-truth regression.
 
 pi resolution: $PI_LOADER_ROOT override, else walk up from the realpath of
 $(command -v pi) to the @earendil-works/pi-coding-agent package root, else
@@ -242,6 +247,48 @@ def main():
             findings,
             coverage,
         )
+
+    # agents — bare frontmatter names; sf-subagents applies pi.namespace at
+    # load time (pi packages spec: single source of truth). A hardcoded
+    # "solidforge:" prefix in a name is the double-truth regression (runtime
+    # agent names would silently drift on a namespace change).
+    ns = pi_manifest.get("namespace") if pi_manifest is not None else None
+    ns_ok = isinstance(ns, str) and bool(
+        re.fullmatch(r"[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?", ns)
+    )
+    agents_dir = os.path.join(REPO, "agents")
+    bad_agents = []
+    agent_count = 0
+    if os.path.isdir(agents_dir):
+        for fn in sorted(os.listdir(agents_dir)):
+            if not fn.endswith(".agent.md"):
+                continue
+            agent_count += 1
+            try:
+                with open(os.path.join(agents_dir, fn), encoding="utf-8") as fh:
+                    head = fh.read(4096)
+            except OSError:
+                bad_agents.append(f"{fn}: unreadable")
+                continue
+            m = re.search(r'^name:\s*"?(.+?)"?\s*$', head, re.MULTILINE)
+            if not m:
+                bad_agents.append(f"{fn}: no name: field in frontmatter")
+            elif ":" in m.group(1) or not re.fullmatch(
+                r"[a-z0-9][a-z0-9-]*", m.group(1)
+            ):
+                bad_agents.append(
+                    f'{fn}: name="{m.group(1)}" must be bare lowercase-hyphen'
+                )
+    _check(
+        "agents-bare-names",
+        ns_ok and agent_count > 0 and not bad_agents,
+        f"ns={ns!r} agents={agent_count} bad={bad_agents}",
+        "agents/*.agent.md frontmatter names must be BARE (lowercase-hyphen); "
+        "sf-subagents composes <pi.namespace>:<name> at load — a hardcoded "
+        "prefix duplicates the namespace truth and drifts on rename",
+        findings,
+        coverage,
+    )
 
     passed = not any(f.get("severity") == "blocker" for f in findings)
     print(

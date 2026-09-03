@@ -1,5 +1,5 @@
 ---
-name: "solidforge:architect"
+name: "architect"
 description: "Expert software architect specializing in system design and technical decisions. Use when: (1) Designing new system architecture, (2) Making architectural decisions, (3) Creating design documentation, (4) Evaluating technical trade-offs, or (5) Planning system scalability"
 ---
 

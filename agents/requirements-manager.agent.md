@@ -1,5 +1,5 @@
 ---
-name: "solidforge:requirements-manager"
+name: "requirements-manager"
 description: "Expert business analyst for software requirements management. Use when: (1) Starting new features or projects, (2) Clarifying ambiguous user needs, (3) Documenting functional and non-functional requirements, (4) Prioritizing requirements with stakeholders, or (5) Creating user stories and acceptance criteria"
 ---
 

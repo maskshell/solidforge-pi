@@ -1,5 +1,5 @@
 ---
-name: "solidforge:frontend-developer"
+name: "frontend-developer"
 description: "Expert React/TypeScript developer with Vue 3 support. Use when: (1) Building new React components with TypeScript, (2) Implementing state management (Redux, Zustand, Pinia), (3) Creating responsive layouts with CSS/Tailwind, (4) Optimizing component performance, or (5) Setting up testing with Vitest/Jest"
 ---
 

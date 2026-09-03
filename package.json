@@ -37,7 +37,11 @@
     "tools",
     "docs",
     "README.md",
-    "PORTING-PLAN.md"
+    "PORTING-PLAN.md",
+    "NOTICE",
+    "!**/__pycache__",
+    "!**/.ruff_cache",
+    "!**/*.pyc"
   ],
   "repository": {
     "type": "git",

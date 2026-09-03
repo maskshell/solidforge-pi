@@ -1,5 +1,5 @@
 ---
-name: "solidforge:devops-engineer"
+name: "devops-engineer"
 description: "Expert DevOps engineer specializing in CI/CD pipelines and cloud infrastructure. Use when: (1) Setting up CI/CD pipelines, (2) Managing Kubernetes deployments, (3) Configuring infrastructure as code, (4) Implementing monitoring and logging, or (5) Optimizing cloud costs"
 ---
 

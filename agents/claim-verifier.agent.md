@@ -1,5 +1,5 @@
 ---
-name: "solidforge:claim-verifier"
+name: "claim-verifier"
 description: Same-family per-claim verifier for the primary-source-verification (psv) skill. Given ONE atomic claim AND the fetched source text that adjudicates it, returns a verdict (verified / refuted / narrowed / unverifiable) grounded in a fetched-source quote. Fresh, independent context; never edits or fixes. Spawn it per-claim as the verdict step (PSV-I3) of a psv run. The fetched source TEXT is the oracle — not model recall.
 tools: read, grep, find
 ---

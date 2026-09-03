@@ -127,13 +127,41 @@ function findNearestProjectAgentsDir(cwd: string): string | null {
 }
 
 /**
- * Package-bundled agents directory (solidforge-pi/agents) — resolved relative to
- * this module, so it works regardless of where the package is installed.
+ * Package root (solidforge-pi) — resolved relative to this module, so it
+ * works regardless of where the package is installed.
+ */
+export function getPackageRoot(): string {
+	const modulePath = decodeURIComponent(new URL(import.meta.url).pathname);
+	return path.dirname(path.dirname(path.dirname(modulePath)));
+}
+
+/**
+ * Package-bundled agents directory (solidforge-pi/agents).
  * Pi packages have no `agents/` resource type; this extension loads its own.
  */
 export function getPackageAgentsDir(): string {
-	const modulePath = decodeURIComponent(new URL(import.meta.url).pathname);
-	return path.join(path.dirname(path.dirname(path.dirname(modulePath))), "agents");
+	return path.join(getPackageRoot(), "agents");
+}
+
+/** pi.namespace validity per the pi packages spec: lowercase a-z/0-9/hyphens,
+ * <=64 chars, no leading/trailing or consecutive hyphens. */
+const NAMESPACE_RE = /^[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?$/;
+
+/**
+ * The package's `pi.namespace` (package.json), read at load time so bundled
+ * agent names follow the manifest — the pi packages spec's single source of
+ * truth ("packages shipping subagents via their own extension should read
+ * pi.namespace and prefix agent names with it"). Frontmatter stays bare;
+ * an absent/invalid namespace loads agents un-prefixed (graceful).
+ */
+export function getPackageNamespace(): string | null {
+	try {
+		const manifest = JSON.parse(fs.readFileSync(path.join(getPackageRoot(), "package.json"), "utf-8"));
+		const ns = (manifest as { pi?: { namespace?: unknown } })?.pi?.namespace;
+		return typeof ns === "string" && NAMESPACE_RE.test(ns) ? ns : null;
+	} catch {
+		return null;
+	}
 }
 
 export function discoverAgents(cwd: string, scope: AgentScope): AgentDiscoveryResult {
@@ -144,8 +172,14 @@ export function discoverAgents(cwd: string, scope: AgentScope): AgentDiscoveryRe
 	const userAgents = scope === "project" ? [] : loadAgentsFromDir(userDir, "user");
 	const projectAgents = scope === "user" || !projectAgentsDir ? [] : loadAgentsFromDir(projectAgentsDir, "project");
 	// Package agents always load (they ship with the deliberately-installed package;
-	// lowest precedence so user/project same-name agents override).
-	const packageAgents = loadAgentsFromDir(packageAgentsDir, "package");
+	// lowest precedence so user/project same-name agents override). Their names
+	// carry the manifest namespace (pi packages spec) — prefix applied HERE from
+	// pi.namespace, not hardcoded in frontmatter (single source of truth).
+	// Idempotent: an already-prefixed name (legacy file) is not double-prefixed.
+	const ns = getPackageNamespace();
+	const packageAgents = loadAgentsFromDir(packageAgentsDir, "package").map((agent) =>
+		ns && !agent.name.startsWith(`${ns}:`) ? { ...agent, name: `${ns}:${agent.name}` } : agent,
+	);
 
 	const agentMap = new Map<string, AgentConfig>();
 

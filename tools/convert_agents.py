@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 """convert_agents.py — deterministic CC agent → Pi subagent conversion.
 
-Rules (PORTING-PLAN.md §4.1):
-  - frontmatter: keep name (solidforge: prefix — CC-style namespacing preserved), description,
+Rules (PORTING-PLAN.md §4.1, amended 2026-09-03 — pi packages spec):
+  - frontmatter: emit BARE name (the `solidforge:` prefix is applied at load
+    time by sf-subagents from package.json pi.namespace — single source of
+    truth; do NOT hardcode it here), keep description,
     tools (mapped), model; strip CC-only fields
   - tool mapping: Read→read Grep→grep Glob→find LS→ls Edit→edit MultiEdit→edit Write→write Bash→bash
   - drop mcp__playwright-test__* (M3: adapter proxy), mcp__ast-grep__* (CLI path), WebSearch/WebFetch (no pi builtin; TODO)
-  - body: `solidforge:<name>` references stay VERBATIM (agent names keep the prefix);
-    backticked CC tool names → pi names
+  - body: `solidforge:<name>` references stay VERBATIM (runtime agent names
+    carry the namespace, composed at load); backticked CC tool names → pi names
   - filename keeps source form `<name>.agent.md` (colon illegal-ish in filenames; name lives in frontmatter)
 Re-runnable: output dir is regenerated (safe).
 """
@@ -86,7 +88,7 @@ def convert(text: str, name: str) -> tuple[str, list[str]]:
     ]:
         body = body.replace(f"`{cc}`", f"`{pi}`")
 
-    fm_out = [f'name: "solidforge:{name}"', f"description: {fields['description']}"]
+    fm_out = [f'name: "{name}"', f"description: {fields['description']}"]
     if mapped:
         fm_out.append(f"tools: {', '.join(mapped)}")
     if fields.get("model"):

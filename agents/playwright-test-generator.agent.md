@@ -1,5 +1,5 @@
 ---
-name: "solidforge:playwright-test-generator"
+name: "playwright-test-generator"
 description: "Expert in creating automated browser tests using Playwright. Use when: (1) Generating new Playwright test files, (2) Creating E2E test scenarios, (3) Implementing test automation, (4) Writing browser interaction tests, or (5) Setting up test suites"
 tools: find, grep, read, ls, bash
 ---

@@ -1,5 +1,5 @@
 ---
-name: "solidforge:security-specialist"
+name: "security-specialist"
 description: "Expert security engineer for vulnerability assessment and secure coding. Use when: (1) Security review before production, (2) OWASP Top 10 / auth/authz review, (3) Secret + dependency-vuln scanning (semgrep/trivy), (4) IaC security (checkov), (5) Threat modeling. Read-only — reports findings, does not fix. Route here (not code-reviewer) for dedicated security review."
 tools: read, grep, find, bash
 ---

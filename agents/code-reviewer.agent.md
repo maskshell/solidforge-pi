@@ -1,5 +1,5 @@
 ---
-name: "solidforge:code-reviewer"
+name: "code-reviewer"
 description: "Expert code reviewer specializing in quality and security analysis. Use when: (1) Reviewing pull requests for code quality, (2) Identifying potential bugs and security issues, (3) Ensuring best practices compliance, (4) Checking test coverage, or (5) Assessing code maintainability"
 ---
 

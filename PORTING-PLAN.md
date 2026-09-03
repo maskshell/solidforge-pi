@@ -296,6 +296,8 @@ solidforge-pi/
 | 对象 | 前缀 | 依据 |
 |---|---|---|
 | **agent 名**（subagent 工具参数） | ✅ 保留 `solidforge:<name>` | agent 名只是 frontmatter 字符串 + `discoverAgents()` 的 Map 键，全链路无字符集校验；不进 CLI 参数（系统提示走临时文件）；冒烟通过（`solidforge:doc-reviewer` 抓到植入矛盾） |
+
+> **修订（2026-09-03，0.2.2）**：pi packages 规范（`docs/packages.md` → Namespace）明确 *"packages shipping subagents via their own extension should read `pi.namespace` and prefix agent names with it"*。frontmatter 改回**裸名**，前缀由 `sf-subagents` 在 `discoverAgents()` 加载时从 `package.json` 的 `pi.namespace` 组合（幂等：已带前缀的 legacy 名不双加）。**运行时名不变**——SKILL.md 60+ 处 `solidforge:<name>` 引用零改动的定案依据依旧成立；变更消除的只是「manifest 命名空间 vs frontmatter 硬编码」的双真相源（改 namespace 时 agent 名不再静默漂移）。
 | **命令**（`/solidforge:arm-tools`） | ✅ 保留 | 源码级验证 + `-p` 模式执行路径冒烟通过 |
 | **技能名**（skills） | ❌ 保持现状无前缀 | Agent Skills 标准强制小写连字符，冒号违规；技能名本就全称唯一（cross-source-review 等） |
 

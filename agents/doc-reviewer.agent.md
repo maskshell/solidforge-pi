@@ -1,5 +1,5 @@
 ---
-name: "solidforge:doc-reviewer"
+name: "doc-reviewer"
 description: Same-family (同源) adversarial doc reviewer for the cross-source-review skill. Runs in a fresh, independent context (no stake in the artifact; did NOT author it) and reports schema'd doc-findings ONLY — never edits or fixes. Spawn it as the same-family (同源) leg of a cross-source doc-convergence loop. Read-only.
 tools: read, grep, find
 ---
