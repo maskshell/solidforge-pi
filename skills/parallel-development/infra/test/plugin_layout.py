@@ -79,7 +79,13 @@ EXPECTED_AGENTS = [
 EXPECTED_HOOK_SCRIPTS = ["blueprint_guard", "counters", "fast_gate"]
 
 # The two skills bundled under skills/ (Phase 4 cutover moved them off the repo root).
-EXPECTED_SKILLS = ["parallel-development", "blueprint-crafting"]
+EXPECTED_SKILLS = [
+    "parallel-development",
+    "blueprint-crafting",
+    "cross-source-review",
+    "primary-source-verification",
+    "prior-art-search",
+]
 SKILLS_DIR = os.path.join(PLUGIN_ROOT, "skills")
 
 RESULTS = []

@@ -23,6 +23,9 @@ permissions:
 env:
   # Same pin as npm-publish.yml (its release-gate clone). Bump both together.
   PI_REF: v0.84.4
+  # Namespace-capable fork build (maskshell/pi). RETIRES when earendil-works/pi#8834
+  # lands upstream — then point this at the official package and drop the fork.
+  NS_PIN: "0.84.4-namespace.2"
 
 jobs:
   gates:
@@ -96,3 +99,29 @@ jobs:
           mkdir -p node_modules/@earendil-works
           ln -s "$PI_ROOT" node_modules/@earendil-works/pi-coding-agent
           PI_PKG_ROOT="$PI_ROOT" node tools/pi_extensions_load_smoke.mjs
+
+  namespace-e2e:
+    # The package's flagship surface (pi.namespace composition) exists only in
+    # the fork build until earendil-works/pi#8834 lands; every other smoke runs
+    # namespace-blind against official pi. This job is the composition proof
+    # AND the #8834 landing detector.
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+      - name: Install namespace-capable pi build (maskshell/pi fork release tarball)
+        run: |
+          mkdir /tmp/pins && cd /tmp/pins
+          npm init -y >/dev/null
+          npm install --no-fund --no-audit \
+            "https://github.com/maskshell/pi/releases/download/v${NS_PIN}/earendil-works-pi-coding-agent-${NS_PIN}.tgz"
+      - name: Namespace composition smoke
+        run: |
+          set -euo pipefail
+          PI_ROOT=/tmp/pins/node_modules/@earendil-works/pi-coding-agent
+          mkdir -p node_modules/@earendil-works
+          ln -s "$PI_ROOT" node_modules/@earendil-works/pi-coding-agent
+          PI_PKG_ROOT="$PI_ROOT" node tools/pi_namespace_smoke.mjs

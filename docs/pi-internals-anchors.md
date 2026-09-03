@@ -1,6 +1,8 @@
 # pi-internals-anchors — substrate behaviors this package deliberately relies on
 
 > Verified against **pi 0.84.x** (source: `dist/core/package-manager.js`, `dist/core/extensions/loader.js`, `dist/core/pi-manifest.js`). Pi is an external substrate moving on its own cadence; these are INTERNALS, not contract. **Re-verify on every pi major/minor bump** (the CI pins — `PI_REF` in `.github/workflows/ci.yml` and `npm-publish.yml` — are the bump points). Each anchor names the package behavior that depends on it.
+>
+> **Fork delta (2026-09-03)**: `pi.namespace` (A3) is NOT in official pi 0.84.4 — it ships in the [maskshell/pi](https://github.com/maskshell/pi) fork (`0.84.4+namespace.2`; proposal [earendil-works/pi#8834](https://github.com/earendil-works/pi/issues/8834)). A3 is therefore a FORK anchor: composed names exist only on fork builds, and the `namespace-e2e` CI job (which installs the fork release) is both the composition proof and the #8834 landing detector — when it lands, repoint that job at official pi and A3 moves to the official contract.
 
 ## A1 — Manifest entries are the ONLY discovery universe for packages
 

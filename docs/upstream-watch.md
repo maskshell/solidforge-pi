@@ -37,7 +37,7 @@ Individually verified rows carry ✅/❌/⚠️; range rows ride the shared engi
 | #55 | dispatch names the agent AT the decision point | adapted (pi: `subagent` tool params in SKILL.md step tables) |
 | #56 | TDD trinity (seam freeze / tracer-bullet / review-axis) | ✅ absorbed via sync-1 hand-merge + skill-level ODP |
 | #57 | ROUTE/FAMILY/MODEL three-level naming | **OUTFLOW** — upstream borrowed it from this port (see below) |
-| #58 | blueprint_guard append-only AC→test carve-out | ⚠️ **pending** — verified ABSENT here (upstream `blueprint_guard.py` 7 carve hits, ours 0; file drifted 159 lines). Candidate: port the carve-out semantics onto the pi file. |
+| #58 | blueprint_guard append-only AC→test carve-out | ✅ absorbed (2026-09-03: guard + carveout test verbatim-aligned from upstream; bridge contract unchanged) |
 | #59 | fast_gate scopes to project root | ⚠️ pending — fast_gate drift is only 17 lines; needs a deliberate next-watch check (absorbed vs adapted-out) |
 | #60 | breaker inert on terminal state | ⚠️ pending — same check pass as #59 |
 | #61 | run-progress sidecar (`csr_progress.py` + `--progress-file`) | ✅ absorbed 2026-08-29 — verbatim port + beyond (sf-progress footer strip; registry kept byte-identical so sidecars stay cross-readable) |

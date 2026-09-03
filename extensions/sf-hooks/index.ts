@@ -65,19 +65,28 @@ function runHook(
 		child.stdin.write(JSON.stringify(payload));
 		child.stdin.end();
 		let stdout = "";
-		let timedOut = false;
+		let settled = false;
+		const settle = (r: HookOutput | null) => {
+			if (settled) return;
+			settled = true;
+			resolve(r);
+		};
 		const timer = setTimeout(() => {
-			timedOut = true;
-			child.kill("SIGKILL");
+			try {
+				child.kill("SIGKILL");
+			} catch {
+				/* already gone */
+			}
+			settle({ stdout, code: null, timedOut: true }); // hard bound — do not wait for close (fd-inheriting grandchildren)
 		}, timeoutMs);
 		child.stdout.on("data", (d) => (stdout += d.toString()));
 		child.on("close", (code) => {
 			clearTimeout(timer);
-			resolve({ stdout, code, timedOut });
+			settle({ stdout, code, timedOut: false });
 		});
 		child.on("error", () => {
 			clearTimeout(timer);
-			resolve(null);
+			settle(null);
 		});
 	});
 }
@@ -126,9 +135,14 @@ interface CmdResult {
  * Run a CLI command, capture combined output. null when the binary is absent
  * (ENOENT). The timeout resolves IMMEDIATELY (hard bound) — not waiting for
  * `close`, which can be held hostage by fd-inheriting grandchildren of the
- * killed child.
+ * killed child. Exported for the seam selftest (timeout/ENOENT paths).
  */
-function runCmd(cmd: string, args: string[], cwd: string, timeoutMs: number): Promise<CmdResult | null> {
+export async function runCmd(
+	cmd: string,
+	args: string[],
+	cwd: string,
+	timeoutMs: number,
+): Promise<CmdResult | null> {
 	return new Promise((resolve) => {
 		const child = spawn(cmd, args, { cwd, stdio: ["ignore", "pipe", "pipe"] });
 		let out = "";
@@ -215,6 +229,24 @@ function tail(s: string, n = LINT_OUT_MAX): string {
 }
 
 /**
+ * Absolute ruff path, resolved ONCE via `which` and cached forever: the two
+ * ruff calls per edit (check + format) then hit the same binary (no TOCTOU),
+ * and no later PATH state can swap it mid-session. Trust boundary: `which`
+ * runs against the pi process's startup PATH — the same trust level as the
+ * python hooks and the post-gate (a binary found there is environment-trusted
+ * by definition). null when ruff is absent (degrade to post-gate).
+ */
+let ruffBinCache: string | null | undefined;
+
+async function resolveRuff(): Promise<string | null> {
+	if (ruffBinCache !== undefined) return ruffBinCache;
+	const out = await runCmd("which", ["ruff"], process.cwd(), 2_000);
+	const first = out?.ok ? out.out.split("\n").map((l) => l.trim()).find(Boolean) : undefined;
+	ruffBinCache = first || null;
+	return ruffBinCache;
+}
+
+/**
  * Pre-write ruff gate for .py targets: lint/format the WOULD-BE content on a
  * temp copy (mode preserved from the original so EXE001 verdicts match), using
  * the file's own ruff config. Returns a deny reason, or null to allow.
@@ -226,7 +258,12 @@ async function preLintPython(input: Record<string, unknown>, cwd: string): Promi
 	if (!filePath.endsWith(".py")) return null;
 	const content = wouldBeContent(input);
 	if (content === null) return null;
-	const tmp = path.join(os.tmpdir(), `sf-pre-lint-${process.pid}-${Date.now()}.py`);
+	const bin = await resolveRuff();
+	if (bin === null) return null;
+	// Private unpredictable dir per invocation — a predictable top-level
+	// /tmp filename is a symlink/raid surface on shared machines.
+	const dir = fs.mkdtempSync(path.join(os.tmpdir(), "sf-pre-lint-"));
+	const tmp = path.join(dir, "probe.py");
 	try {
 		try {
 			fs.writeFileSync(tmp, content);
@@ -240,12 +277,12 @@ async function preLintPython(input: Record<string, unknown>, cwd: string): Promi
 		}
 		const cfg = findRuffConfig(filePath);
 		const common = cfg ? ["--config", cfg] : [];
-		const chk = await runCmd("ruff", [...common, "check", "--no-cache", "--output-format=concise", tmp], cwd, PRE_LINT_TIMEOUT_MS);
+		const chk = await runCmd(bin, [...common, "check", "--no-cache", "--output-format=concise", tmp], cwd, PRE_LINT_TIMEOUT_MS);
 		if (chk === null || chk.timedOut) return null; // absent or hung ruff — degrade to post-gate
 		if (!chk.ok) {
 			return { reason: `pre-write lint: ruff check fails on the proposed edit — fix the edit itself and retry (the file has NOT been modified):\n${tail(chk.out)}` };
 		}
-		const fmt = await runCmd("ruff", [...common, "format", "--check", tmp], cwd, PRE_LINT_TIMEOUT_MS);
+		const fmt = await runCmd(bin, [...common, "format", "--check", tmp], cwd, PRE_LINT_TIMEOUT_MS);
 		if (fmt === null || fmt.timedOut) return null; // absent or hung ruff — degrade to post-gate
 		if (!fmt.ok) {
 			return { reason: `pre-write lint: ruff format would reformat the proposed edit — wrap the lines inside the edit and retry (the file has NOT been modified):\n${tail(fmt.out)}` };
@@ -253,7 +290,7 @@ async function preLintPython(input: Record<string, unknown>, cwd: string): Promi
 		return null;
 	} finally {
 		try {
-			fs.rmSync(tmp, { force: true });
+			fs.rmSync(dir, { recursive: true, force: true });
 		} catch {
 			/* best effort */
 		}

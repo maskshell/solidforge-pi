@@ -15,7 +15,7 @@
  * Usage: node tools/sf_hooks_selftest.mjs   (requires python3 + ruff on PATH)
  */
 
-import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -84,41 +84,51 @@ try {
 		r5?.isError === true && /already applied/i.test(postText),
 		JSON.stringify(postText.slice(0, 120)),
 	);
-	// --- AC6: a HUNG ruff degrades to ALLOW (never deny on timeout) ---
-	const fakeBin = path.join(tmp, "fakebin");
-	mkdirSync(fakeBin);
-	writeFileSync(path.join(fakeBin, "ruff"), "#!/bin/sh\nsleep 30\n");
-	chmodSync(path.join(fakeBin, "ruff"), 0o755);
-	const realPath = process.env.PATH;
-	process.env.PATH = `${fakeBin}:${realPath}`;
+	// --- AC6: runCmd TIMEOUT is a hard bound (direct unit test of the exact
+	// M1/M2 mechanics: a hung binary must resolve IMMEDIATELY, flagged, not
+	// deny-shaped and not close-blocking) ---
+	const fakeBin2 = path.join(tmp, "fakebin2");
+	mkdirSync(fakeBin2);
+	const hungRuff = path.join(fakeBin2, "hung");
+	writeFileSync(hungRuff, "#!/bin/sh\nsleep 30\n");
+	chmodSync(hungRuff, 0o755);
 	const t0 = Date.now();
-	let r6;
+	const r6 = await ext.runCmd(hungRuff, ["--version"], tmp, 1_000);
+	const r6ms = Date.now() - t0;
+	check(
+		"AC6 hung binary: timedOut flag + immediate resolve",
+		r6 !== null && r6.timedOut === true && r6.ok === false && r6ms < 15_000,
+		`result=${JSON.stringify(r6)} elapsed=${r6ms}ms`,
+	);
+
+	// --- AC7: runCmd ENOENT degrades to null (caller allows) ---
+	const r7 = await ext.runCmd("definitely-not-a-binary-xyz", [], tmp, 1_000);
+	check("AC7 absent binary (ENOENT) yields null", r7 === null, JSON.stringify(r7));
+
+	// --- AC8: temp hygiene — nothing at os.tmpdir() top level, ever ---
+	// (mkdtemp private dir per invocation; predictable top-level names are a
+	// symlink/raid surface on shared machines)
+	const stray = readdirSync(tmpdir()).filter((f) => f.startsWith("sf-pre-lint-"));
+	check("AC8 no predictable top-level sf-pre-lint files in tmpdir", stray.length === 0, stray.join(", "));
+
+	// --- AC9: ruff resolution is cached ONCE — a later PATH strip cannot
+	// un-resolve it (the deny still fires via the cached absolute binary) ---
+	const realPath = process.env.PATH;
+	process.env.PATH = tmp; // ruff's dir no longer on PATH
+	let r9;
 	try {
-		r6 = await handlers.tool_call(
-			{ toolName: "edit", input: { path: okPy, edits: [{ oldText: "a = 1", newText: "a = 3" }] } },
+		r9 = await handlers.tool_call(
+			{ toolName: "edit", input: { path: okPy, edits: [{ oldText: "a = 1", newText: "if True:a=1" }] } },
 			ctx,
 		);
 	} finally {
 		process.env.PATH = realPath;
 	}
 	check(
-		"AC6 hung ruff (timeout) degrades to allow",
-		!r6?.block && Date.now() - t0 < 15_000,
-		`block=${JSON.stringify(r6 ?? null)} elapsed=${Date.now() - t0}ms`,
+		"AC9 cached absolute ruff keeps the gate alive under a PATH strip",
+		!!r9?.block && /pre-write lint/.test(String(r9?.reason ?? "")),
+		JSON.stringify(r9 ?? "no-block"),
 	);
-
-	// --- AC7: ruff ABSENT degrades to allow (ENOENT) ---
-	process.env.PATH = tmp; // no ruff, no python3 — pre-hooks also degrade silently
-	let r7;
-	try {
-		r7 = await handlers.tool_call(
-			{ toolName: "edit", input: { path: okPy, edits: [{ oldText: "a = 1", newText: "a = 4" }] } },
-			ctx,
-		);
-	} finally {
-		process.env.PATH = realPath;
-	}
-	check("AC7 ruff absent (ENOENT) degrades to allow", !r7?.block, JSON.stringify(r7 ?? "allowed"));
 } finally {
 	rmSync(tmp, { recursive: true, force: true });
 }
