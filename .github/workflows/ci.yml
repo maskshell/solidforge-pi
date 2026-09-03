@@ -62,9 +62,9 @@ jobs:
         run: node tools/sf_hooks_selftest.mjs
 
       - name: markdownlint (actively-maintained surfaces; frozen CC-era references/ stay out of scope)
-        run: npx -y markdownlint-cli2 "README.md" "PORTING-PLAN.md" "docs/*.md" "skills/*/SKILL.md"
+        run: npx -y markdownlint-cli2@0.23.2 "README.md" "PORTING-PLAN.md" "docs/*.md" "skills/*/SKILL.md"
 
-      - name: npm pack leak check (F1 regression class: caches/workspace must never ship)
+      - name: "npm pack leak check (F1 regression class: caches/workspace must never ship)"
         run: |
           set -euo pipefail
           npm pack --dry-run 2>&1 | tee /tmp/pack.log

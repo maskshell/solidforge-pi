@@ -3,10 +3,10 @@
 
 Loading-chain check for the PLUGIN BOUNDARY (the analog of disconnect_check.py for the new layout). Asserts the plugin's structural pieces exist and are well-formed so a model following progressive disclosure from plugin-enable never hits a dead end:
 
-  - .claude-plugin/plugin.json parses and has name=solidforge, version, description
-  - hooks/hooks.json parses, has PreToolUse + PostToolUse, and the hook commands reference ${CLAUDE_PLUGIN_ROOT} and the three hook scripts (blueprint_guard / counters / fast_gate)
-  - commands/arm-tools.md exists (prompts/arm-tools.md — the /solidforge:arm-tools invocation is namespace-composed from pi.namespace at load; the literal-colon filename was retired 2026-08-29)
-  - agents/ contains the 22 plugin-bundled agents (by BARE frontmatter name — the solidforge: namespace is composed at load time by sf-subagents from pi.namespace, per the pi packages spec; amended 2026-09-03)
+  - package.json parses and carries the pi manifest (pi.extensions incl. sf-hooks, pi.skills, pi.prompts, pi.namespace)
+  - extensions/sf-hooks/index.ts wires the python hook bridge (tool_call/tool_result subscription, CLAUDE_PROJECT_DIR env bridge, the three hook scripts)
+  - prompts/arm-tools.md exists (plain filename; the /solidforge:arm-tools invocation is namespace-composed from pi.namespace at load — literal-colon filename retired 2026-08-29)
+  - agents/ contains EXACTLY the 22 plugin-bundled agents, by BARE frontmatter name (the solidforge: namespace is composed at load time by sf-subagents from pi.namespace, per the pi packages spec; amended 2026-09-03)
   - every agent that references a references/agent-patterns/<role>.md companion has that companion bundled under skills/parallel-development/references/agent-patterns/ (catches the loading-chain break where an agent points at a companion that was not copied)
 
 The hook command PATHS use ${CLAUDE_PLUGIN_ROOT}/skills/parallel-development/... (resolved at runtime on plugin-enable). This check validates STRUCTURE (files present + well-formed), not runtime resolution.
@@ -194,6 +194,15 @@ def t_agents():
             f"copy {expected}.agent.md into agents/ (BARE frontmatter name "
             f'"{expected}" — the solidforge: prefix is composed at load)',
         )
+    # bidirectional: a stray agent outside EXPECTED_AGENTS would silently ride
+    # the package (mirror of pi_loader_smoke extensions-registered direction B)
+    extras = sorted(set(names) - set(EXPECTED_AGENTS))
+    check(
+        "no unexpected agents",
+        not extras,
+        f"remove {extras} or register them in EXPECTED_AGENTS (a stray agent "
+        "silently ships to every user)",
+    )
     # companion coverage: any agent referencing a references/agent-patterns/<role>.md
     # companion must have it bundled under skills/parallel-development/references/agent-patterns/.
     # The agent link form is ../skills/parallel-development/references/agent-patterns/<role>.md

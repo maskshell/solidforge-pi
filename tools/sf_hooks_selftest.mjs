@@ -15,7 +15,7 @@
  * Usage: node tools/sf_hooks_selftest.mjs   (requires python3 + ruff on PATH)
  */
 
-import { chmodSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -70,11 +70,12 @@ try {
 	check("AC4 non-python edit allowed", !r4?.block);
 
 	// --- AC5: post-write block message states the edit already landed ---
+	// (fixture is a real red file, so fast_gate reports a genuine lint finding,
+	// not a missing-file error — decouples AC5 from fast_gate's missing-file path)
+	const postPy = path.join(tmp, "post.py");
+	writeFileSync(postPy, "if True:a=1\n"); // the post-edit on-disk state: genuinely red
 	const r5 = await handlers.tool_result(
-		{
-			toolName: "edit",
-			input: { path: path.join(tmp, "post.py"), edits: [{ oldText: "a", newText: "if True:a=1" }] },
-		},
+		{ toolName: "edit", input: { path: postPy, edits: [{ oldText: "a = 1", newText: "if True:a=1" }] } },
 		ctx,
 	);
 	const postText = Array.isArray(r5?.content) ? String(r5.content[0]?.text ?? "") : "";
@@ -83,6 +84,41 @@ try {
 		r5?.isError === true && /already applied/i.test(postText),
 		JSON.stringify(postText.slice(0, 120)),
 	);
+	// --- AC6: a HUNG ruff degrades to ALLOW (never deny on timeout) ---
+	const fakeBin = path.join(tmp, "fakebin");
+	mkdirSync(fakeBin);
+	writeFileSync(path.join(fakeBin, "ruff"), "#!/bin/sh\nsleep 30\n");
+	chmodSync(path.join(fakeBin, "ruff"), 0o755);
+	const realPath = process.env.PATH;
+	process.env.PATH = `${fakeBin}:${realPath}`;
+	const t0 = Date.now();
+	let r6;
+	try {
+		r6 = await handlers.tool_call(
+			{ toolName: "edit", input: { path: okPy, edits: [{ oldText: "a = 1", newText: "a = 3" }] } },
+			ctx,
+		);
+	} finally {
+		process.env.PATH = realPath;
+	}
+	check(
+		"AC6 hung ruff (timeout) degrades to allow",
+		!r6?.block && Date.now() - t0 < 15_000,
+		`block=${JSON.stringify(r6 ?? null)} elapsed=${Date.now() - t0}ms`,
+	);
+
+	// --- AC7: ruff ABSENT degrades to allow (ENOENT) ---
+	process.env.PATH = tmp; // no ruff, no python3 — pre-hooks also degrade silently
+	let r7;
+	try {
+		r7 = await handlers.tool_call(
+			{ toolName: "edit", input: { path: okPy, edits: [{ oldText: "a = 1", newText: "a = 4" }] } },
+			ctx,
+		);
+	} finally {
+		process.env.PATH = realPath;
+	}
+	check("AC7 ruff absent (ENOENT) degrades to allow", !r7?.block, JSON.stringify(r7 ?? "allowed"));
 } finally {
 	rmSync(tmp, { recursive: true, force: true });
 }

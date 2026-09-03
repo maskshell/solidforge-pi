@@ -47,6 +47,7 @@ jobs:
         run: |
           set -euo pipefail
           git clone --quiet --depth 1 --branch v0.84.4 https://github.com/earendil-works/pi /tmp/pi
+          # PI_REF COUPLING: .github/workflows/ci.yml (env.PI_REF) must move with this pin — bump both together.
           PI_LOADER_ROOT=/tmp/pi python3 tools/pi_loader_smoke.py
 
       - name: Publish (OIDC trusted publisher, with provenance)

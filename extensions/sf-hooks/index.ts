@@ -116,36 +116,70 @@ function ccPayload(toolName: string, input: Record<string, unknown>): Record<str
 
 const CC_NAMES: Record<string, string> = { edit: "Edit", write: "Write" };
 
-/** Run a CLI command, capture combined output; null when the binary is absent (ENOENT). */
-function runCmd(cmd: string, args: string[], cwd: string, timeoutMs: number): Promise<{ ok: boolean; out: string } | null> {
+interface CmdResult {
+	ok: boolean;
+	out: string;
+	timedOut: boolean;
+}
+
+/**
+ * Run a CLI command, capture combined output. null when the binary is absent
+ * (ENOENT). The timeout resolves IMMEDIATELY (hard bound) — not waiting for
+ * `close`, which can be held hostage by fd-inheriting grandchildren of the
+ * killed child.
+ */
+function runCmd(cmd: string, args: string[], cwd: string, timeoutMs: number): Promise<CmdResult | null> {
 	return new Promise((resolve) => {
 		const child = spawn(cmd, args, { cwd, stdio: ["ignore", "pipe", "pipe"] });
 		let out = "";
-		let timedOut = false;
+		let settled = false;
+		const settle = (r: CmdResult | null) => {
+			if (settled) return;
+			settled = true;
+			resolve(r);
+		};
 		const timer = setTimeout(() => {
-			timedOut = true;
-			child.kill("SIGKILL");
+			try {
+				child.kill("SIGKILL");
+			} catch {
+				/* already gone */
+			}
+			settle({ ok: false, out, timedOut: true });
 		}, timeoutMs);
 		child.stdout.on("data", (d) => (out += d.toString()));
 		child.stderr.on("data", (d) => (out += d.toString()));
 		child.on("close", (code) => {
 			clearTimeout(timer);
-			resolve({ ok: !timedOut && code === 0, out });
+			settle({ ok: code === 0, out, timedOut: false });
 		});
 		child.on("error", () => {
 			clearTimeout(timer);
-			resolve(null); // binary not installed — degrade to post-gate only
+			settle(null); // binary not installed — degrade to post-gate only
 		});
 	});
 }
 
-/** Nearest ruff config (ruff.toml / .ruff.toml) walking up from the target file. */
+/**
+ * Nearest ruff config walking up from the target file: ruff.toml / .ruff.toml,
+ * or a pyproject.toml carrying a [tool.ruff] table. Known limitation: ruff
+ * `per-file-ignores` match the TEMP copy's /tmp path, not the real path — a
+ * per-file-ignored violation can pre-deny; the post-gate (real path) stays
+ * authoritative.
+ */
 function findRuffConfig(filePath: string): string | null {
 	let dir = path.dirname(path.resolve(filePath));
 	while (true) {
 		for (const name of ["ruff.toml", ".ruff.toml"]) {
 			const c = path.join(dir, name);
 			if (fs.existsSync(c)) return c;
+		}
+		const pj = path.join(dir, "pyproject.toml");
+		if (fs.existsSync(pj)) {
+			try {
+				if (fs.readFileSync(pj, "utf-8").includes("[tool.ruff]")) return pj;
+			} catch {
+				/* unreadable — keep walking */
+			}
 		}
 		const parent = path.dirname(dir);
 		if (parent === dir) return null;
@@ -194,7 +228,11 @@ async function preLintPython(input: Record<string, unknown>, cwd: string): Promi
 	if (content === null) return null;
 	const tmp = path.join(os.tmpdir(), `sf-pre-lint-${process.pid}-${Date.now()}.py`);
 	try {
-		fs.writeFileSync(tmp, content);
+		try {
+			fs.writeFileSync(tmp, content);
+		} catch {
+			return null; // tmpdir unwritable — degrade to post-gate
+		}
 		try {
 			fs.chmodSync(tmp, fs.statSync(filePath).mode & 0o777);
 		} catch {
@@ -203,12 +241,12 @@ async function preLintPython(input: Record<string, unknown>, cwd: string): Promi
 		const cfg = findRuffConfig(filePath);
 		const common = cfg ? ["--config", cfg] : [];
 		const chk = await runCmd("ruff", [...common, "check", "--no-cache", "--output-format=concise", tmp], cwd, PRE_LINT_TIMEOUT_MS);
-		if (chk === null) return null;
+		if (chk === null || chk.timedOut) return null; // absent or hung ruff — degrade to post-gate
 		if (!chk.ok) {
 			return { reason: `pre-write lint: ruff check fails on the proposed edit — fix the edit itself and retry (the file has NOT been modified):\n${tail(chk.out)}` };
 		}
 		const fmt = await runCmd("ruff", [...common, "format", "--check", tmp], cwd, PRE_LINT_TIMEOUT_MS);
-		if (fmt === null) return null;
+		if (fmt === null || fmt.timedOut) return null; // absent or hung ruff — degrade to post-gate
 		if (!fmt.ok) {
 			return { reason: `pre-write lint: ruff format would reformat the proposed edit — wrap the lines inside the edit and retry (the file has NOT been modified):\n${tail(fmt.out)}` };
 		}

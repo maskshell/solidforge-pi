@@ -318,7 +318,7 @@ solidforge-pi/
 ## 13. M3 实施记录（2026-08-25）
 
 - **sf-hooks 扩展**（§4.2 落地）：`tool_call`(edit|write) → blueprint_guard.py + counters.py pre（5s），deny ⇒ `{block:true, reason}`；`tool_result` → fast_gate.py（20s），`decision:block` ⇒ isError + FAST-GATE 反馈。env 桥 `CLAUDE_PROJECT_DIR=ctx.cwd`；工具名映射 edit/write→Edit/Write（MultiEdit 并入 edit）、`input.path`→`tool_input.file_path`。**实弹三路径**：suspended 断路器 deny、frozen blueprint deny、ruff lint 反馈自纠。
-- **hetero_review.py pi 化**：重放 csr 模式（manifest/_load_profile/_pi_argv/_run_streamed/_run_claude_once/_parse_pi_stream/main）；pd 特有 `_run_loop_state` 生命周期记账原样保留（本地 subprocess，harness 无关）；wiring 测试适配（envelope parser 断言 → wrapper-cap 映射断言；_materialize →_load_profile 路由组合断言）。
+- **hetero_review.py pi 化**：重放 csr 模式（manifest/_load_profile/_pi_argv/_run_streamed/_run_claude_once/_parse_pi_stream/main）；pd 特有 `_run_loop_state` 生命周期记账原样保留（本地 subprocess，harness 无关）；wiring 测试适配（envelope parser 断言 → wrapper-cap 映射断言；`_materialize` → `_load_profile` 路由组合断言）。
 - **M3 实弹排障三连**（全部真 bug，全修复）：① pd `--allowed-tools` 默认仍是 CC 空格大写名（Stage D 漏项）→ 子进程无工具，deepseek 退化吐 DSML 原文一轮即停；② `_extract_text` 只取第一个 text part → 工具前导 prose 后的 JSON 被漏（csr/pd 双修：拼接全部 text parts）；③ **子进程继承 wrapper stdin（非 TTY 不关）→ `pi -p` 阻塞读 stdin**（手动跑通、wrapper 挂起的根因）→ `stdin=DEVNULL`（双 wrapper 同修，load-bearing 注释入档）。
 - **TaskCreate 方案二**：loop_state.py 新增 `task-add/list/claim/conflict/complete` 子命令族，状态文件 `.claude/parallel-dev/tasks.json`；冲突检测 = files_touched 与 **in_progress** 任务交集（pending 为 advisory）；claim 冲突 exit 3 + conflicts[]，`--force` 编排者裁决。SKILL.md 调度环与 20 个示例行全部改写为 CLI 形式。
 - **playwright 三件套**：M0 TODO 旗标落地为「Browser automation surface (PI PORT)」节——`mcp({search})`/`mcp({tool,args})` proxy 指引 + adapter 缺席时 Playwright CLI 兜底（诚实声明交互式会话不可用，不编造）。
