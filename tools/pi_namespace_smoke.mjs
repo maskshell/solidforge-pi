@@ -17,9 +17,9 @@
 
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
-const repo = path.dirname(path.dirname(new URL(import.meta.url).pathname));
+const repo = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const piRoot = process.env.PI_PKG_ROOT;
 if (!piRoot || !fs.existsSync(path.join(piRoot, "dist", "core", "skills.js"))) {
 	console.error("PI_PKG_ROOT must point at an installed pi package (dist/core/skills.js)");

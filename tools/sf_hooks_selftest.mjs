@@ -15,9 +15,12 @@
  * Usage: node tools/sf_hooks_selftest.mjs   (requires python3 + ruff on PATH)
  */
 
-import { chmodSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
+import * as fs from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const { chmodSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } = fs;
 
 const results = [];
 const check = (name, ok, detail = "") => {
@@ -105,12 +108,6 @@ try {
 	const r7 = await ext.runCmd("definitely-not-a-binary-xyz", [], tmp, 1_000);
 	check("AC7 absent binary (ENOENT) yields null", r7 === null, JSON.stringify(r7));
 
-	// --- AC8: temp hygiene — nothing at os.tmpdir() top level, ever ---
-	// (mkdtemp private dir per invocation; predictable top-level names are a
-	// symlink/raid surface on shared machines)
-	const stray = readdirSync(tmpdir()).filter((f) => f.startsWith("sf-pre-lint-"));
-	check("AC8 no predictable top-level sf-pre-lint files in tmpdir", stray.length === 0, stray.join(", "));
-
 	// --- AC9: ruff resolution is cached ONCE — a later PATH strip cannot
 	// un-resolve it (the deny still fires via the cached absolute binary) ---
 	const realPath = process.env.PATH;
@@ -129,6 +126,50 @@ try {
 		!!r9?.block && /pre-write lint/.test(String(r9?.reason ?? "")),
 		JSON.stringify(r9 ?? "no-block"),
 	);
+
+	// --- AC10: literal splice — a $-crafted newText cannot make the probe
+	// clean while the landed edit is red (String.replace with a string
+	// replacement interprets $& $` $' $$; pi splices LITERALLY) ---
+	const dollarPy = path.join(tmp, "dollar.py");
+	writeFileSync(dollarPy, "import sys\nOK()\n");
+	const r10 = await handlers.tool_call(
+		{ toolName: "edit", input: { path: dollarPy, edits: [{ oldText: "import sys\n", newText: "import os\n$'" }] } },
+		ctx,
+	);
+	check(
+		"AC10 $-sequence newText denied (probe == literal landed content)",
+		!!r10?.block,
+		JSON.stringify(r10?.reason ?? "ALLOWED — $ interpretation divergence")
+	);
+
+	// --- AC11: ccPayload edit translation makes the ADR #58 carve-out
+	// reachable through the bridge (CC-shape keys, Edit vs MultiEdit) ---
+	const p1 = ext.ccPayload("Edit", { path: "/x/a.py", edits: [{ oldText: "a", newText: "b" }] });
+	const p2 = ext.ccPayload("Edit", {
+		path: "/x/a.py",
+		edits: [
+			{ oldText: "a", newText: "b" },
+			{ oldText: "c", newText: "d" },
+		],
+	});
+	const p3 = ext.ccPayload("Write", { path: "/x/a.py", content: "x = 1\n" });
+	check(
+		"AC11 single edit → CC Edit old_string/new_string",
+		p1.tool_name === "Edit" && p1.tool_input.old_string === "a" && p1.tool_input.new_string === "b",
+		JSON.stringify(p1)
+	);
+	check(
+		"AC11 multi edit → CC MultiEdit with CC-shaped edits[]",
+		p2.tool_name === "MultiEdit" && Array.isArray(p2.tool_input.edits) && p2.tool_input.edits[0].old_string === "a",
+		JSON.stringify(p2)
+	);
+	check("AC11 write passes content through", p3.tool_input.content === "x = 1\n", JSON.stringify(p3));
+
+	// --- AC12: temp hygiene — nothing at os.tmpdir() top level, ever ---
+	// (runs LAST so every invocation above — including AC10's deny — had its
+	// mkdtemp cleanup observed)
+	const stray = readdirSync(tmpdir()).filter((f) => f.startsWith("sf-pre-lint-"));
+	check("AC12 no predictable top-level sf-pre-lint files in tmpdir", stray.length === 0, stray.join(", "));
 } finally {
 	rmSync(tmp, { recursive: true, force: true });
 }

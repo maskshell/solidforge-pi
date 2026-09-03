@@ -29,9 +29,10 @@ import { spawn } from "node:child_process";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
+import { fileURLToPath } from "node:url";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 
-const HERE = path.dirname(new URL(import.meta.url).pathname);
+const HERE = path.dirname(fileURLToPath(import.meta.url)); // decode-safe (raw .pathname breaks on %20 paths)
 const HOOKS_DIR = path.normalize(path.join(HERE, "..", "..", "skills", "parallel-development", "infra", "hooks"));
 
 const PRE_HOOKS = ["blueprint_guard.py", "counters.py"];
@@ -64,6 +65,9 @@ function runHook(
 		});
 		child.stdin.write(JSON.stringify(payload));
 		child.stdin.end();
+		child.stdin.on("error", () => {
+			/* EPIPE when the child exits before reading — not a gate signal */
+		});
 		let stdout = "";
 		let settled = false;
 		const settle = (r: HookOutput | null) => {
@@ -114,13 +118,38 @@ function parseDeny(stdout: string): { reason: string } | null {
 	return null;
 }
 
-function ccPayload(toolName: string, input: Record<string, unknown>): Record<string, unknown> {
-	// pi edit/write input {path,...} → CC {tool_name, tool_input:{file_path}}
+export function ccPayload(toolName: string, input: Record<string, unknown>): Record<string, unknown> {
+	// pi edit/write input {path,...} → CC {tool_name, tool_input:{file_path}}.
+	// Edit translation (2026-09-03, I-1): CC hook contract has Edit
+	// {old_string,new_string} and MultiEdit {edits:[{old_string,new_string}]};
+	// emitting pi's raw {edits:[{oldText,newText}]} under tool_name "Edit" left
+	// blueprint_guard's ADR #58 mapping carve-out UNREACHABLE through this
+	// bridge (the carve-out arms read the CC keys — missing keys ⇒ conservative
+	// deny, so the documented append-open path never passed). counters.py and
+	// fast_gate.py read only file_path — inert to the translation.
 	const filePath = (input.path as string) ?? (input.file_path as string) ?? "";
 	const toolInput: Record<string, unknown> = { file_path: filePath };
 	if (input.content !== undefined) toolInput.content = input.content;
-	if (input.edits !== undefined) toolInput.edits = input.edits;
-	return { tool_name: toolName, tool_input: toolInput };
+	let effectiveName = toolName;
+	const edits = input.edits;
+	if (Array.isArray(edits)) {
+		const ccEdits = edits.map((e) =>
+			e && typeof (e as Record<string, unknown>).oldText === "string"
+				? {
+						old_string: (e as Record<string, unknown>).oldText,
+						new_string: (e as Record<string, unknown>).newText,
+				}
+				: e
+		);
+		if (ccEdits.length === 1) {
+			toolInput.old_string = (ccEdits[0] as Record<string, unknown>).old_string;
+			toolInput.new_string = (ccEdits[0] as Record<string, unknown>).new_string;
+		} else {
+			toolInput.edits = ccEdits;
+			if (toolName === "Edit") effectiveName = "MultiEdit";
+		}
+	}
+	return { tool_name: effectiveName, tool_input: toolInput };
 }
 
 const CC_NAMES: Record<string, string> = { edit: "Edit", write: "Write" };
@@ -204,22 +233,32 @@ function findRuffConfig(filePath: string): string | null {
 /**
  * The would-be file content after a pi edit/write tool call, or null when it
  * cannot be determined (write without content; edit against a missing file or
- * a stale oldText — the tool itself will error in those cases).
+ * a stale oldText — the tool itself will error in those cases; also pi-side
+ * CRLF/BOM/fuzzy-whitespace tolerance diverges from this exact match — those
+ * paths return null and the post-write gate stays authoritative).
+ * Caps: >200 edits or >5MB content bail to null (unbounded model-fabricated
+ * arrays would otherwise freeze the event loop synchronously).
  */
 function wouldBeContent(input: Record<string, unknown>): string | null {
 	if (typeof input.content === "string") return input.content; // write
 	const edits = input.edits;
-	if (!Array.isArray(edits)) return null;
+	if (!Array.isArray(edits) || edits.length > 200) return null;
 	let content: string;
 	try {
 		content = fs.readFileSync(String(input.path ?? ""), "utf-8");
 	} catch {
 		return null;
 	}
+	if (content.length > 5 * 1024 * 1024) return null;
 	for (const e of edits) {
 		if (!e || typeof e.oldText !== "string" || typeof e.newText !== "string") return null;
 		if (!content.includes(e.oldText)) return null;
-		content = content.replace(e.oldText, e.newText); // first occurrence = the tool's unique-region contract
+		// LITERAL splice via function replacement: String.replace with a string
+		// replacement INTERPRETS $& $` $' $$ — a crafted newText could make the
+		// probe clean while the landed (literal) edit is red. The function form
+		// skips $ interpretation; first occurrence = the tool's unique-region
+		// contract.
+		content = content.replace(e.oldText, () => e.newText);
 	}
 	return content;
 }
@@ -241,7 +280,17 @@ let ruffBinCache: string | null | undefined;
 async function resolveRuff(): Promise<string | null> {
 	if (ruffBinCache !== undefined) return ruffBinCache;
 	const out = await runCmd("which", ["ruff"], process.cwd(), 2_000);
-	const first = out?.ok ? out.out.split("\n").map((l) => l.trim()).find(Boolean) : undefined;
+	if (out === null) {
+		// `which` itself absent/failed to spawn — definitive enough for this session
+		ruffBinCache = null;
+		return null;
+	}
+	if (out.timedOut) {
+		// transient: do NOT cache — retry on the next edit (a hung moment must not
+		// degrade the pre-gate for the whole session)
+		return null;
+	}
+	const first = out.ok ? out.out.split("\n").map((l) => l.trim()).find(Boolean) : undefined;
 	ruffBinCache = first || null;
 	return ruffBinCache;
 }
@@ -271,7 +320,8 @@ async function preLintPython(input: Record<string, unknown>, cwd: string): Promi
 			return null; // tmpdir unwritable — degrade to post-gate
 		}
 		try {
-			fs.chmodSync(tmp, fs.statSync(filePath).mode & 0o777);
+			const mode = fs.statSync(filePath).mode & 0o777;
+			if (mode & 0o400) fs.chmodSync(tmp, mode); // preserve exec bit (EXE001 parity); skip unreadable modes
 		} catch {
 			/* new file — keep default mode */
 		}

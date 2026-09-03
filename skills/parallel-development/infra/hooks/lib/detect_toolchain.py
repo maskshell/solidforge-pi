@@ -72,12 +72,20 @@ def which_any(*candidates):
 
 def resolve_tool(name):
     """Return an argv prefix to run a tool: [<resolved-path>] or None.
-    Checks PATH first, then the project's local virtualenv bins (.venv/venv/env).
-    Lets gates find tools installed as project dev deps even when the venv is not
-    'active' on PATH."""
+
+    PATH only, by default (pi port, 2026-09-03 security divergence from CC):
+    the project-venv fallback executed whatever binary a repo had committed
+    under .venv/venv/env — a hostile repo could plant an executable and have
+    the gate run it with the user's full privileges, with no prior code exec
+    (the fallback armed exactly in the state where the tool is absent from
+    PATH). Opt back in explicitly per-project with SF_PROJECT_VENV_TOOLS=1
+    when you actually rely on venv dev-dep tooling and trust the repo.
+    """
     p = _shutil_which(name)
     if p:
         return [p]
+    if os.environ.get("SF_PROJECT_VENV_TOOLS") != "1":
+        return None
     root = project_root()
     for venv in (".venv", "venv", "env"):
         cand = os.path.join(root, venv, "bin", name)
@@ -135,11 +143,16 @@ def deny_block(reason):
 
 
 def loop_state_path():
-    """Locate loop_state.py: dev location first (sibling scripts/ dir), then the
-    installed project location."""
+    """Locate loop_state.py: dev/package location only (sibling scripts/ dir).
+
+    The old fallback executed loop_state.py from the PROJECT's
+    .claude/parallel-dev/scripts/ — executing project-committed code with user
+    privileges, dormant only because the package layout happened to satisfy the
+    primary path. Fail closed (None) instead: accounting is best-effort, code
+    execution from the project dir is not an acceptable fallback.
+    """
     here = os.path.dirname(os.path.abspath(__file__))  # .../hooks/lib
     dev = os.path.normpath(os.path.join(here, "..", "..", "scripts", "loop_state.py"))
     if os.path.exists(dev):
         return dev
-    root = os.environ.get("CLAUDE_PROJECT_DIR") or os.getcwd()
-    return os.path.join(root, ".claude", "parallel-dev", "scripts", "loop_state.py")
+    return None

@@ -260,6 +260,10 @@ def main():
     action = "ok"
     breaker_reason = ""
     try:
+        if not ls:
+            raise FileNotFoundError(
+                "loop_state not resolvable (fail-closed, no project-dir fallback)"
+            )
         proc = subprocess.run(
             ["python3", ls, "gate-fail", fingerprint],
             capture_output=True,

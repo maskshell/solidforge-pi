@@ -36,7 +36,7 @@ def deny(reason):
 
 def loop_status():
     ls = dt.loop_state_path()
-    if not os.path.exists(ls):
+    if not ls or not os.path.exists(ls):
         return None
     try:
         proc = subprocess.run(
