@@ -22,6 +22,13 @@ Checks:
      and pi.namespace is valid (sf-subagents prefixes the namespace at load
      time per the pi packages spec); a hardcoded "solidforge:" prefix in a
      name is the double-source-of-truth regression.
+  5. extensions — bidirectional manifest consistency: every pi.extensions
+     entry exists (direction A, manifest-paths-exist) AND every discoverable
+     unit under extensions/ (direct *.ts/*.js, or a dir with index.ts /
+     index.js / pi-package.json) is listed or explicitly excluded (direction
+     B). pi enumerates manifest entries only — an unlisted extension dir is
+     structurally invisible (silent no-load, invisible even to settings
+     force-includes: the filter universe is manifest-derived).
 
 pi resolution: $PI_LOADER_ROOT override, else walk up from the realpath of
 $(command -v pi) to the @earendil-works/pi-coding-agent package root, else
@@ -33,6 +40,7 @@ Usage:
     python3 tools/pi_loader_smoke.py
 """
 
+import fnmatch
 import json
 import os
 import re
@@ -81,6 +89,15 @@ def _check(name, ok, detail, suggestion, findings, coverage):
     coverage.append(f"{name}: {'PASS' if ok else 'FAIL'}")
     if not ok:
         findings.append(_finding(f"{name}: {detail}", suggestion))
+
+
+def _has_pi_manifest(pkg_path):
+    """True when package.json carries a `pi` object (an extension entry point)."""
+    try:
+        with open(pkg_path, encoding="utf-8") as fh:
+            return isinstance(json.load(fh).get("pi"), dict)
+    except (OSError, json.JSONDecodeError, AttributeError):
+        return False
 
 
 def resolve_pi_root():
@@ -236,6 +253,8 @@ def main():
         missing_paths = []
         for key in ("extensions", "skills", "prompts"):
             for rel in pi_manifest.get(key, []) or []:
+                if rel.startswith(("!", "+", "-")):
+                    continue  # override patterns (!exclude / +include / -exclude)
                 if not os.path.exists(os.path.join(REPO, rel)):
                     missing_paths.append(f"{key}: {rel}")
         _check(
@@ -286,6 +305,62 @@ def main():
         "agents/*.agent.md frontmatter names must be BARE (lowercase-hyphen); "
         "sf-subagents composes <pi.namespace>:<name> at load — a hardcoded "
         "prefix duplicates the namespace truth and drifts on rename",
+        findings,
+        coverage,
+    )
+
+    # extensions — direction B of manifest consistency (direction A — entry
+    # exists — is manifest-paths-exist above): every discoverable unit under
+    # extensions/ must be registered in pi.extensions or explicitly excluded.
+    # pi expands manifest entries only for packages, so an unregistered
+    # extension dir is structurally invisible: silent no-load AND invisible
+    # even to a user's `+path` force-include (the settings filter universe is
+    # derived from manifest entries — verified against pi 0.84.x
+    # package-manager.js collectManifestFiles/collectFilesFromManifestEntries).
+    def _norm_entry(entry):
+        """Strip ./ and any leading override marker (!, +, -) for matching."""
+        entry = entry.removeprefix("./")
+        for marker in ("!", "+", "-"):
+            if entry.startswith(marker):
+                return entry.removeprefix(marker)
+        return entry
+
+    ext_entries = (pi_manifest or {}).get("extensions") or []
+    listed = [_norm_entry(e) for e in ext_entries if not e.startswith(("!", "-"))]
+    excluded = [_norm_entry(e) for e in ext_entries if e.startswith(("!", "-"))]
+
+    def _registered(posix_rel):
+        if any(fnmatch.fnmatch(posix_rel, pat) for pat in excluded if pat):
+            return True  # deliberately excluded
+        return any(
+            posix_rel == pat or fnmatch.fnmatch(posix_rel, pat) for pat in listed
+        )
+
+    unregistered = []
+    ext_dir = os.path.join(REPO, "extensions")
+    if os.path.isdir(ext_dir):
+        for name in sorted(os.listdir(ext_dir)):
+            if name.startswith(".") or name == "node_modules":
+                continue
+            full = os.path.join(ext_dir, name)
+            discoverable = (os.path.isfile(full) and name.endswith((".ts", ".js"))) or (
+                os.path.isdir(full)
+                and (
+                    os.path.isfile(os.path.join(full, "index.ts"))
+                    or os.path.isfile(os.path.join(full, "index.js"))
+                    or _has_pi_manifest(os.path.join(full, "package.json"))
+                )
+            )
+            if discoverable and not _registered(f"extensions/{name}"):
+                unregistered.append(f"extensions/{name}")
+    _check(
+        "extensions-registered",
+        not unregistered,
+        f"unregistered={unregistered}",
+        "every discoverable unit under extensions/ must be listed in "
+        "pi.extensions (or explicitly excluded with '!'): pi expands manifest "
+        "entries only — an unlisted extension silently no-loads and is "
+        "invisible even to settings force-includes",
         findings,
         coverage,
     )
