@@ -1,6 +1,6 @@
 {
-  "name": "solidforge-pi",
-  "version": "0.2.0",
+  "name": "@maskshell/solidforge-pi",
+  "version": "0.2.1",
   "description": "SolidForge — loop-engineering skills for the Pi coding agent: converge → specify → implement pipeline + outcome-axis verification layers. Pi port of the Claude Code plugin.",
   "keywords": [
     "pi-package"

@@ -10,7 +10,7 @@
 ## Install
 
 ```bash
-pi install npm:solidforge-pi                          # npm registry
+pi install npm:@maskshell/solidforge-pi               # npm registry (org-scoped, mirrors the GitHub path)
 pi install git:github.com/maskshell/solidforge-pi      # or: from git / a local path
 ```
 
