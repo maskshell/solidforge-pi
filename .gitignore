@@ -6,3 +6,4 @@ workspace/
 .DS_Store
 extensions/**/*.js
 .claude/
+__pycache__/

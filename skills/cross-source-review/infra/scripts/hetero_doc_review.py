@@ -56,7 +56,8 @@ Divergences from the CC original (logged in hetero_doc_review.divergence.md):
 Flags used:
   pi --mode json -p --no-session
     -e <sf-providers-dir>          provider registry (bundled with the package)
-    --model <provider/model>       composed from profiles/<name>.json
+    --model <provider/model>       composed from profiles/<name>.json; precedence
+                                   --model flag > <NAME>_MODEL env > profile default
     [--tools read,grep,find,bash]  read-only review surface
     "<adversarial prompt>"         positional (print mode)
 ==============================================================================
@@ -70,6 +71,11 @@ PROVIDER-TEMPLATE + TOKEN-INJECTION PATTERN:
                                `DEEPSEEK_ANTHROPIC_AUTH_TOKEN`, qwen3 ->
                                `QWEN3_ANTHROPIC_AUTH_TOKEN`). Override with the
                                template's optional `_token_env` for a non-convention name.
+  model-var convention — optional `<UPPERCASE-FILENAME>_MODEL` (deepseek ->
+                               `DEEPSEEK_MODEL`, omlx-local -> `OMLX_LOCAL_MODEL`)
+                               pins the model id explicitly from .env.solidforge,
+                               overriding the profile's `model` field; an explicit
+                               `--model` flag still wins.
   --profile <name[,name2...]> or $HETERO_DOC_PROFILE — select provider(s); comma-list
                                = dual-/multi-different-family (each backend runs independently,
                                findings merged + tagged with `provider`).
@@ -452,6 +458,21 @@ def _resolve_token_var(name, template):
         return template["_token_env"]
     sanitized = re.sub(r"[^A-Za-z0-9]", "_", name).upper()
     return f"{sanitized}_ANTHROPIC_AUTH_TOKEN"
+
+
+def _resolve_model_override(name):
+    """Optional per-provider model override env var: <UPPERCASE-FILENAME>_MODEL.
+
+    Same filename-sanitization as the token convention — `deepseek` ->
+    DEEPSEEK_MODEL, `minimax-cn` -> MINIMAX_CN_MODEL, `omlx-local` ->
+    OMLX_LOCAL_MODEL. Lets .env.solidforge pin the model id EXPLICITLY (swap a
+    tier, pin a local quant) without editing the committed profile — the
+    profile's `model` stays the packaged default. Precedence: an explicit
+    `--model` flag beats the env var (per-invocation beats ambient); unset/empty
+    falls through to the profile. Returns "" when unset.
+    """
+    sanitized = re.sub(r"[^A-Za-z0-9]", "_", name).upper()
+    return os.environ.get(f"{sanitized}_MODEL", "").strip()
 
 
 def _load_profile(name):
@@ -1264,7 +1285,13 @@ def main():
         argv = None
         if not args.dry_run and not args.dry_run_malform and not args.dry_run_budget:
             profile = _load_profile(name)  # fail-fast on missing token env var
-            argv = _pi_argv(profile, args.model, prompt, args.allowed_tools)
+            # Model precedence: --model flag > <NAME>_MODEL env > profile default.
+            argv = _pi_argv(
+                profile,
+                args.model or _resolve_model_override(name),
+                prompt,
+                args.allowed_tools,
+            )
         # All caps ride the live stream (PI-SUBSTRATE MANIFEST): byte cap + the
         # wrapper-side budget/turns caps pi does not offer as CLI flags.
         guards = {
