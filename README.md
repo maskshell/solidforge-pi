@@ -14,7 +14,7 @@ pi install npm:@maskshell/solidforge-pi               # npm registry (org-scoped
 pi install git:github.com/maskshell/solidforge-pi      # or: from git / a local path
 ```
 
-Requires `python3` on `$PATH` (all gate/policy scripts are Python stdlib-only CLIs). Release gate: `python3 tools/pi_loader_smoke.py` asserts the package loads under pi's REAL resource loaders (exact 5-skill set, zero diagnostics, manifest paths resolve) — the cross-harness frontmatter regression class per-skill gates cannot see.
+Requires `python3` on `$PATH` (all gate/policy scripts are Python stdlib-only CLIs) and `ruff` for the lint gates. Gates run in CI on every push/PR ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)): per-skill structural gates, `pi_loader_smoke.py` (the package loads under pi's REAL resource loaders — 7 checks: exact 5-skill set, zero diagnostics, prompt/manifest/agents/extensions-registered consistency), the sf-hooks seam selftest, markdownlint, an npm-pack leak check, and a headless loader-e2e that imports + initializes all extensions through pi's own loader. Release publishing additionally re-runs the loader smoke (see `npm-publish.yml`).
 
 **Optional prerequisite — [pi-mcp-adapter](https://www.npmjs.com/package/pi-mcp-adapter)**, only for the Playwright E2E trio and Graphiti memory:
 
@@ -30,7 +30,7 @@ Without the adapter, the playwright agents fall back to the Playwright CLI (`npx
 
 Enabling the package does NOT mutate host-project build files. In a target project run:
 
-```
+```text
 /solidforge:arm-tools              # pi.namespace-capable pi — provision arch-configs + constitution + templates
 /solidforge:arm-tools --with-tools # …also add version-matched gate tools to dev deps
 /arm-tools                         # stock-pi fallback (no namespace: template name = filename)
@@ -45,7 +45,7 @@ The namespace form requires a pi build with `pi.namespace` support — this pack
 Profiles are pi **catalog routes** (model facts catalog-inherited; the CC-era `[1M]` suffix is a context-window parameter and never appears in a pi model id):
 
 | profile (alias) | route | model | credential |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `zai-coding-cn` (`bigmodel`) | zai-coding-cn — GLM coding endpoint, openai-completions | `glm-5.3` | pi `auth.json` (default provider) or `ZAI_CODING_CN_API_KEY` |
 | `deepseek` | deepseek — native endpoint | `deepseek-v4-flash` | `DEEPSEEK_API_KEY` ← bridged from `DEEPSEEK_ANTHROPIC_AUTH_TOKEN` |
 | `minimax-cn` (`minimax`) | minimax-cn — anthropic endpoint | `MiniMax-M3` | `MINIMAX_CN_API_KEY` ← bridged from `MINIMAX_ANTHROPIC_AUTH_TOKEN` |
@@ -60,6 +60,25 @@ Put tokens in the target project's `.env.solidforge` (shell env wins; `arm-tools
 
 The `subagent` tool and the hetero wrappers spawn `pi --mode json -p` children. Non-interactive runs do not show the project-trust prompt: without a saved trust decision they follow `defaultProjectTrust` (`ask` default = project-local `.pi` resources ignored). For CI, either save a trust decision interactively first (`/trust`) or set `defaultProjectTrust: "always"` in `~/.pi/agent/settings.json` (weigh the security tradeoff), or pass `--approve`.
 
+## Development
+
+Run the full CI gate set locally:
+
+```bash
+ruff check tools skills/*/infra && ruff format --check tools skills/*/infra
+for s in skills/*/; do (cd "$s" && python3 infra/test/lint_self.py && python3 infra/test/disconnect_check.py && [ -f infra/test/plugin_layout.py ] && python3 infra/test/plugin_layout.py); done
+PI_LOADER_ROOT=<pi package root> python3 tools/pi_loader_smoke.py
+node tools/sf_hooks_selftest.mjs
+PI_PKG_ROOT=<pi package root> node tools/pi_extensions_load_smoke.mjs
+```
+
+Contributor checklist (the non-obvious invariants the gates enforce):
+
+- **New extension dir** (`extensions/sf-*/`): MUST be registered in `pi.extensions` — pi expands manifest entries only, an unlisted dir silently no-loads (`extensions-registered` blocks the release). The enumerated manifest form is deliberate: it is immune to the `extensions/index.ts` barrel hijack and acts as an explicit publish gate — do NOT collapse it to `"./extensions"` (see [docs/pi-internals-anchors.md](docs/pi-internals-anchors.md)).
+- **Agent files** (`agents/*.agent.md`): BARE lowercase-hyphen frontmatter `name:` — the `solidforge:` namespace is composed at load by `sf-subagents` from `pi.namespace` (single source of truth).
+- **Python edits**: ruff check + format must pass — the in-session gate denies red edits BEFORE they land (and post-write blocks disclose that the edit already applied).
+- **pi version bumps**: re-verify the internals anchors in [docs/pi-internals-anchors.md](docs/pi-internals-anchors.md) and move `PI_REF` in BOTH workflows together.
+
 ## Layout
 
 ```text
@@ -67,7 +86,7 @@ solidforge-pi/
 ├── package.json              # pi manifest (pi.extensions / pi.skills / pi.prompts)
 ├── skills/                   # 5 skills (SKILL.md + stdlib python infra + self-gates)
 ├── prompts/arm-tools.md           # /solidforge:arm-tools via pi.namespace
-├── agents/                   # 22 solidforge:<name> agent definitions (loaded by sf-subagents)
+├── agents/                   # 22 agent definitions (BARE names; sf-subagents composes solidforge:<name> from pi.namespace at load)
 └── extensions/
     ├── sf-subagents/         # subagent tool + package agents discovery (16/8 concurrency, env-tunable); live streaming of child internals (tool calls / turns / elapsed / idle / text tail)
     ├── sf-hooks/             # tool_call/tool_result → python hook bridge (CLAUDE_PROJECT_DIR env)

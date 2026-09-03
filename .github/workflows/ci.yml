@@ -1,0 +1,98 @@
+name: ci
+
+# Push/PR gate — every check that previously depended on the author's LOCAL
+# in-session hooks (fast-gate, per-skill gates, loader smokes). A fresh clone
+# must be able to prove the package green with zero local infrastructure;
+# contributors and hook-less environments get the same protection.
+#
+# npm-publish.yml stays the release gate (runs on published GitHub Releases);
+# this workflow keeps master green between releases.
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  # Same pin as npm-publish.yml (its release-gate clone). Bump both together.
+  PI_REF: v0.84.4
+
+jobs:
+  gates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76c36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+      - name: Install ruff (runner python3 is preinstalled; gates are stdlib-only)
+        run: python3 -m pip install --user ruff && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: ruff check + format (tools + every skill infra; per-skill ruff.toml via walk-up discovery)
+        run: |
+          ruff check tools skills/*/infra
+          ruff format --check tools skills/*/infra
+
+      - name: Per-skill structural gates (lint_self + disconnect_check + plugin_layout where present)
+        run: |
+          set -euo pipefail
+          for s in skills/*/; do
+            echo "== ${s}"
+            ( cd "$s" && python3 infra/test/lint_self.py )
+            ( cd "$s" && python3 infra/test/disconnect_check.py )
+            if [ -f "${s}infra/test/plugin_layout.py" ]; then
+              ( cd "$s" && python3 infra/test/plugin_layout.py )
+            fi
+          done
+
+      - name: pi real-loader smoke (skills/prompts/manifest/agents/extensions-registered)
+        run: |
+          git clone --quiet --depth 1 --branch "$PI_REF" https://github.com/earendil-works/pi /tmp/pi
+          PI_LOADER_ROOT=/tmp/pi python3 tools/pi_loader_smoke.py
+
+      - name: sf-hooks seam selftest (pre-write lint gate; needs ruff on PATH)
+        run: node tools/sf_hooks_selftest.mjs
+
+      - name: markdownlint (actively-maintained surfaces; frozen CC-era references/ stay out of scope)
+        run: npx -y markdownlint-cli2 "README.md" "PORTING-PLAN.md" "docs/*.md" "skills/*/SKILL.md"
+
+      - name: npm pack leak check (F1 regression class: caches/workspace must never ship)
+        run: |
+          set -euo pipefail
+          npm pack --dry-run 2>&1 | tee /tmp/pack.log
+          if grep -E "__pycache__|\.pyc|\.ruff_cache|workspace/|\.claude/" /tmp/pack.log; then
+            echo "::error::cache/workspace leakage detected in tarball"; exit 1
+          fi
+          grep -q "NOTICE" /tmp/pack.log || { echo "::error::NOTICE missing from tarball"; exit 1; }
+
+  loader-e2e:
+    # P1: prove the extension FILES import + initialize under pi's own loader
+    # (jiti transpile + factory init), headless — the authless approximation
+    # of the `pi -e` install-path probe (which needs model credentials).
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76c36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+      - name: Install pinned pi package (npm form — jiti + bundled peers present)
+        run: |
+          mkdir /tmp/pipkg && cd /tmp/pipkg
+          npm init -y >/dev/null
+          npm install --no-fund --no-audit "@earendil-works/pi-coding-agent@${PI_REF#v}"
+      - name: Load all extensions through pi's real loader
+        run: |
+          set -euo pipefail
+          PI_ROOT=/tmp/pipkg/node_modules/@earendil-works/pi-coding-agent
+          mkdir -p node_modules/@earendil-works
+          ln -s "$PI_ROOT" node_modules/@earendil-works/pi-coding-agent
+          PI_PKG_ROOT="$PI_ROOT" node tools/pi_extensions_load_smoke.mjs

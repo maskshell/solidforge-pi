@@ -19,13 +19,12 @@
 
 ---
 
-
 ## 0. 结论速览
 
 **无根本性障碍。** SolidForge 的灵魂——确定性收敛策略引擎（`converge.py` / `produce.py` / `loop_state.py` / `plan_queue.py` 等纯 stdlib Python CLI）和协议文本——完全 harness 无关，约 70% 资产可直接复用。Claude Code 插件外壳（agents / hooks / command / MCP 四件套）需按 Pi 的扩展模型重建，其中 **4 处为实质重写点**。
 
 | 分级 | 内容 | 占比 |
-|---|---|---|
+| --- | --- | --- |
 | 直接复用 | 5 个 SKILL.md（文本替换后）、全部 Python infra、schemas、arch-configs、设计文档 | ~70% |
 | 适配层 | agents 转换、hooks shim、arm-tools 命令、profiles | ~25% |
 | 实质重写 | ① hetero 异族子进程 substrate ② playwright MCP 三件套（引入 adapter 后已减半）③ TaskCreate 调度/冲突检测层 ④ budget/turns 上限下沉 | ~5% |
@@ -50,7 +49,7 @@ SolidForge 是一个 Claude Code 插件（`.claude-plugin/plugin.json` + 自带 
 ## 2. 直接复用清单（不动或仅文本替换）
 
 | 组件 | 复用方式 | 备注 |
-|---|---|---|
+| --- | --- | --- |
 | 5 个 `SKILL.md` | 复制 + 文本替换 | Pi 实现同一 Agent Skills 标准；技能名全部合规。**description 长度卡边**：parallel-development 1016/1024、psv 1011、pas 1014——**禁止加字**，Pi 适配说明写进正文而非 frontmatter |
 | Python infra（全部 `infra/scripts/`、`infra/hooks/`、`infra/install/`） | 原样复用 | 均为 stdlib-only CLI，经 bash 调用，与宿主无关 |
 | schemas / arch-configs / docs | 原样复用 | 纯文件 |
@@ -104,7 +103,7 @@ SKILL.md 文本替换项（全量）：
 ~150 行 TS，把 Pi 事件转成 CC hook 协议喂给原 Python 脚本：
 
 | Claude Code | Pi 对应物 |
-|---|---|
+| --- | --- |
 | PreToolUse matcher `Edit\|Write` | `tool_call` 事件，`toolName ∈ {edit, write}` |
 | PostToolUse matcher `Edit\|Write` | `tool_result` 事件（可改结果） |
 | stdin payload `tool_input.file_path` | `event.input.path`（Pi 参数名不同） |
@@ -142,7 +141,7 @@ arm.py 本体：加 AGENTS.md 优先逻辑（§3.1）；`plugin_layout.py` 自�
 
 `hetero_review.py` / `hetero_doc_review.py` / research tier 的 spawn 从 `claude -p --settings ...` 改为：
 
-```
+```text
 pi --mode json -p --no-session --model <provider>/<model> \
   --tools <allowed> --append-system-prompt <prompt-file> [-p "<prompt>"]
 ```
@@ -150,7 +149,7 @@ pi --mode json -p --no-session --model <provider>/<model> \
 Pi 无对应物、需下沉实现的 CC flag：
 
 | CC flag | Pi 替代 |
-|---|---|
+| --- | --- |
 | `--settings profiles/<x>.json` | sf-providers 扩展注册的 provider（§4.4） |
 | `--max-budget-usd <cap>` | **自行实现**：JSON 事件流含 `usage.cost.total`，wrapper 累计超限即 SIGKILL |
 | `--max-turns <cap>` | **自行实现**：计数 `message_end`(assistant) 事件 |
@@ -186,7 +185,7 @@ wrapper 的心跳（stderr 每 30s）、`provider_runs[]` 记账、`.env.solidfo
 **按依赖分级**：
 
 | solidforge 依赖 | 决策 | 模式 | 理由 |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | **graphiti**（可选） | ✅ 用 adapter | **proxy**（单个 `mcp` 代理工具，懒连接） | 调用稀疏，近零空闲成本；本来声明优雅降级 |
 | **playwright-test**（E2E 必需） | ✅ 用 adapter | **proxy（已定案，见 §6 实测）** | 保住 MCP 语义与跨步骤浏览器会话态，重写面最小 |
 | **ast-grep**（可选） | ❌ 不用 adapter | — | 官方 CLI（`@ast-grep/cli`）就是两条路径之一，不值得挂底座 |
@@ -212,7 +211,7 @@ wrapper 的心跳（stderr 每 30s）、`provider_runs[]` 记账、`.env.solidfo
 
 ## 7. 目标形态（修正版）
 
-```
+```text
 solidforge-pi/
 ├── package.json              # pi manifest: extensions/skills/prompts + pi.mcp
 ├── mcp.json                  # playwright-test server 定义（随包分发）
@@ -232,7 +231,7 @@ solidforge-pi/
 ## 8. 移植顺序与里程碑
 
 | 阶段 | 内容 | 打通验证 |
-|---|---|---|
+| --- | --- | --- |
 | **M0 spike** ✅ | sf-subagents 扩展跑通 + directTools 命名实测 + models.json/registerProvider 对 DeepSeek 端点连通性 | `subagent` 工具调 `solidforge:doc-reviewer` 返回结构化结果 |
 | **M1 csr** ✅（2026-08-25） | skills/cross-source-review 移植：hetero_doc_review.py spawn 层 pi 化（`pi --mode json -p -e sf-providers`）+ guard 测试重写（8 检查）+ SKILL.md/install.md/divergence.md 适配 | **实弹**：bigmodel(GLM-5.2) 抓到植入矛盾（blocker+双行引文）；qwen3 401 被 `hetero-api-error` 如实披露；离线 6/6 测试全绿（含 budget/turns 熔断 degrade） |
 | **M2 psv/pas** ✅（2026-08-25） | 两个 outcome-axis 技能（无 hooks 依赖，最快） | psv e2e：BERT 误归属被 **refuted**（带抓取引文），覆盖记录 1V/1R/0W/0K of 2；pas e2e：3 新颖性声明全 clear-under-search（含诚实盲区披露）；两技能离线 14/14 绿 |
@@ -244,7 +243,7 @@ solidforge-pi/
 ## 9. 风险清单
 
 | 风险 | 影响 | 缓解 |
-|---|---|---|
+| --- | --- | --- |
 | SKILL.md description 卡 1024 上限（1016/1014/1011） | Pi 适配说明无处加 | 写进正文，不碰 frontmatter；替换文本时监控长度 |
 | pi-mcp-adapter 单维护者 + peerDep `^0.84.1` | pi 升级后 adapter 断连 → playwright/graphiti 降级 | 锁 adapter 精确版本；graphiti 本来优雅降级；playwright 有 CLI 兜底预案 |
 | 非交互子进程项目信任（subagent `pi -p` 不弹信任框） | CI/新环境子代理加载不到项目资源 | README 写明 `--approve` / `defaultProjectTrust` 权衡 |
@@ -259,7 +258,7 @@ solidforge-pi/
 ## 10. 待拍板事项 → 已拍板（M0，2026-08-23）
 
 | 事项 | 决策 | 依据 |
-|---|---|---|
+| --- | --- | --- |
 | 1. TaskCreate 层 | **方案二**：Python tasks.json 状态文件（`loop_state.py` 家族管理 `task add/claim/conflict-check`） | 冲突检测是收敛环正确性部件，应在确定性层（可测试、可 golden）；M3 执行 |
 | 2. playwright proxy vs directTools | **proxy**（adapter v2.27.0 源码实测：directTools 命名单下划线，与 CC 不一致，免改假设不成立） | 见 §6 |
 | 3. providers 路径 A/B | **路径 B**（registerProvider 扩展），已实现于 `extensions/sf-providers`，DeepSeek 连通已验证 | 一体安装体验 |
@@ -270,7 +269,7 @@ solidforge-pi/
 ## 11. M0 spike 结果（2026-08-23）
 
 | 验证项 | 结果 |
-|---|---|
+| --- | --- |
 | sf-subagents 扩展（包内 agents 发现 + spawn 链路） | ✅ 冒烟通过：`-e` 加载 → 发现 `sf-doc-reviewer`（package source）→ spawn 子进程 → 正确抓到植入的 zero-downtime 矛盾，按 schema 返回 4 findings |
 | directTools 命名实测 | ✅ 完成（源码验证，未装 adapter）：**不一致**（单下划线），决策定 proxy |
 | DeepSeek 连通性（sf-providers + `.env.solidforge` 自加载） | ✅ `--model deepseek/deepseek-v4-flash` 返回正常 |
@@ -293,8 +292,8 @@ solidforge-pi/
 
 **结论：可行，已定案采用。** 两类对象分开看：
 
-| 对象 | 前缀 | 依据 |
-|---|---|---|
+| 对象                              | 前缀                        | 依据                                                                                                                                                                        |
+| ---                               | ---                         | ---                                                                                                                                                                         |
 | **agent 名**（subagent 工具参数） | ✅ 保留 `solidforge:<name>` | agent 名只是 frontmatter 字符串 + `discoverAgents()` 的 Map 键，全链路无字符集校验；不进 CLI 参数（系统提示走临时文件）；冒烟通过（`solidforge:doc-reviewer` 抓到植入矛盾） |
 
 > **修订（2026-09-03，0.2.2）**：pi packages 规范（`docs/packages.md` → Namespace）明确 *"packages shipping subagents via their own extension should read `pi.namespace` and prefix agent names with it"*。frontmatter 改回**裸名**，前缀由 `sf-subagents` 在 `discoverAgents()` 加载时从 `package.json` 的 `pi.namespace` 组合（幂等：已带前缀的 legacy 名不双加）。**运行时名不变**——SKILL.md 60+ 处 `solidforge:<name>` 引用零改动的定案依据依旧成立；变更消除的只是「manifest 命名空间 vs frontmatter 硬编码」的双真相源（改 namespace 时 agent 名不再静默漂移）。
@@ -314,19 +313,17 @@ solidforge-pi/
 
 **附带验证：argument-hint（CC 同名同渲染）**。prompt template 的 frontmatter `argument-hint` 在补全列表内渲染为 `${hint} — ${desc}`（autocomplete.js L209-214，与 CC 一致）；`/solidforge:arm-tools` 保留 CC 原版 hint。注意分档：扩展命令（registerCommand）**无** argumentHint 字段（types.d.ts RegisteredCommand），只有空格后的动态参数候选（getArgumentCompletions → AutocompleteItem{value,label,description}）——因此 arm-tools 保持 template 路线，不转扩展命令（两者不能同名共存，会触发 :1/:2 冲突后缀）。
 
-
 ---
 
 ## 13. M3 实施记录（2026-08-25）
 
 - **sf-hooks 扩展**（§4.2 落地）：`tool_call`(edit|write) → blueprint_guard.py + counters.py pre（5s），deny ⇒ `{block:true, reason}`；`tool_result` → fast_gate.py（20s），`decision:block` ⇒ isError + FAST-GATE 反馈。env 桥 `CLAUDE_PROJECT_DIR=ctx.cwd`；工具名映射 edit/write→Edit/Write（MultiEdit 并入 edit）、`input.path`→`tool_input.file_path`。**实弹三路径**：suspended 断路器 deny、frozen blueprint deny、ruff lint 反馈自纠。
-- **hetero_review.py pi 化**：重放 csr 模式（manifest/_load_profile/_pi_argv/_run_streamed/_run_claude_once/_parse_pi_stream/main）；pd 特有 `_run_loop_state` 生命周期记账原样保留（本地 subprocess，harness 无关）；wiring 测试适配（envelope parser 断言 → wrapper-cap 映射断言；_materialize → _load_profile 路由组合断言）。
+- **hetero_review.py pi 化**：重放 csr 模式（manifest/_load_profile/_pi_argv/_run_streamed/_run_claude_once/_parse_pi_stream/main）；pd 特有 `_run_loop_state` 生命周期记账原样保留（本地 subprocess，harness 无关）；wiring 测试适配（envelope parser 断言 → wrapper-cap 映射断言；_materialize →_load_profile 路由组合断言）。
 - **M3 实弹排障三连**（全部真 bug，全修复）：① pd `--allowed-tools` 默认仍是 CC 空格大写名（Stage D 漏项）→ 子进程无工具，deepseek 退化吐 DSML 原文一轮即停；② `_extract_text` 只取第一个 text part → 工具前导 prose 后的 JSON 被漏（csr/pd 双修：拼接全部 text parts）；③ **子进程继承 wrapper stdin（非 TTY 不关）→ `pi -p` 阻塞读 stdin**（手动跑通、wrapper 挂起的根因）→ `stdin=DEVNULL`（双 wrapper 同修，load-bearing 注释入档）。
 - **TaskCreate 方案二**：loop_state.py 新增 `task-add/list/claim/conflict/complete` 子命令族，状态文件 `.claude/parallel-dev/tasks.json`；冲突检测 = files_touched 与 **in_progress** 任务交集（pending 为 advisory）；claim 冲突 exit 3 + conflicts[]，`--force` 编排者裁决。SKILL.md 调度环与 20 个示例行全部改写为 CLI 形式。
 - **playwright 三件套**：M0 TODO 旗标落地为「Browser automation surface (PI PORT)」节——`mcp({search})`/`mcp({tool,args})` proxy 指引 + adapter 缺席时 Playwright CLI 兜底（诚实声明交互式会话不可用，不编造）。
 - **plugin_layout 适配**：root 发现 `.claude-plugin/plugin.json` → `package.json`（pi manifest）；manifest 断言 → pi-package keyword + pi.extensions/skills/prompts；hooks.json 断言 → sf-hooks 扩展接线断言；arm-tools 路径 → prompts/；agent 名适配 `solidforge:` 命名空间。**bc（blueprint-crafting）补漏复制**——原里程碑表漏列（M1-M4 无 bc 行），其确定性管线开箱全绿，SKILL.md 仅 3 处 spawn 措辞适配。
 - 其余：`.markdownlint.json` 随包复制（lint_self 需要）；pd profiles 同步 csr 路由集；model-routing/convergent-loop/hooks-reference 三个可执行 reference 更新为 pi substrate（design-decisions.md 是 ADR 历史档案，保留 CC 叙述）。
-
 
 ---
 
@@ -339,7 +336,6 @@ solidforge-pi/
 
 **收官状态**：五技能全部在位且门禁绿；四个 CC 外壳件（agents/hooks/command/substrate）全部按 pi 模型重建；方案文档与 divergence 日志全程同步。后续可选：npm 发布（pi-package keyword 已就位）、M0.5 agent prose 工具名残留清洗、sf-providers 模型规格进一步校准。
 
-
 ---
 
 ## 15. Upstream 同步记录（2026-08-25，sync-1）
@@ -347,17 +343,18 @@ solidforge-pi/
 比对本移植复制基线（08-25 11:54）与 upstream `../solidforge` HEAD（45f596b）：
 
 **已命中（无需动作）**：
+
 - `29c5e13` TDD 三件套 / `5af48fe` GLM-5.3 / `5d0b493`+`dbbce21`+`082bc7b` 命名清扫 / `5656ef7` rustfmt edition / ADR #53 flash 默认 —— 全部在复制基线内（早前 `grep "seam:"` 带冒号属误判，正文为 "seam —"）。
 - `8255b34`+`45f596b` ADR #57 三级命名 —— **upstream 反向采纳了本移植的学说**（commit 自述 "borrowed from the pi + dsh ports"）；pi 侧 profiles 全部合规（`_provider`==文件名、`_family` 齐、qwen-bailian/minimax-cn 同名、qwen3 双侧退役）。FABLE tier 全路由钉死为 CC env 阶梯概念，pi 无对应机制（`_pi_argv` 直连 route/model）→ N/A。
 - `3a93109` docs/papers 快照 → pi 包范围外（只带 skills；技能内链接不涉）。
 
 **同步落地（本次）**：
+
 - `ca9edc5`（bc seam Option A）：loop_state.py **手工合并** `set-blueprint-ref` + fresh-state 崩溃修复（与 task 注册表共存，沙盒验证 ref/rev 双写）；bc SKILL.md seam-aware spawn；bc docs 4 件 wholesale（arch-design §3 AC-ENTRY、seam-upstream-anchor proposal+record）；plan-reviewer agent 增 seam-quality (a/b/c) 检查。
 - `5b06dd3`+`8255b34`：csr install.md 家族列表（pi 路由版）；pd model-routing.md 三级学说表（pi 路由示例）；`.env.solidforge.example` 双 qwen 凭据通道（bailian 按量 vs token-plan 订阅）+ alias 说明。
 - **有意 divergence 保留**：qwen3 alias → qwen-bailian（本环境 key 为按量制；upstream 扫向 qwen-token-plan-cn）；zai 路由 = pi coding 端点（upstream bigmodel.json 留 CC `/api/anthropic` 端点）——双平台各正。
 
 **终验**：52/52 门禁绿（五技能全量）。
-
 
 ---
 
@@ -366,12 +363,12 @@ solidforge-pi/
 **复验结论**：文件发现逻辑三端兼容——CC/pi 逐字一致（`<project-root>/.env.solidforge` → `.env`，shell wins）；dsh 同两层 + preset-root 第三层兜底（且 dsh harness 擦 shell 凭据，文件即权威源）。差异仅在**变量名消费**：
 
 | 路由 | CC | pi | dsh |
-|---|---|---|---|
-| deepseek | `DEEPSEEK_ANTHROPIC_AUTH_TOKEN`（convention）| 同（`_token_env`）| 同（convention；dsh 已移除该 profile——同源）|
-| glm | `BIGMODEL_ANTHROPIC_AUTH_TOKEN` | 同（桥→`ZAI_CODING_CN_API_KEY`）| 原 `<ROUTE>_API_KEY` → **已对齐** `BIGMODEL_...` |
+| --- | --- | --- | --- |
+| deepseek | `DEEPSEEK_ANTHROPIC_AUTH_TOKEN`（convention） | 同（`_token_env`） | 同（convention；dsh 已移除该 profile——同源） |
+| glm | `BIGMODEL_ANTHROPIC_AUTH_TOKEN` | 同（桥→`ZAI_CODING_CN_API_KEY`） | 原 `<ROUTE>_API_KEY` → **已对齐** `BIGMODEL_...` |
 | minimax-cn | `MINIMAX_ANTHROPIC_AUTH_TOKEN` | 同 | 原 `MINIMAX_CN_API_KEY` → **已对齐** |
-| qwen-bailian | `QWEN_BAILIAN_ANTHROPIC_AUTH_TOKEN` | **已修**（原 `QWEN3_` 过时）| —（无此 profile）|
-| qwen-token-plan-cn | `QWEN_TOKEN_PLAN_CN_ANTHROPIC_AUTH_TOKEN` | **已修**（原 `..._API_KEY` 不一致）| 同（convention）|
+| qwen-bailian | `QWEN_BAILIAN_ANTHROPIC_AUTH_TOKEN` | **已修**（原 `QWEN3_` 过时） | —（无此 profile） |
+| qwen-token-plan-cn | `QWEN_TOKEN_PLAN_CN_ANTHROPIC_AUTH_TOKEN` | **已修**（原 `..._API_KEY` 不一致） | 同（convention） |
 
 **落地**：① pi 两个 qwen profile `_token_env` 对齐 upstream 文件名约定；sf-providers 桥表加 `QWEN_TOKEN_PLAN_CN_`→`..._API_KEY`、Bailian 现行名 `QWEN_BAILIAN_` + legacy `QWEN3_` 双认；example 模板同步。② dsh 四个 DSH-NATIVE/外部 profile（zai/minimax-cn/qwen，pd+csr 双拷贝）加 `_token_env`/`_credential_env` 指向共享文件的 CC 约定名（dsh 的 escape-hatch 字段，语义即为此）。③ **部署**：一份物理文件 `solidforge/.env.solidforge` + symlink（pi 根 `../solidforge/.env.solidforge`；dsh preset 根绝对链接）。
 
@@ -450,6 +447,7 @@ the upstream mechanics (event granularity, zero LLM-behavior dependence, both le
 covered, ambient run-level strip — none of which CC offers):
 
 **L1 — per-leg live panels (event-driven).**
+
 - `sf-subagents` (同源): the child `pi --mode json` stream is now consumed at
   event granularity — `tool_execution_start` (current action), throttled
   `message_update` text_delta probes (live text tail; prefix-check before the
@@ -467,6 +465,7 @@ covered, ambient run-level strip — none of which CC offers):
   just 30s liveness) is visible mid-run through PLAIN bash — no new tool needed.
 
 **L2 — run-progress sidecar (upstream #61 ported verbatim + ambient strip).**
+
 - `csr_progress.py` ported verbatim (pure stdlib, zero CC surface; EVENT_REGISTRY
   identical → sidecar files are cross-readable with upstream).
 - wrapper `--progress-file` (upstream semantics: leg boundaries + heartbeat tee,
