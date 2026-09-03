@@ -11,6 +11,7 @@ Rules (PORTING-PLAN.md §4.1):
   - filename keeps source form `<name>.agent.md` (colon illegal-ish in filenames; name lives in frontmatter)
 Re-runnable: output dir is regenerated (safe).
 """
+
 import re
 import sys
 from pathlib import Path
@@ -19,9 +20,16 @@ SRC = Path("/Users/solosus/dev/ws-ai/solidforge/agents")
 DST = Path(__file__).resolve().parent.parent / "agents"
 
 TOOL_MAP = {
-    "Read": "read", "Grep": "grep", "Glob": "find", "LS": "ls",
-    "Edit": "edit", "MultiEdit": "edit", "Write": "write", "Bash": "bash",
-    "WebSearch": None, "WebFetch": None,  # no pi builtin — dropped, TODO note
+    "Read": "read",
+    "Grep": "grep",
+    "Glob": "find",
+    "LS": "ls",
+    "Edit": "edit",
+    "MultiEdit": "edit",
+    "Write": "write",
+    "Bash": "bash",
+    "WebSearch": None,
+    "WebFetch": None,  # no pi builtin — dropped, TODO note
 }
 DROP_PREFIX = ("mcp__",)  # playwright (M3 adapter proxy) + ast-grep (CLI path)
 AGENT_NAME_RE = re.compile(r"^([a-z0-9-]+)\.agent\.md$")
@@ -59,22 +67,33 @@ def convert(text: str, name: str) -> tuple[str, list[str]]:
     if tools_line:
         mapped, dropped = map_tools(tools_line)
         if dropped:
-            notes.append(f"# TODO(M3): dropped CC-only tools: {', '.join(sorted(dropped))}")
+            notes.append(
+                f"# TODO(M3): dropped CC-only tools: {', '.join(sorted(dropped))}"
+            )
     else:
         mapped = None
 
     # body: `solidforge:<name>` references stay verbatim — agent names keep the prefix.
     # (backticked CC tool-name cleanup is independent and still applies)
-    for cc, pi in [("Read", "read"), ("Grep", "grep"), ("Glob", "find"), ("LS", "ls"),
-                   ("MultiEdit", "edit"), ("Write", "write"), ("Bash", "bash")]:
+    for cc, pi in [
+        ("Read", "read"),
+        ("Grep", "grep"),
+        ("Glob", "find"),
+        ("LS", "ls"),
+        ("MultiEdit", "edit"),
+        ("Write", "write"),
+        ("Bash", "bash"),
+    ]:
         body = body.replace(f"`{cc}`", f"`{pi}`")
 
     fm_out = [f'name: "solidforge:{name}"', f"description: {fields['description']}"]
     if mapped:
         fm_out.append(f"tools: {', '.join(mapped)}")
-    if "model" in fields and fields["model"]:
+    if fields.get("model"):
         fm_out.append(f"model: {fields['model']}")
-    return "---\n" + "\n".join(fm_out) + "\n---\n" + ("\n".join(notes) + "\n" if notes else "") + body, notes
+    return "---\n" + "\n".join(fm_out) + "\n---\n" + (
+        "\n".join(notes) + "\n" if notes else ""
+    ) + body, notes
 
 
 def main():
