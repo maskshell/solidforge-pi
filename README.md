@@ -35,7 +35,7 @@ Enabling the package does NOT mutate host-project build files. In a target proje
 /arm-tools                         # stock-pi fallback (no namespace: template name = filename)
 ```
 
-The namespace form requires a pi build with `pi.namespace` support (this package declares `"namespace": "solidforge"`; see the proposal + implementation at [maskshell/pi, branch `package-namespace`](https://github.com/maskshell/pi/tree/package-namespace), tracked in [earendil-works/pi#8834](https://github.com/earendil-works/pi/issues/8834)).
+The namespace form requires a pi build with `pi.namespace` support — this package declares `"namespace": "solidforge"`. Easiest install (prebuilt, release-tracked): `npm install -g https://github.com/maskshell/pi/releases/latest` asset one-liner from [maskshell/pi Releases](https://github.com/maskshell/pi/releases) (see [FORK.md](https://github.com/maskshell/pi/blob/main/FORK.md)); source patches + lifecycle rules on the [`namespace-patch` branch](https://github.com/maskshell/pi/tree/namespace-patch/patch); proposal trail: [earendil-works/pi#8834](https://github.com/earendil-works/pi/issues/8834).
 
 `arm.py` appends the L1 Constitution to the project's **AGENTS.md** (when present) or **CLAUDE.md** — pi loads either. Reversible: `arm.py --revert` (dry-run; `--apply` to execute).
 
