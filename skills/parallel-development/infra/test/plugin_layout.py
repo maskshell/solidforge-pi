@@ -5,8 +5,8 @@ Loading-chain check for the PLUGIN BOUNDARY (the analog of disconnect_check.py f
 
   - .claude-plugin/plugin.json parses and has name=solidforge, version, description
   - hooks/hooks.json parses, has PreToolUse + PostToolUse, and the hook commands reference ${CLAUDE_PLUGIN_ROOT} and the three hook scripts (blueprint_guard / counters / fast_gate)
-  - commands/arm-tools.md exists (the /solidforge:arm-tools Layer 2 command)
-  - agents/ contains the 17 plugin-bundled agents (by frontmatter name)
+  - commands/arm-tools.md exists (prompts/arm-tools.md — the /solidforge:arm-tools invocation is namespace-composed from pi.namespace at load; the literal-colon filename was retired 2026-08-29)
+  - agents/ contains the 22 plugin-bundled agents (by BARE frontmatter name — the solidforge: namespace is composed at load time by sf-subagents from pi.namespace, per the pi packages spec; amended 2026-09-03)
   - every agent that references a references/agent-patterns/<role>.md companion has that companion bundled under skills/parallel-development/references/agent-patterns/ (catches the loading-chain break where an agent points at a companion that was not copied)
 
 The hook command PATHS use ${CLAUDE_PLUGIN_ROOT}/skills/parallel-development/... (resolved at runtime on plugin-enable). This check validates STRUCTURE (files present + well-formed), not runtime resolution.
@@ -45,20 +45,26 @@ if PLUGIN_ROOT is None:
 
 PACKAGE_JSON = os.path.join(PLUGIN_ROOT, "package.json")
 SF_HOOKS_EXT = os.path.join(PLUGIN_ROOT, "extensions", "sf-hooks", "index.ts")
-ARM_TOOLS_MD = os.path.join(PLUGIN_ROOT, "prompts", "solidforge:arm-tools.md")
+ARM_TOOLS_MD = os.path.join(PLUGIN_ROOT, "prompts", "arm-tools.md")
 AGENTS_DIR = os.path.join(PLUGIN_ROOT, "agents")
 
-# The 17 plugin-bundled agents (Solid Forge registers these as solidforge:<name>).
+# The 22 plugin-bundled agents, BARE frontmatter names (sf-subagents composes
+# the solidforge: namespace at load from pi.namespace — single source of truth).
 EXPECTED_AGENTS = [
     "architect",
     "backend-developer",
+    "claim-extractor",
+    "claim-verifier",
     "code-reviewer",
+    "collision-verifier",
     "devops-engineer",
+    "doc-reviewer",
     "documentation-writer",
     "frontend-developer",
     "graphiti-config-generator",
     "ios-developer",
     "ios-tester",
+    "novelty-claim-extractor",
     "plan-reviewer",
     "playwright-test-generator",
     "playwright-test-healer",
@@ -158,7 +164,7 @@ def t_hooks_json():
 
 
 def t_arm_tools_command():
-    print("prompts/solidforge:arm-tools.md:")
+    print("prompts/arm-tools.md:")
     check("arm-tools.md exists", os.path.exists(ARM_TOOLS_MD), f"create {ARM_TOOLS_MD}")
 
 
@@ -179,13 +185,14 @@ def t_agents():
         nm = _frontmatter_name(text)
         if nm:
             names[nm] = f
-    # PI PORT (M0.5): agent names carry the solidforge: namespace verbatim
+    # PI PORT (amended 2026-09-03): agents carry BARE names in frontmatter;
+    # sf-subagents composes <pi.namespace>:<name> at load (pi packages spec).
     for expected in EXPECTED_AGENTS:
         check(
-            f"agent present: solidforge:{expected}",
-            f"solidforge:{expected}" in names,
-            f"copy {expected}.agent.md into agents/ (frontmatter name "
-            f'"solidforge:{expected}")',
+            f"agent present: {expected}",
+            expected in names,
+            f"copy {expected}.agent.md into agents/ (BARE frontmatter name "
+            f'"{expected}" — the solidforge: prefix is composed at load)',
         )
     # companion coverage: any agent referencing a references/agent-patterns/<role>.md
     # companion must have it bundled under skills/parallel-development/references/agent-patterns/.
