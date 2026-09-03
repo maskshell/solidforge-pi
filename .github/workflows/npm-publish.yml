@@ -1,0 +1,53 @@
+name: npm-publish
+
+# Publishes to npmjs via Trusted Publishers (OIDC) — no npm token stored.
+# Registration required once on npmjs.com:
+#   package @maskshell/solidforge-pi -> Settings -> Trusted Publisher
+#   repository: maskshell/solidforge-pi
+#   workflow filename: npm-publish.yml
+#   environment: (empty)
+# Trigger: a published GitHub Release (tag vX.Y.Z must equal package.json
+# version). The release gate (pi real-loader smoke) runs before publishing.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  id-token: write # OIDC token for trusted publishing
+
+concurrency:
+  group: npm-publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.ref }}
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24 # bundles npm >= 11.5 (required for OIDC publish)
+
+      - name: Tag/version consistency
+        run: |
+          set -euo pipefail
+          PKG_VER="$(node -p "require('./package.json').version")"
+          TAG_VER="${GITHUB_REF_NAME#v}"
+          echo "package=$PKG_VER tag=$TAG_VER"
+          [ "$PKG_VER" = "$TAG_VER" ] || { echo "version mismatch: package.json $PKG_VER vs tag $TAG_VER" >&2; exit 1; }
+
+      - name: Release gate — pi real-loader smoke
+        run: |
+          set -euo pipefail
+          git clone --quiet --depth 1 --branch v0.84.4 https://github.com/earendil-works/pi /tmp/pi
+          PI_LOADER_ROOT=/tmp/pi python3 tools/pi_loader_smoke.py
+
+      - name: Publish (OIDC trusted publisher, with provenance)
+        run: npm publish --provenance --registry=https://registry.npmjs.org
