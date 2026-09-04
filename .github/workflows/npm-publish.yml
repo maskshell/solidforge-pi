@@ -51,4 +51,16 @@ jobs:
           PI_LOADER_ROOT=/tmp/pi python3 tools/pi_loader_smoke.py
 
       - name: Publish (OIDC trusted publisher, with provenance)
-        run: npm publish --provenance --registry=https://registry.npmjs.org
+        run: |
+          set -euo pipefail
+          PKG_VER="$(node -p "require('./package.json').version")"
+          PKG_NAME="$(node -p "require('./package.json').name")"
+          # Idempotency guard: the version may already exist in the registry —
+          # e.g. a rename cutover's manual first publish (trusted-publisher
+          # pre-registration is unavailable for not-yet-published names).
+          # Skip with a notice instead of failing the release red.
+          if npm view "${PKG_NAME}@${PKG_VER}" version --registry=https://registry.npmjs.org >/dev/null 2>&1; then
+            echo "::notice::${PKG_NAME}@${PKG_VER} already published (manual first-publish of the rename) — skipping publish; gates above still ran."
+            exit 0
+          fi
+          npm publish --provenance --registry=https://registry.npmjs.org
