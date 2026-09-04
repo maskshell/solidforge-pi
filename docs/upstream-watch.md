@@ -38,6 +38,7 @@ Individually verified rows carry ✅/❌/⚠️; range rows ride the shared engi
 | #56 | TDD trinity (seam freeze / tracer-bullet / review-axis) | ✅ absorbed via sync-1 hand-merge + skill-level ODP |
 | #57 | ROUTE/FAMILY/MODEL three-level naming | **OUTFLOW** — upstream borrowed it from this port (see below) |
 | #58 | blueprint_guard append-only AC→test carve-out | ✅ absorbed (2026-09-03: guard + carveout test verbatim-aligned from upstream; bridge contract unchanged) |
+| — | **DESIGN OUTFLOW (2026-09-04)**: SF_PROJECT_NODE_BIN opt-in (node_modules/.bin with realpath containment) + arm.py tool_present truthfulness + arm-tools $ARGUMENTS wiring | pi 0.2.7 shipped; CC adoption pending — handoff: [docs/outflow/sf-project-node-bin-handoff.md](outflow/sf-project-node-bin-handoff.md) |
 | — | **SECURITY OUTFLOW (2026-09-03)**: `detect_toolchain.resolve_tool` project-venv fallback (executes repo-committed `.venv/bin/<tool>` under the gate's authority) + `loop_state_path` project-dir fallback | **DIVERGED here → backported same day** — both repos now PATH-only (opt-in via `SF_PROJECT_VENV_TOOLS=1`) / fail-closed; CC reference fixed in its own commit |
 | #59 | fast_gate scopes to project root | ⚠️ pending — fast_gate drift is only 17 lines; needs a deliberate next-watch check (absorbed vs adapted-out) |
 | #60 | breaker inert on terminal state | ⚠️ pending — same check pass as #59 |

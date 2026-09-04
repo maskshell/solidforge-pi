@@ -5,6 +5,10 @@ argument-hint: "[--with-tools [--lang python|web|rust|swift|java]] [--scaffold-c
 
 # arm-tools — arm a project for Solid Forge
 
+Invocation arguments (as the user typed them after the command; `<none passed>` when empty): `${ARGUMENTS:-<none passed>}`
+
+Parse the flags for Step 1 from THAT line verbatim — do not infer absence from silence: pi substitutes the real invocation arguments into it, and a flag the user typed but this prompt does not repeat is still in effect.
+
 You are arming the project at the current working directory for the Solid Forge convergence loop. This is **Layer 2** — the explicit, per-project provisioning step. Layer 1 (installing/enabling the solidforge-pi package) already activated the sf-hooks guard + the `solidforge:` agents + the skills; this command provisions the **project-side** files the gates and loop need.
 
 > pi reads the project context file `AGENTS.md` **or** `CLAUDE.md` at startup (same layering). `arm.py` appends to `AGENTS.md` when the project already has one, else `CLAUDE.md` — either lands in the context.

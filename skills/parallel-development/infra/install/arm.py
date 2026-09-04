@@ -67,13 +67,15 @@ def have(cmd):
 
 
 def tool_present(project_dir, name):
-    """True if a tool is reachable: on PATH OR in the project's local venv bin."""
-    if have(name):
-        return True
-    for venv in (".venv", "venv", "env"):
-        if os.path.exists(os.path.join(project_dir, venv, "bin", name)):
-            return True
-    return False
+    """True if the GATES can actually run this tool — resolve_tool's trust
+    model is the single source of truth (PATH; project-local bins only under
+    their explicit opt-ins SF_PROJECT_VENV_TOOLS / SF_PROJECT_NODE_BIN, with
+    node containment). The old unconditional venv check reported tools the
+    0.2.4+ gates would refuse to execute — a silent-green of its own."""
+    sys.path.insert(0, os.path.join(INFRA_ROOT, "hooks", "lib"))
+    import detect_toolchain as _dt
+
+    return _dt.resolve_tool(name) is not None
 
 
 def run_cwd(argv, cwd, timeout=600):

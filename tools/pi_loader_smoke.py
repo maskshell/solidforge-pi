@@ -235,6 +235,28 @@ def main():
         coverage,
     )
 
+    # arm-tools must WIRE the invocation arguments into the prompt body — a
+    # template that never references $ARGUMENTS silently drops every flag the
+    # user typed (2026-09-04 incident: `--with-tools --scaffold-configs`
+    # vanished; the model armed without tools). Verified against the fork's
+    # substituteArgs renderer: multi-arg preservation + clean no-arg fallback.
+    try:
+        with open(os.path.join(REPO, EXPECTED_PROMPT), encoding="utf-8") as fh:
+            prompt_body = fh.read()
+    except OSError:
+        prompt_body = ""
+    _check(
+        "prompt-arguments-wired",
+        "$ARGUMENTS" in prompt_body or "${ARGUMENTS" in prompt_body,
+        f"{EXPECTED_PROMPT} never references $ARGUMENTS — invocation flags "
+        "are silently dropped",
+        "reference the invocation arguments (e.g. `${ARGUMENTS:-<none "
+        "passed>}`) near the top so the model parses the user's actual flags; "
+        "pi substitutes them at render time",
+        findings,
+        coverage,
+    )
+
     try:
         with open(os.path.join(REPO, "package.json"), encoding="utf-8") as fh:
             manifest = json.load(fh)
