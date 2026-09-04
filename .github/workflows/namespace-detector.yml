@@ -1,0 +1,73 @@
+name: namespace-landing-detector
+
+# Automated tripwire for earendil-works/pi#8834 (pi.namespace upstreaming).
+# The package's flagship surface depends on pi.namespace, which only the
+# maskshell/pi fork provides today; ci.yml's namespace-e2e job pins the fork.
+# When official pi gains namespace support, this weekly probe notices and
+# opens a tracking issue so the fork pin is retired instead of lingering.
+#
+# Landing checklist (the issue body carries this too):
+#   1. ci.yml: namespace-e2e installs official pi (drop NS_PIN/fork tarball)
+#   2. npm-publish.yml + ci.yml PI_REF: bump to the landing release
+#   3. docs/pi-internals-anchors.md: A3 moves from fork anchor to official
+#   4. README: retire the maskshell/pi fork install guidance
+
+on:
+  schedule:
+    - cron: "0 9 * * 1" # weekly, Monday 09:00 UTC
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: namespace-detector
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76c36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+      - name: Probe latest official pi for pi.namespace support
+        id: probe
+        run: |
+          set -euo pipefail
+          mkdir /tmp/probe && cd /tmp/probe
+          npm init -y >/dev/null
+          npm install --no-fund --no-audit @earendil-works/pi-coding-agent@latest
+          PROBE_RESULT=$(node --input-type=module -e "
+            const { pathToFileURL } = await import('node:url');
+            const s = await import(pathToFileURL('/tmp/probe/node_modules/@earendil-works/pi-coding-agent/dist/core/skills.js').href);
+            process.stdout.write(typeof s.validateNamespaceValue === 'function' ? 'LANDED' : 'NOT_LANDED');
+          ")
+          echo "result=$PROBE_RESULT"
+          echo "result=$PROBE_RESULT" >> "$GITHUB_OUTPUT"
+      - name: Open tracking issue on landing
+        if: steps.probe.outputs.result == 'LANDED'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          MARKER="pi-namespace-landed"
+          existing=$(gh issue list --state open --search "$MARKER in:title" --json number --jq 'length')
+          if [ "$existing" != "0" ]; then
+            echo "tracking issue already open — skipping"
+            exit 0
+          fi
+          gh issue create --title "[$MARKER] official pi gained pi.namespace — retire the fork pin" --body "The weekly probe detected \`validateNamespaceValue\` in the latest official \`@earendil-works/pi-coding-agent\` (earendil-works/pi#8834 landed).
+
+          Landing checklist:
+          - [ ] ci.yml: \`namespace-e2e\` installs official pi; drop \`NS_PIN\` + the fork tarball URL
+          - [ ] ci.yml + npm-publish.yml: bump \`PI_REF\` to the landing release
+          - [ ] docs/pi-internals-anchors.md: A3 moves from fork anchor to the official contract; drop the fork-delta note
+          - [ ] README: retire the maskshell/pi fork install guidance (official pi suffices)
+          - [ ] Re-verify anchors A1–A5 against the landing release"
+      - name: Not landed (quiet)
+        if: steps.probe.outputs.result != 'LANDED'
+        run: echo "official pi still lacks pi.namespace — fork pin stays; next probe in a week."

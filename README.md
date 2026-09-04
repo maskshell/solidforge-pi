@@ -70,6 +70,7 @@ for s in skills/*/; do (cd "$s" && python3 infra/test/lint_self.py && python3 in
 PI_LOADER_ROOT=<pi package root> python3 tools/pi_loader_smoke.py
 node tools/sf_hooks_selftest.mjs
 PI_PKG_ROOT=<pi package root> node tools/pi_extensions_load_smoke.mjs
+./tools/e2e_probe.sh  # authenticated install-path probe (needs model creds; CI-infeasible)
 ```
 
 Contributor checklist (the non-obvious invariants the gates enforce):

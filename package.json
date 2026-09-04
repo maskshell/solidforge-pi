@@ -9,6 +9,7 @@
   "type": "module",
   "pi": {
     "namespace": "solidforge",
+    "image": "https://raw.githubusercontent.com/maskshell/solidforge-pi/master/docs/preview.png",
     "extensions": [
       "./extensions/sf-subagents",
       "./extensions/sf-hooks",
