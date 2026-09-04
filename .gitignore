@@ -8,3 +8,9 @@ extensions/**/*.js
 .claude/
 __pycache__/
 node_modules/
+.claude/parallel-dev/loop-state.json
+.claude/parallel-dev/runs/
+.claude/parallel-dev/tasks.json
+!.env.example
+!.env.solidforge.example
+.vale/styles/
