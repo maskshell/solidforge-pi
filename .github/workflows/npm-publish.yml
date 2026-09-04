@@ -1,8 +1,8 @@
 name: npm-publish
 
 # Publishes to npmjs via Trusted Publishers (OIDC) — no npm token stored.
-# Registration required once on npmjs.com:
-#   package @maskshell/solidforge-pi -> Settings -> Trusted Publisher
+# Registration required once on npmjs.com (per package name):
+#   package solidforge-pi -> Settings -> Trusted Publisher
 #   repository: maskshell/solidforge-pi
 #   workflow filename: npm-publish.yml
 #   environment: (empty)

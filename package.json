@@ -1,6 +1,6 @@
 {
-  "name": "@maskshell/solidforge-pi",
-  "version": "0.2.5",
+  "name": "solidforge-pi",
+  "version": "0.2.6",
   "description": "SolidForge — loop-engineering skills for the Pi coding agent: converge → specify → implement pipeline + outcome-axis verification layers. Pi port of the Claude Code plugin.",
   "keywords": [
     "pi-package"
@@ -54,7 +54,6 @@
   },
   "homepage": "https://github.com/maskshell/solidforge-pi#readme",
   "publishConfig": {
-    "registry": "https://registry.npmjs.org/",
-    "access": "public"
+    "registry": "https://registry.npmjs.org/"
   }
 }
