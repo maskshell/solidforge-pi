@@ -70,12 +70,16 @@ def tool_present(project_dir, name):
     """True if the GATES can actually run this tool — resolve_tool's trust
     model is the single source of truth (PATH; project-local bins only under
     their explicit opt-ins SF_PROJECT_VENV_TOOLS / SF_PROJECT_NODE_BIN, with
-    node containment). The old unconditional venv check reported tools the
-    0.2.4+ gates would refuse to execute — a silent-green of its own."""
-    sys.path.insert(0, os.path.join(INFRA_ROOT, "hooks", "lib"))
+    node containment). `project_dir` is threaded through as resolve_tool's
+    root so the positional-arg path (cwd ≠ target) reports against the SAME
+    project the tools install into. The old unconditional venv check reported
+    tools the 0.2.4+ gates would refuse to execute — a silent-green of its own."""
+    lib = os.path.join(INFRA_ROOT, "hooks", "lib")
+    if lib not in sys.path:
+        sys.path.insert(0, lib)
     import detect_toolchain as _dt
 
-    return _dt.resolve_tool(name) is not None
+    return _dt.resolve_tool(name, root=project_dir) is not None
 
 
 def run_cwd(argv, cwd, timeout=600):

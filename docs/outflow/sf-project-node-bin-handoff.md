@@ -60,4 +60,8 @@ repo and accept that its devDependencies define gate tooling"). Default stays
 PATH-only everywhere. Containment (node branch) narrows the blast radius to
 `node_modules/` itself; the venv branch has no equivalent check today (venv
 entries are conventionally real files, not symlinks — noted asymmetry, kept
-deliberately to match 0.2.4 semantics).
+deliberately to match 0.2.4 semantics). Residual TOCTOU: exists→realpath→spawn leaves a swap window — accepted,
+informational (threat model is repo-committed content, not a concurrent local
+process; same residual the 0.2.4 fix accepted). POSIX layout only: Windows
+Scripts//.cmd shims are out of scope, as in 0.2.4 — the test file is
+substrate-neutral but not Windows-tested.

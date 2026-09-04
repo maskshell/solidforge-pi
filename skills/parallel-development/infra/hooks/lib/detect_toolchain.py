@@ -70,7 +70,7 @@ def which_any(*candidates):
     return None
 
 
-def resolve_tool(name):
+def resolve_tool(name, root=None):
     """Return an argv prefix to run a tool: [<resolved-path>] or None.
 
     PATH only, by default (pi port, 2026-09-03 security divergence from CC):
@@ -87,11 +87,14 @@ def resolve_tool(name):
     The node branch carries a containment hard stop: a .bin entry whose
     realpath ESCAPES node_modules/ (symlink to code outside the declared
     trust boundary) is refused even under the opt-in. PATH always wins.
+    `root` (optional, for callers that know the target project — arm.py's
+    positional path) defaults to project_root(). POSIX layout only
+    (bin/, .bin/ — Windows Scripts//.cmd shims are out of scope, as in 0.2.4).
     """
     p = _shutil_which(name)
     if p:
         return [p]
-    root = project_root()
+    root = root or project_root()
     if os.environ.get("SF_PROJECT_NODE_BIN") == "1":
         cand = os.path.join(root, "node_modules", ".bin", name)
         if os.path.exists(cand):

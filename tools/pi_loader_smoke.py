@@ -18,11 +18,14 @@ Checks:
      builds — the literal-colon filename was retired 2026-08-29).
   3. manifest — package.json parses; every pi.extensions / pi.skills /
      pi.prompts path exists on disk.
-  4. agents — every agents/*.agent.md frontmatter name is BARE lowercase-hyphen
+  4. prompts/arm-tools.md references $ARGUMENTS (prompt-arguments-wired) —
+     a template that never wires the invocation arguments silently drops
+     every user flag (2026-09-04 live incident).
+  5. agents — every agents/*.agent.md frontmatter name is BARE lowercase-hyphen
      and pi.namespace is valid (sf-subagents prefixes the namespace at load
      time per the pi packages spec); a hardcoded "solidforge:" prefix in a
      name is the double-source-of-truth regression.
-  5. extensions — bidirectional manifest consistency: every pi.extensions
+  6. extensions — bidirectional manifest consistency: every pi.extensions
      entry exists (direction A, manifest-paths-exist) AND every discoverable
      unit under extensions/ (direct *.ts/*.js, or a dir with index.ts /
      index.js / pi-package.json) is listed or explicitly excluded (direction
