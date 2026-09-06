@@ -22,7 +22,7 @@ permissions:
 
 env:
   # Same pin as npm-publish.yml (its release-gate clone). Bump both together.
-  PI_REF: v0.84.4
+  PI_REF: v0.85.1
   # Namespace-capable fork build (maskshell/pi). RETIRES when earendil-works/pi#8834
   # lands upstream — then point this at the official package and drop the fork.
   NS_PIN: "0.84.4-namespace.2"
