@@ -25,7 +25,7 @@ env:
   PI_REF: v0.85.1
   # Namespace-capable fork build (maskshell/pi). RETIRES when earendil-works/pi#8834
   # lands upstream — then point this at the official package and drop the fork.
-  NS_PIN: "0.84.4-namespace.2"
+  NS_PIN: "0.85.1-namespace.1"
 
 jobs:
   gates:
