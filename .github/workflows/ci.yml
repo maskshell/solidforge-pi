@@ -25,7 +25,10 @@ env:
   PI_REF: v0.85.1
   # Namespace-capable fork build (maskshell/pi). RETIRES when earendil-works/pi#8834
   # lands upstream — then point this at the official package and drop the fork.
-  NS_PIN: "0.85.1-namespace.1"
+  # npm alias channel (registry reachability in CI > GitHub release assets);
+  # the fork's release-published automation publishes the alias — future bumps
+  # pin the new latest (exact version, never a range).
+  NS_PIN: "pi-namespace-patch@0.85.1-namespace.3"
 
 jobs:
   gates:
@@ -112,16 +115,13 @@ jobs:
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24
-      - name: Install namespace-capable pi build (maskshell/pi fork release tarball)
+      - name: Install namespace-capable pi build (npm alias channel, exact pin)
         run: |
           mkdir /tmp/pins && cd /tmp/pins
           npm init -y >/dev/null
-          npm install --no-fund --no-audit \
-            "https://github.com/maskshell/pi/releases/download/v${NS_PIN}/earendil-works-pi-coding-agent-${NS_PIN}.tgz"
+          npm install --no-fund --no-audit --registry=https://registry.npmjs.org "${NS_PIN}"
       - name: Namespace composition smoke
         run: |
           set -euo pipefail
-          PI_ROOT=/tmp/pins/node_modules/@earendil-works/pi-coding-agent
-          mkdir -p node_modules/@earendil-works
-          ln -s "$PI_ROOT" node_modules/@earendil-works/pi-coding-agent
-          PI_PKG_ROOT="$PI_ROOT" node tools/pi_namespace_smoke.mjs
+          PI_PKG_ROOT=/tmp/pins/node_modules/pi-namespace-patch \
+            node tools/pi_namespace_smoke.mjs
