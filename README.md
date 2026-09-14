@@ -79,6 +79,7 @@ Contributor checklist (the non-obvious invariants the gates enforce):
 - **Agent files** (`agents/*.agent.md`): BARE lowercase-hyphen frontmatter `name:` — the `solidforge:` namespace is composed at load by `sf-subagents` from `pi.namespace` (single source of truth).
 - **Python edits**: ruff check + format must pass — the in-session gate denies red edits BEFORE they land (and post-write blocks disclose that the edit already applied).
 - **pi version bumps**: re-verify the internals anchors in [docs/pi-internals-anchors.md](docs/pi-internals-anchors.md) and move `PI_REF` in BOTH workflows together.
+- **Authoring model-facing artifacts** (SKILL.md bodies, agent files, wrapper-composed prompts): the upstream workspace's [prompt-content-spec](https://github.com/maskshell/solidforge/blob/main/docs/prompt-content-spec.md) is the cited authority — especially L4 (never re-state a deterministic gate's constraint in prose without an "enforced by gate Y" label; spend the artifact's attention on the semantic residue) and L6 (runtime-assembled prompts: deterministic construction, asserted-or-coverage-noted, different-family consumer by default). The upstream [external-reference-candidates backlog](https://github.com/maskshell/solidforge/blob/main/docs/external-reference-candidates.md) is the shared adoption queue — its problem-existence test and touchpoint policy apply to this tree too (C1 record-schema env provenance, C3a pd trigger check, C4 rubric single-sourcing, C8 reviewer-prompt micro-adoptions are shared-infra gaps).
 
 ## Layout
 
