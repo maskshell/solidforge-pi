@@ -26,6 +26,8 @@ pi install npm:pi-mcp-adapter
 
 Without the adapter, the playwright agents fall back to the Playwright CLI (`npx playwright codegen|test`), and Graphiti memory ops degrade gracefully (the skill skips them).
 
+MCP on pi is adapter-shaped, not host-shaped: ONE proxy tool (`mcp`, ~200 tokens) instead of per-tool schema injection — discover with `mcp({ search: "..." })`, call with `mcp({ tool: "<name>", args: { ... } })`; servers lazy-start. The adapter reads the STANDARD `.mcp.json` (project) / `~/.config/mcp/mcp.json` (global) directly — Claude Code/Cursor configs in the standard form work as-is; host-specific config FILES (Cursor's `.cursor/mcp.json`, CC's user store) are imported once via `/mcp setup` (auto-discovery of host files is off by default).
+
 ## Arm a project (Layer 2)
 
 Enabling the package does NOT mutate host-project build files. In a target project run:
