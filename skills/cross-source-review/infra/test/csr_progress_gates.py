@@ -30,6 +30,9 @@ runs via --dry-run / a faked pi JSONL child:
      disconnect_check REQUIRED_FILES + SKILL.md/install.md enumerations carry
      the two new files (rule 5).
   9. live-disclosure-contract (pi replacement for upstream check 9) — SKILL.md
+  10. runs/LATEST stable pointer (substrate-neutral part of upstream b9b4a2f —
+      the CC narration-pointer assertions are deliberately NOT absorbed; check 9
+      forbids that mechanic here)
      step-2 different-family bullet passes --progress-file and documents the
      leg-progress stderr stream; the sidecar section names the three live
      layers; and the CC-era narration mechanics (run_in_background) are
@@ -534,6 +537,58 @@ def run():
         coverage,
         file_="SKILL.md",
     )
+
+    # --- check 10: runs/LATEST stable pointer (substrate-neutral mechanics) --
+    # The run-start append atomically points <runs-dir>/LATEST at the run dir
+    # (relative symlink; non-run-start appends never move it). Functional probe.
+    import os as _os
+    import subprocess as _sp
+    import tempfile as _tf
+
+    with _tf.TemporaryDirectory() as _runs:
+        _rd = _os.path.join(_runs, "20260914-1200-probe")
+        _os.makedirs(_rd)
+        _pf = _os.path.join(_rd, "progress.jsonl")
+        _sp.run(
+            [
+                sys.executable,
+                str(CSR_PROGRESS),
+                "append",
+                "--file",
+                _pf,
+                "--type",
+                "run-start",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        _sp.run(
+            [
+                sys.executable,
+                str(CSR_PROGRESS),
+                "append",
+                "--file",
+                _pf,
+                "--type",
+                "round-end",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        _link = _os.path.join(_runs, "LATEST")
+        ok10 = _os.path.islink(_link) and _os.readlink(_link) == "20260914-1200-probe"
+        _check(
+            "latest-pointer",
+            ok10,
+            f"LATEST={_link} islink={_os.path.islink(_link)} "
+            f"target={_os.readlink(_link) if _os.path.islink(_link) else None}",
+            "the run-start append must atomically point runs/LATEST (relative "
+            "symlink) at the new run dir — csr_progress._point_latest",
+            findings,
+            coverage,
+        )
 
     return findings, coverage
 

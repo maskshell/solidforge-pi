@@ -179,7 +179,33 @@ def _now_ts():
     return datetime.now().isoformat(timespec="seconds")
 
 
+def _point_latest(run_dir):
+    """Atomically point <runs-dir>/LATEST at `run_dir` (relative symlink)."""
+    run_dir = os.path.abspath(run_dir)
+    runs_dir = os.path.dirname(run_dir)
+    target = os.path.relpath(run_dir, runs_dir)
+    link = os.path.join(runs_dir, "LATEST")
+    tmp = link + ".tmp"
+    if os.path.lexists(tmp):
+        os.remove(tmp)
+    os.symlink(target, tmp)
+    os.replace(tmp, link)
+
+
 def cmd_append(args):
+
+    # LATEST pointer (observability-affordance fix, 2026-09-07): the run-start
+    # append atomically points <runs-dir>/LATEST at THIS run dir, so a human gets
+    # a stable one-liner (`... status runs/LATEST --watch 5`) without knowing the
+    # timestamped dir name. Relative target (survives repo moves); temp-symlink +
+    # os.replace = atomic; BEST-EFFORT — a failed pointer NEVER aborts the review
+    # (same contract as the append itself, ADR #61).
+    if args.type == "run-start":
+        try:
+            _point_latest(os.path.dirname(os.path.abspath(args.file)))
+        except OSError:
+            pass
+
     """Append ONE validated JSONL line. Exit 2 on misuse (argument-error class);
     exit 1 on an unwritable target — a clean one-line error, never a traceback
     (NFR-4: every progress-write path degrades honestly; the review itself is

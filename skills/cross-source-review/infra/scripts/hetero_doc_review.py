@@ -1217,10 +1217,12 @@ def main():
     ap.add_argument(
         "--round-index",
         type=int,
-        default=1,
+        default=None,
         help="This leg's round number (label only; the convergence loop is "
         "CSR-I4-driver-driven per proposal §3 — the driver alternates same-family ↔ this "
-        "wrapper, and the cap = the count of wrapper invocations).",
+        "wrapper, and the cap = the count of wrapper invocations). Unset → derived from "
+        "--prior-findings' `round` field when present (deterministic — never relies on "
+        "the orchestrator passing the flag); fallback 1.",
     )
     ap.add_argument(
         "--prior-findings",
@@ -1279,7 +1281,20 @@ def main():
     # independently + merges; a finding is tagged with its `provider` when >1 backend
     # runs, so reconciliation (proposal §3 table) can attribute it.
     prior = _load_prior(args.prior_findings)
-    prompt = adversarial_prompt(args.artifact, args.authority, prior, args.round_index)
+    # round-index derivation (2026-09-07 sidecar-round fix, upstream c46a8f5): an
+    # unset flag MUST NOT silently label every leg round=1 — the wrapper's own
+    # sidecar events (hetero-leg-start/heartbeat/leg-end) carry the true round,
+    # derived from the prior-findings JSON the driver already passes (its
+    # `round` field); the explicit flag still wins.
+    round_index = args.round_index
+    if round_index is None and isinstance(prior, dict) and prior.get("round"):
+        try:
+            round_index = int(prior["round"])
+        except (TypeError, ValueError):
+            round_index = 1
+    if round_index is None:
+        round_index = 1
+    prompt = adversarial_prompt(args.artifact, args.authority, prior, round_index)
     per_provider = []  # per-provider result dicts
     for name in provider_names:
         argv = None
@@ -1300,7 +1315,7 @@ def main():
             "budget_usd": args.budget_usd,
             "max_turns": args.max_turns,
         }
-        _progress_append("hetero-leg-start", round=args.round_index, provider=name)
+        _progress_append("hetero-leg-start", round=round_index, provider=name)
         rc = run_claude(
             None if argv is None else argv,
             args.timeout,
@@ -1312,7 +1327,7 @@ def main():
         )
         _progress_append(
             "hetero-leg-end",
-            round=args.round_index,
+            round=round_index,
             provider=name,
             outcome=(
                 "ok"
