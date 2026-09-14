@@ -89,6 +89,8 @@ python3 skills/primary-source-verification/infra/test/lint_self.py              
 python3 skills/primary-source-verification/infra/test/dogfood.py                 # runs the pipeline on a fixture doc with a planted misattribution (skips gracefully w/o network; recorded log substitutes)
 ```
 
+For a SINGLE claim or fact-shaped question outside a full psv run, the plugin's `web-claim-verifier` agent is the shared building block (search + fetch + verdict in one fresh context; its output IS the evidence capture). It does NOT replace this pipeline — the authoritative full-M coverage record is emitted here only.
+
 ## Reference Files
 
 - [proposal.md](docs/proposal.md) — authoritative design (problem, non-goals, owned contract, layering, §9 decisions).

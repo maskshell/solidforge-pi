@@ -6,7 +6,7 @@ Loading-chain check for the PLUGIN BOUNDARY (the analog of disconnect_check.py f
   - package.json parses and carries the pi manifest (pi.extensions incl. sf-hooks, pi.skills, pi.prompts, pi.namespace)
   - extensions/sf-hooks/index.ts wires the python hook bridge (tool_call/tool_result subscription, CLAUDE_PROJECT_DIR env bridge, the three hook scripts)
   - prompts/arm-tools.md exists (plain filename; the /solidforge:arm-tools invocation is namespace-composed from pi.namespace at load — literal-colon filename retired 2026-08-29)
-  - agents/ contains EXACTLY the 22 plugin-bundled agents, by BARE frontmatter name (the solidforge: namespace is composed at load time by sf-subagents from pi.namespace, per the pi packages spec; amended 2026-09-03)
+  - agents/ contains EXACTLY the 23 plugin-bundled agents, by BARE frontmatter name (the solidforge: namespace is composed at load time by sf-subagents from pi.namespace, per the pi packages spec; amended 2026-09-03)
   - every agent that references a references/agent-patterns/<role>.md companion has that companion bundled under skills/parallel-development/references/agent-patterns/ (catches the loading-chain break where an agent points at a companion that was not copied)
 
 The hook command PATHS use ${CLAUDE_PLUGIN_ROOT}/skills/parallel-development/... (resolved at runtime on plugin-enable). This check validates STRUCTURE (files present + well-formed), not runtime resolution.
@@ -73,6 +73,7 @@ EXPECTED_AGENTS = [
     "researcher",
     "security-specialist",
     "tester",
+    "web-claim-verifier",
 ]
 
 # The three hook scripts the hooks.json must wire (by basename substring in the command).

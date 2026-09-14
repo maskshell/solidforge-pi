@@ -3,7 +3,7 @@
 **SolidForge for the [Pi](https://github.com/earendil-works/pi-mono) coding agent** — an independent, pi-native implementation of the SolidForge Loop Engineering system: the **converge → specify → implement** pipeline plus two additive **outcome-axis** layers (cited-source verification + uncited prior-art collision). Design lineage: [solidforge](https://github.com/maskshell/solidforge) (the Claude Code reference implementation) — its ADRs remain the shared design authority and knowledge flows both ways, but there is **no git upstream/sync relationship**; code sharing is narrow, deliberate, and ledgered in [docs/upstream-watch.md](docs/upstream-watch.md).
 
 - **Skills (5)** — `cross-source-review`, `blueprint-crafting`, `parallel-development`, `primary-source-verification`, `prior-art-search` (invoke `/skill:solidforge:<name>` or the bare `/solidforge:<name>` on a pi.namespace-capable pi; `/skill:<name>` on stock pi)
-- **Agents (22)** — plugin-scoped as `solidforge:<name>`, dispatched via the bundled `subagent` tool (isolated context; single / parallel / chain)
+- **Agents (23)** — plugin-scoped as `solidforge:<name>`, dispatched via the bundled `subagent` tool (isolated context; single / parallel / chain)
 - **Guards** — the convergence-loop hooks (`blueprint_guard` / `counters` / `fast_gate`) bridged to pi's `tool_call` / `tool_result` events by the `sf-hooks` extension
 - **Heterogeneous (异源) review substrate** — the different-family review legs spawn stateless `pi --mode json` subprocesses on provider routes **different** from the orchestrator's family, with wrapper-side budget/turn/bytes/wall-clock breakers (ADR #41/#43/#52 semantics preserved)
 
