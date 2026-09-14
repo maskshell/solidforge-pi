@@ -222,11 +222,26 @@ def check_web(file_path):
     return True, None
 
 
+def _in_project_root(file_path):
+    """True iff file_path sits under the project root (ADR #59 scope). On any
+    path-comparison failure, gate it anyway — conservative (a false lint beats
+    a silent skip)."""
+    try:
+        root = os.path.abspath(dt.project_root())
+        target = os.path.abspath(file_path)
+        return os.path.commonpath([root, target]) == root
+    except ValueError:
+        return True
+
+
 def main():
     payload = dt.read_payload()
     file_path = (payload.get("tool_input") or {}).get("file_path")
     if not file_path:
         sys.exit(0)
+
+    if not _in_project_root(file_path):
+        sys.exit(0)  # out-of-repo scratch: not the convergence target (ADR #59)
 
     platform = dt.classify(file_path)
     if platform is None:

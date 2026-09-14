@@ -141,6 +141,23 @@ def record_fingerprint(state, raw_fp):
 
 def check_breakers(state):
     """Return (action, reason). action in ok|degrade|escalate|suspend|hard-terminate."""
+    # No-active-loop guard (ADR #60): a terminal loop (converged / suspended /
+    # hard_terminated) has no convergence process to protect. Post-loop edits
+    # (maintenance on a converged repo — e.g. skill development dogfooding its
+    # own fast gate) must not ride the OLD task's fingerprint counts into a
+    # stale escalate: the fingerprint_log is only cleared by init, so counts
+    # from finished tasks would otherwise echo forever. Fingerprints still
+    # RECORD (audit trail intact — rule 3); only the breaker decision is
+    # inert. counters.py's edit-deny on suspended/hard_terminated is
+    # unchanged. Residual, stated honestly: a CRASHED inner_running loop's
+    # leftovers still count until the next task's init resets them.
+    status = state.get("status")
+    if status in ("converged", "suspended", "hard_terminated"):
+        return (
+            "ok",
+            f"no active loop (status={status}) — fingerprint recorded for audit only",
+        )
+
     b = state.get("budget", {})
     inner = state.get("inner", {})
 
