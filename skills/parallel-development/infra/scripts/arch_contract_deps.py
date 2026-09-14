@@ -370,13 +370,29 @@ def check_gitleaks(root, findings, coverage):
             pass
 
 
+def _resolve(name, root):
+    """Canonical tool resolution via hooks/lib/detect_toolchain.resolve_tool:
+    PATH-wins; project-local bins only under their explicit opt-ins
+    (SF_PROJECT_NODE_BIN / SF_PROJECT_VENV_TOOLS) with node containment
+    (2026-09-07, #63-#66 security mirror of CC 8a19c2e)."""
+    lib = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "hooks", "lib"
+    )
+    if lib not in sys.path:
+        sys.path.insert(0, lib)
+    import detect_toolchain as dt
+
+    return dt.resolve_tool(name, root=root)
+
+
 def check_pip_audit(root, findings, coverage):
-    if not have("pip-audit"):
+    pip_audit = _resolve("pip-audit", root)
+    if not pip_audit:
         coverage.append(
-            "pip-audit: not installed — Python dep vuln scan skipped (install: `uv add --dev pip-audit` or `pip install pip-audit`)"
+            "pip-audit: not resolved — Python dep vuln scan skipped (PATH, or `uv add --dev pip-audit` + activate the venv / SF_PROJECT_VENV_TOOLS=1)"
         )
         return
-    rc, out, _err = run(["pip-audit", "--format", "json"], cwd=root, timeout=300)
+    rc, out, _err = run(pip_audit + ["--format", "json"], cwd=root, timeout=300)
     if rc is None or rc == 124:
         coverage.append("pip-audit: invocation failed/timed out — skipped")
         return
@@ -476,14 +492,16 @@ def check_dependency_check(root, findings, coverage):
 
 
 def check_govulncheck(root, findings, coverage):
-    if not have("govulncheck"):
+    govulncheck = _resolve("govulncheck", root)
+    if not govulncheck:
         coverage.append(
-            "govulncheck: not installed — Go dep vuln scan skipped (install: "
-            "`go install golang.org/x/vuln/cmd/govulncheck@latest`)"
+            "govulncheck: not resolved — Go dep vuln scan skipped (PATH, or "
+            "`go install golang.org/x/vuln/cmd/govulncheck@latest` + the venv "
+            "opt-in for project-local)"
         )
         return
     rc, out, _err = run(
-        ["govulncheck", "-format", "json", "./..."], cwd=root, timeout=300
+        govulncheck + ["-format", "json", "./..."], cwd=root, timeout=300
     )
     if rc is None:
         coverage.append("govulncheck: invocation failed — skipped")

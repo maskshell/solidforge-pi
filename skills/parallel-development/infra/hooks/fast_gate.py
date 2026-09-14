@@ -212,10 +212,10 @@ def check_web(file_path):
     )
     if not has_cfg:
         return True, None
-    local = os.path.join(root, "node_modules", ".bin", "eslint")
-    tool = local if os.path.exists(local) else dt.which_any("eslint")
-    if not tool:
+    resolved = dt.resolve_tool("eslint", root=root)
+    if not resolved:
         return True, None
+    tool = resolved[0]
     rc, out = run_quiet([tool, "--no-error-on-unmatched-pattern", file_path])
     if rc not in (0, None):
         return False, ("eslint", out)

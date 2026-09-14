@@ -67,13 +67,32 @@ def emit(findings, coverage):
     sys.exit(0 if passed else 1)
 
 
+def _resolve(name, root):
+    """Canonical tool resolution via hooks/lib/detect_toolchain.resolve_tool:
+    PATH-wins; project-local bins only under their explicit opt-ins
+    (SF_PROJECT_NODE_BIN / SF_PROJECT_VENV_TOOLS) with node containment.
+    This gate resolves NO tool project-locally on its own (2026-09-07,
+    #63-#66 security mirror of CC 8a19c2e). Lazy import mirrors the
+    standardized idiom (E402-clean at module level)."""
+    lib = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "hooks", "lib"
+    )
+    if lib not in sys.path:
+        sys.path.insert(0, lib)
+    import detect_toolchain as dt
+
+    return dt.resolve_tool(name, root=root)
+
+
 def depcruise_cmd(root):
-    local = os.path.join(root, "node_modules", ".bin", "depcruise")
-    if os.path.exists(local):
-        return [local]
-    if have("depcruise"):
-        return ["depcruise"]
-    if have("npx"):
+    resolved = _resolve("depcruise", root)
+    if resolved:
+        return resolved
+    # npx delegates with its own local-first semantics (it executes a
+    # project-local binary when one is installed) — a PATH tool is NOT PATH
+    # resolution, so this arm rides only under the node opt-in (2026-09-07,
+    # #63-#66). Outside the opt-in the gate degrades honestly.
+    if os.environ.get("SF_PROJECT_NODE_BIN") == "1" and have("npx"):
         return ["npx", "--no-install", "depcruise"]
     return None
 
@@ -95,7 +114,7 @@ def check_dependency_cruiser(root, findings, coverage, src):
     base = depcruise_cmd(root)
     if not base:
         coverage.append(
-            "dependency-cruiser: not installed — circular/layer checks skipped (install: `npm i -D dependency-cruiser`)"
+            "dependency-cruiser: not resolved — circular/layer checks skipped (PATH, or install + SF_PROJECT_NODE_BIN=1 for the project-local copy)"
         )
         return
     # Use --output-type err (not json): depcruise's JSON `violations` array omits some cycles that the err/text output reports, and the exit code is non-zero on error violations. err output is the reliable signal.
@@ -164,11 +183,10 @@ def check_eslint_concurrency(root, findings, coverage, src):
             "eslint: not configured — sync-in-async concurrency check skipped"
         )
         return
-    local = os.path.join(root, "node_modules", ".bin", "eslint")
-    tool = local if os.path.exists(local) else ("eslint" if have("eslint") else None)
+    tool = _resolve("eslint", root)
     if not tool:
         coverage.append(
-            "eslint: not installed — sync-in-async concurrency check skipped (install: `npm i -D eslint`)"
+            "eslint: not resolved — sync-in-async concurrency check skipped (PATH, or `npm i -D eslint` + SF_PROJECT_NODE_BIN=1 for project-local)"
         )
         return
     rc, out = run(
@@ -200,11 +218,10 @@ def check_eslint_concurrency(root, findings, coverage, src):
 
 
 def _resolve_tsc(root):
-    """Resolve tsc: project-local node_modules/.bin/tsc first, else PATH."""
-    local = os.path.join(root, "node_modules", ".bin", "tsc")
-    if os.path.exists(local):
-        return [local]
-    return ["tsc"] if have("tsc") else None
+    """Resolve tsc via the canonical resolver (PATH-wins; the project's
+    PINNED tsc runs when SF_PROJECT_NODE_BIN=1 and no PATH copy shadows it —
+    the version-coupling trade-off recorded in the upstream-watch #63-#66 row (PATH-wins version-coupling trade-off))."""
+    return _resolve("tsc", root)
 
 
 def check_types(root, findings, coverage, src):
@@ -214,7 +231,7 @@ def check_types(root, findings, coverage, src):
     tsc = _resolve_tsc(root)
     if not tsc:
         coverage.append(
-            "tsc: not installed — type-check skipped (install: `npm i -D typescript`)"
+            "tsc: not resolved — type-check skipped (PATH, or `npm i -D typescript` + SF_PROJECT_NODE_BIN=1 for project-local)"
         )
         return
     if not os.path.exists(os.path.join(root, "tsconfig.json")):

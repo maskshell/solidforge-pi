@@ -80,21 +80,20 @@ def run(argv, timeout=120):
         return 124, f"timeout after {timeout}s"
 
 
-def resolve_tool(name):
-    """Return an argv prefix [<path>] for a tool, searching PATH then the
-    project's local venv bins (.venv/venv/env); None if not found. Finds tools
-    installed as project dev deps even when the venv is not active on PATH."""
-    from shutil import which
+def resolve_tool(name, root=None):
+    """Delegate to the canonical resolver (hooks/lib detect_toolchain):
+    PATH-wins; project-local venv bins only under SF_PROJECT_VENV_TOOLS=1
+    (2026-09-07, #63-#66 security mirror — the previous PRIVATE resolver here
+    was unconditional, making 489b217's 'PATH-only' claim false for this
+    gate). Thin wrapper keeps the local call sites unchanged."""
+    lib = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "hooks", "lib"
+    )
+    if lib not in sys.path:
+        sys.path.insert(0, lib)
+    import detect_toolchain as _dt
 
-    p = which(name)
-    if p:
-        return [p]
-    root = os.environ.get("CLAUDE_PROJECT_DIR") or os.getcwd()
-    for venv in (".venv", "venv", "env"):
-        cand = os.path.join(root, venv, "bin", name)
-        if os.path.exists(cand):
-            return [cand]
-    return None
+    return _dt.resolve_tool(name, root=root)
 
 
 def find_importlinter_config(root):
