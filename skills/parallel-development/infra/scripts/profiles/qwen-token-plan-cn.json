@@ -1,7 +1,7 @@
 {
-  "_comment": "PI hetero profile — Qwen family via pi's BUILT-IN catalog route qwen-token-plan-cn (baseUrl .../compatible-mode/v1, openai-completions; the token-plan endpoint serves an aggregated fleet — qwen/glm/deepseek/kimi models under one key). FILENAME=ROUTE. _family = MODEL LINEAGE (qwen). Catalog-inherited facts: qwen3.8-max ctx 1M reasoning. Credential: QWEN_TOKEN_PLAN_CN_ANTHROPIC_AUTH_TOKEN (token-plan SUBSCRIPTION key — NOT the Bailian pay-per-use key; for pay-per-use use qwen-bailian.json). NOTE: a 401 from this route is an expired token-plan credential (observed 2026-08-25), surfaced honestly as hetero-api-error.",
+  "_comment": "PI hetero profile — Qwen family via pi's BUILT-IN catalog route qwen-token-plan-cn (baseUrl .../compatible-mode/v1, openai-completions; the token-plan endpoint serves an aggregated fleet — qwen/glm/deepseek/kimi models under one key). FILENAME=ROUTE. _family = MODEL LINEAGE (qwen). Catalog-inherited facts: qwen3.8-max ctx 1M reasoning. Credential: QWEN_TOKEN_PLAN_CN_ANTHROPIC_AUTH_TOKEN (token-plan SUBSCRIPTION key — NOT the Bailian pay-per-use key; for pay-per-use use qwen-bailian.json). NOTE: a 401 from this route is an expired token-plan credential (observed 2026-08-25), surfaced honestly as hetero-api-error. 2026-09-14 #69: all-tiers flash per upstream e737680/db0d064 (same DashScope endpoints); pi-side live pong pending credentials.",
   "_provider": "qwen-token-plan-cn",
-  "model": "qwen3.8-max",
+  "model": "qwen3.8-flash",
   "_family": "qwen",
   "_token_env": "QWEN_TOKEN_PLAN_CN_ANTHROPIC_AUTH_TOKEN"
 }

@@ -46,11 +46,11 @@ Profiles are pi **catalog routes** (model facts catalog-inherited; the CC-era `[
 
 | profile (alias) | route | model | credential |
 | --- | --- | --- | --- |
-| `zai-coding-cn` (`bigmodel`) | zai-coding-cn — GLM coding endpoint, openai-completions | `glm-5.3` | pi `auth.json` (default provider) or `ZAI_CODING_CN_API_KEY` |
+| `zai-coding-cn` (`bigmodel`) | zai-coding-cn — GLM coding endpoint, openai-completions | `glm-5.3-flash` | pi `auth.json` (default provider) or `ZAI_CODING_CN_API_KEY` |
 | `deepseek` | deepseek — native endpoint | `deepseek-v4-flash` | `DEEPSEEK_API_KEY` ← bridged from `DEEPSEEK_ANTHROPIC_AUTH_TOKEN` |
 | `minimax-cn` (`minimax`) | minimax-cn — anthropic endpoint | `MiniMax-M3` | `MINIMAX_CN_API_KEY` ← bridged from `MINIMAX_ANTHROPIC_AUTH_TOKEN` |
-| `qwen-bailian` (`qwen3`) | **custom route** (pi catalog has only token-plan subscription qwen routes; Bailian pay-per-use key registered by `sf-providers` when present) | `qwen3.8-max` | `QWEN3_ANTHROPIC_AUTH_TOKEN` (the DashScope pay-per-use key) |
-| `qwen-token-plan-cn` | qwen-token-plan-cn — token-plan subscription | `qwen3.8-max` | `QWEN_TOKEN_PLAN_CN_API_KEY` |
+| `qwen-bailian` (`qwen3`) | **custom route** (pi catalog has only token-plan subscription qwen routes; Bailian pay-per-use key registered by `sf-providers` when present) | `qwen3.8-flash` | `QWEN3_ANTHROPIC_AUTH_TOKEN` (the DashScope pay-per-use key) |
+| `qwen-token-plan-cn` | qwen-token-plan-cn — token-plan subscription | `qwen3.8-flash` | `QWEN_TOKEN_PLAN_CN_API_KEY` |
 
 Put tokens in the target project's `.env.solidforge` (shell env wins; `arm-tools` provisions the `.env.solidforge.example` placeholder). Select legs via `HETERO_DOC_PROFILE` / `HETERO_PROFILE` (comma-list = multi-different-family). CC-era profile names (`bigmodel`, `minimax`, `qwen3`) keep working via aliases.
 
