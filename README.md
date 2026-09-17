@@ -16,6 +16,14 @@ pi install git:github.com/maskshell/solidforge-pi      # or: from git / a local 
 
 Requires `python3` on `$PATH` (all gate/policy scripts are Python stdlib-only CLIs) and `ruff` for the lint gates. Gates run in CI on every push/PR ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)): per-skill structural gates, `pi_loader_smoke.py` (the package loads under pi's REAL resource loaders — 7 checks: exact 5-skill set, zero diagnostics, prompt/manifest/agents/extensions-registered consistency), the sf-hooks seam selftest, markdownlint, an npm-pack leak check, and a headless loader-e2e that imports + initializes all extensions through pi's own loader. Release publishing additionally re-runs the loader smoke (see `npm-publish.yml`).
 
+**Optional but recommended — [pi-namespace-patch](https://www.npmjs.com/package/pi-namespace-patch)**: the namespaced invocation surface (`/skill:solidforge:<name>`, `/solidforge:arm-tools`, `solidforge:<agent>`) requires a pi build with `pi.namespace` support — not yet in official pi ([earendil-works/pi#8834](https://github.com/earendil-works/pi/issues/8834) tracked). Stock pi works: everything runs under the bare names (`/skill:<name>`, `/<name>`); the namespace only removes collision risk in crowded setups.
+
+```bash
+npm install -g pi-namespace-patch   # fork channel, trusted publishing + provenance; pi --version → e.g. 0.85.1-namespace.3
+```
+
+Full note (channels, version-string schemes, pinned tarball alternative): [Arm a project → the namespace paragraph](#arm-a-project-layer-2).
+
 **Optional prerequisite — [pi-mcp-adapter](https://www.npmjs.com/package/pi-mcp-adapter)**, only for the Playwright E2E trio and Graphiti memory:
 
 ```bash
