@@ -229,6 +229,11 @@ _PARTIAL_EVENT_PREFIX = '{"type":"message_update"'
 _PROGRESS_PATH = None
 _PROGRESS_WARNED = False
 
+# Distilled execution stream (ADR #69, pi re-base): module-global like the
+# progress sidecar so the preserved function-signature contract stays untouched.
+_STREAM_LOG_PATH = None
+_STREAM_LOG_WARNED = False
+
 
 def _progress_append(event_type, **fields):
     global _PROGRESS_WARNED
@@ -252,6 +257,69 @@ def _progress_append(event_type, **fields):
                 file=sys.stderr,
             )
             _PROGRESS_WARNED = True
+
+
+def _stream_log_append(kind, **fields):
+    global _STREAM_LOG_WARNED
+    if not _STREAM_LOG_PATH:
+        return
+    line = {
+        "ts": time.strftime("%Y-%m-%dT%H:%M:%S"),
+        "kind": kind,
+        **fields,
+    }
+    try:
+        parent = os.path.dirname(os.path.abspath(_STREAM_LOG_PATH))
+        os.makedirs(parent, exist_ok=True)
+        with open(_STREAM_LOG_PATH, "a", encoding="utf-8") as fh:
+            fh.write(json.dumps(line, ensure_ascii=False) + "\n")
+            fh.flush()
+    except (OSError, ValueError) as exc:
+        # ValueError catches UnicodeEncodeError (a ValueError subclass): a
+        # lone-surrogate escape in model-derived text explodes at write — the
+        # first progress-family writer whose payload is MODEL-derived.
+        if not _STREAM_LOG_WARNED:
+            print(
+                f"warning: stream log unwritable ({exc}); continuing without it",
+                file=sys.stderr,
+            )
+            _STREAM_LOG_WARNED = True
+
+
+def _stream_log_tool_event(evt):
+    """Distill ONE pi `tool_execution_start` event (ADR #69 pi re-base — the
+    CC variant gated on type==assistant/tool_use content blocks, which NEVER
+    occur on the pi wire; the anti-silent-empty regression: hetero_doc_guards
+    probes this seam with a fake pi child). kind=tool + input_head (json.dumps
+    capped 300). isinstance-guarded, never raises; telemetry counters are
+    NEVER touched."""
+    name = evt.get("toolName")
+    if not isinstance(name, str) or not name:
+        return
+    try:
+        head = json.dumps(evt.get("args"), ensure_ascii=False)[:300]
+    except (TypeError, ValueError):
+        head = "<unserializable>"
+    _stream_log_append("tool", tool=name, input_head=head)
+
+
+def _stream_log_message_event(msg):
+    """Distill ONE pi assistant message_end's text parts (ADR #69 pi re-base):
+    every content part with type==text becomes a kind=text line (capped 2000 —
+    same cap as trace-append, one format both legs). Tool parts never appear
+    in pi message_end content (they arrive as tool_execution_start events)."""
+    content = msg.get("content")
+    if isinstance(content, str):
+        if content.strip():
+            _stream_log_append("text", text=content[:2000])
+        return
+    if not isinstance(content, list):
+        return
+    for part in content:
+        if isinstance(part, dict) and part.get("type") == "text":
+            text = part.get("text")
+            if isinstance(text, str) and text.strip():
+                _stream_log_append("text", text=text[:2000])
 
 
 # leg-progress events (PI-PORT ADDITION beyond upstream): EVENT-granularity live
@@ -736,10 +804,12 @@ def _run_streamed(
                         "tool",
                         _tool_preview(evt.get("toolName"), evt.get("args")),
                     )
+                    _stream_log_tool_event(evt)  # ADR #69 distilled stream
                 if isinstance(evt, dict) and evt.get("type") == "message_end":
                     msg = evt.get("message")
                     if isinstance(msg, dict) and msg.get("role") == "assistant":
                         tele["assistant_events"] += 1
+                        _stream_log_message_event(msg)  # ADR #69 distilled stream
                         if tele["model"] is None and isinstance(msg.get("model"), str):
                             tele["model"] = msg["model"]
                         # pi surfaces provider/API errors on the assistant
@@ -1316,6 +1386,18 @@ def main():
             "max_turns": args.max_turns,
         }
         _progress_append("hetero-leg-start", round=round_index, provider=name)
+        # ADR #69 distilled execution stream: one file per (round, provider),
+        # derived from the sidecar's dir; spawn marker (no --json-schema on
+        # this substrate — the CC structured/unstructured mode label is gone).
+        global _STREAM_LOG_PATH
+        if _PROGRESS_PATH:
+            _STREAM_LOG_PATH = os.path.join(
+                os.path.dirname(os.path.abspath(_PROGRESS_PATH)),
+                f"round{round_index}-{name}.stream.jsonl",
+            )
+            _stream_log_append("spawn-start")
+        else:
+            _STREAM_LOG_PATH = None
         rc = run_claude(
             None if argv is None else argv,
             args.timeout,
@@ -1325,6 +1407,7 @@ def main():
             dry_budget=args.dry_run_budget,
             guards=guards,
         )
+        _STREAM_LOG_PATH = None  # per-leg file; the next leg re-derives
         _progress_append(
             "hetero-leg-end",
             round=round_index,

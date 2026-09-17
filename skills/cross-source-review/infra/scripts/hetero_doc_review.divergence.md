@@ -274,3 +274,25 @@ New module surface: `_progress_append` / `_emit_leg_progress` / `_tool_preview`
 stdout stays the single result JSON; without the flag both surfaces are inert
 (behavior-identical to pre-v2.2 — verified by the unchanged hetero_doc_guards
 checks 1–8).
+
+
+## csr-only extension (ADR #69) — distilled execution stream (pi re-base)
+
+- The wrapper distills the different-family leg's execution into
+  `round<k>-<provider>.stream.jsonl` beside the sidecar (spawn marker + one
+  kind=text line per assistant text part + one kind=tool line per
+  tool_execution_start; caps text<=2000 / input_head<=300; best-effort —
+  OSError/ValueError warn once and continue).
+- PI RE-BASE (load-bearing): the CC variant gates the distiller on
+  `type=="assistant"` events walking `tool_use` content blocks — shapes that
+  NEVER occur on the pi wire. Ours hooks `tool_execution_start` and
+  `message_end(message.role=="assistant")` at the same reader seam that feeds
+  leg-progress. A verbatim port would emit only the spawn marker — a
+  SILENTLY empty audit trail; hetero_doc_guards probes this seam with a fake
+  pi child (the anti-silent-empty regression).
+- The spawn marker carries NO `schema` field (pi has no --json-schema; the
+  CC structured/unstructured mode label is meaningless here) — the renderer
+  emits the mode label only when the field is present.
+- Read side: `csr_progress.py stream` (csr_progress.py, shared with the
+  same-family trace-append path). Round derivation: --round-index with the
+  prior-findings fallback (#68); the SKILL passes roundIndex explicitly.

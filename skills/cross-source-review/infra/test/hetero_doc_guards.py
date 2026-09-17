@@ -53,6 +53,7 @@ import json, sys, time
 print('{"type":"message_update","usage":{},"assistantMessageEvent":{"type":"text_delta","contentIndex":0,"delta":"tok"}}', flush=True)
 print('{"type":"message_update","usage":{},"assistantMessageEvent":{"type":"text_delta","contentIndex":0,"delta":"tok"}}', flush=True)
 time.sleep(1.2)  # span >1 heartbeat tick at the patched 0.3s interval
+print(json.dumps({"type": "tool_execution_start", "toolName": "read", "args": {"path": "docs/x.md"}}), flush=True)
 msg = {"type": "message_end", "message": {"role": "assistant", "model": "fake-model-x", "content": [{"type": "text", "text": "review"}], "usage": {"cost": {"total": 0.01}}}}
 print(json.dumps(msg), flush=True)
 print(json.dumps(msg), flush=True)
@@ -178,7 +179,7 @@ def run():
         rc2 == 0
         and tele["model"] == "fake-model-x"
         and tele["assistant_events"] == 2
-        and tele["events"] == 4
+        and tele["events"] == 5
         and tele["stream_bytes"] > 0
         and abs(tele["cost_usd"] - 0.02) < 1e-9
         and tele["killed"] is None
@@ -194,6 +195,51 @@ def run():
         findings,
         coverage,
     )
+
+    # --- check 2b: ADR #69 distilled stream — the anti-silent-empty probe --
+    # The pi re-base lesson (adversarial triage, 2026-09-16): the CC event
+    # gate (type==assistant / tool_use blocks) NEVER fires on the pi wire —
+    # a verbatim port emits only the spawn marker, a SILENTLY empty audit
+    # trail. This probe drives the REAL reader with a fake pi child and
+    # asserts BOTH kinds land in the stream log.
+    import tempfile as _tf
+
+    with _tf.TemporaryDirectory() as _td:
+        _sl = os.path.join(_td, "round1-fake.stream.jsonl")
+        mod._STREAM_LOG_PATH = _sl
+        mod._STREAM_LOG_WARNED = False
+        try:
+            with contextlib.redirect_stderr(io.StringIO()):
+                mod._run_streamed(
+                    [sys.executable, "-c", _FAKE_STREAM_OK],
+                    30,
+                    10 * 1024 * 1024,
+                    "fake",
+                )
+            _lines = [json.loads(x) for x in open(_sl, encoding="utf-8") if x.strip()]
+            _tools = [e for e in _lines if e.get("kind") == "tool"]
+            _texts = [e for e in _lines if e.get("kind") == "text"]
+            ok2b = (
+                bool(_tools)
+                and _tools[0].get("tool") == "read"
+                and "docs/x.md" in _tools[0].get("input_head", "")
+                and bool(_texts)
+                and _texts[0].get("text") == "review"
+            )
+            _check(
+                "distilled-stream-pi-wire",
+                ok2b,
+                f"tools={[e.get('tool') for e in _tools]} "
+                f"texts={[e.get('text') for e in _texts]} — an empty log here "
+                "means the distiller's event gate drifted off the pi wire "
+                "(the silent-empty class)",
+                "re-base the gate on tool_execution_start / assistant "
+                "message_end (see divergence.md ADR #69 section)",
+                findings,
+                coverage,
+            )
+        finally:
+            mod._STREAM_LOG_PATH = None
 
     # --- check 3: byte-cap breaker ---------------------------------------
     rc3 = mod._run_claude_once(

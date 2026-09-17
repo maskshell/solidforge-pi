@@ -30,6 +30,8 @@ runs via --dry-run / a faked pi JSONL child:
      disconnect_check REQUIRED_FILES + SKILL.md/install.md enumerations carry
      the two new files (rule 5).
   9. live-disclosure-contract (pi replacement for upstream check 9) — SKILL.md
+  10a-10c. ADR #69 mechanics: all-runs active detection, trace-append
+      validation+truncation, stream render round-trip (no CC spawn label)
   10. runs/LATEST stable pointer (substrate-neutral part of upstream b9b4a2f —
       the CC narration-pointer assertions are deliberately NOT absorbed; check 9
       forbids that mechanic here)
@@ -537,6 +539,141 @@ def run():
         coverage,
         file_="SKILL.md",
     )
+
+    # --- check 10a-10c: ADR #69 mechanics (stream render / trace-append
+    # validation+truncation / all-runs active detection) — substrate-neutral
+    # probes; the CC narration assertions are NOT ported (check 9 precedent) --
+    import subprocess as _sp2
+    import tempfile as _tf
+
+    with _tf.TemporaryDirectory() as _td2:
+        _runs2 = os.path.join(_td2, "runs")
+        _rdA = os.path.join(_runs2, "20260916-a")
+        _rdB = os.path.join(_runs2, "20260916-b")
+        os.makedirs(_rdA)
+        os.makedirs(_rdB)
+        _pfA = os.path.join(_rdA, "progress.jsonl")
+        _pfB = os.path.join(_rdB, "progress.jsonl")
+
+        def _ap(file, typ, *kv):
+            argv = [
+                sys.executable,
+                str(CSR_PROGRESS),
+                "append",
+                "--file",
+                file,
+                "--type",
+                typ,
+            ]
+            for pair in kv:
+                argv += ["--field", pair]
+            _sp2.run(argv, capture_output=True, text=True, timeout=30)
+
+        _ap(_pfA, "run-start", "artifact=x.md", "tier=short", "cap=2")
+        _ap(_pfB, "run-start", "artifact=y.md", "tier=long", "cap=5")
+        _ap(_pfB, "run-end", "outcome=converged")
+
+        # 10a all-runs: 2 total, 1 active (no run-end), 1 ended
+        _r = _sp2.run(
+            [sys.executable, str(CSR_PROGRESS), "status", _runs2],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        ok10a = (
+            _r.returncode == 0
+            and "runs: 2 total, 1 active, 1 ended" in _r.stdout
+            and "-- 20260916-a (ACTIVE" in _r.stdout
+            and "20260916-b" not in _r.stdout.split("ended")[0]
+        )
+        _check(
+            "all-runs-active-detection",
+            ok10a,
+            f"rc={_r.returncode} out={_r.stdout[:120]!r}",
+            "active = no run-end event (deterministic); _collect_run_dirs "
+            "excludes symlinks, newest-first by mtime",
+            findings,
+            coverage,
+        )
+
+        # 10b trace-append: valid entries land (truncated); bad vocab rejected
+        _sl = os.path.join(_rdA, "round1-same-family.stream.jsonl")
+        _r1 = _sp2.run(
+            [
+                sys.executable,
+                str(CSR_PROGRESS),
+                "trace-append",
+                "--file",
+                _sl,
+                "--entries",
+                json.dumps(
+                    [
+                        {"kind": "text", "text": "x" * 3000},
+                        {"kind": "tool", "tool": "read", "input_head": "h" * 500},
+                    ]
+                ),
+            ],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        _r2 = _sp2.run(
+            [
+                sys.executable,
+                str(CSR_PROGRESS),
+                "trace-append",
+                "--file",
+                _sl,
+                "--entries",
+                json.dumps([{"kind": "bogus"}]),
+            ],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        _evts = [json.loads(x) for x in open(_sl, encoding="utf-8") if x.strip()]
+        ok10b = (
+            _r1.returncode == 0
+            and _r2.returncode == 2
+            and len(_evts) == 2
+            and len(_evts[0]["text"]) == 2000  # server-side truncation
+            and len(_evts[1]["input_head"]) == 300
+        )
+        _check(
+            "trace-append-validation-truncation",
+            ok10b,
+            f"rc1={_r1.returncode} rc2={_r2.returncode} lens="
+            f"{[len(_evts[0]['text']), len(_evts[1]['input_head'])] if len(_evts) == 2 else 'MISSING'}",
+            "strict vocabulary (exit 2 on unknown kind/field) + server-side "
+            "truncation (text 2000 / input_head 300)",
+            findings,
+            coverage,
+        )
+
+        # 10c stream render round-trip: text + tool lines render; spawn renders
+        # WITHOUT the CC mode label (no schema field on pi)
+        _r3 = _sp2.run(
+            [sys.executable, str(CSR_PROGRESS), "stream", _rdA],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        ok10c = (
+            _r3.returncode == 0
+            and "▸ read" in _r3.stdout
+            and "xxx" in _r3.stdout
+            and "unstructured-retry" not in _r3.stdout
+        )
+        _check(
+            "stream-render-roundtrip",
+            ok10c,
+            f"rc={_r3.returncode} out={_r3.stdout[:120]!r}",
+            "the newest .stream.jsonl in the dir renders: text verbatim, tool "
+            "as name+head; the CC structured/unstructured spawn label must "
+            "stay absent on pi (no --json-schema)",
+            findings,
+            coverage,
+        )
 
     # --- check 10: runs/LATEST stable pointer (substrate-neutral mechanics) --
     # The run-start append atomically points <runs-dir>/LATEST at the run dir
