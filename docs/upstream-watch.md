@@ -57,6 +57,8 @@ Individually verified rows carry ✅/❌/⚠️; range rows ride the shared engi
 | — | backlog C9 (review-loop ladder discipline) + C1 retrofit clause (127c039) | informational — updates the cited shared backlog (README checklist already points there); C1's retrofit clause reads at the next record-schema touchpoint |
 | — | evaluation-protocol line: coding-pass verification v1.2→v1.3, D1–D3 executed, paper §6.5, start-from-requirements guide (12 docs commits) | informational — CC-workspace methodology/eval line; cite on relevant authoring |
 
+| HETERO_THINKING env knob (requested-level semantics + wrapper-side enum fail-fast + sidecar provenance stamp) | pi 0.3.1 (2026-09-17); adversarial design review first — the decisive finding: pi CLAMPS per-model silently (glm-5.3-flash: off/minimal→low, medium→high, xhigh→max; qwen-bailian: high→xhigh, max→medium), so a naive stamp lies about review conditions | open — the alternative to upstream's EFFORT_LEVEL=max-in-profile (e737680, deliberately not absorbed): project/session channels instead of shipped-profile hardcode; the clamp-matrix documentation + requested-level stamp are the transferable ideas |
+
 ## Outflow ledger (this repo → upstream)
 
 | What | Evidence | Upstream disposition |

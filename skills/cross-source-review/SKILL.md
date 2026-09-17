@@ -66,7 +66,7 @@ Event vocabulary (single-sourced with `csr_progress.py` EVENT_REGISTRY — the s
 - `run-start` — artifact / tier / cap (+authority) — writer: orchestrator, once at Frame
 - `same-family-spawn` — round
 - `same-family-complete` — round / findings
-- `hetero-leg-start` — round / provider — writer: the WRAPPER
+- `hetero-leg-start` — round / provider / thinking (REQUESTED level via HETERO_THINKING, when set — pi clamps per model; the stamp records the request) — writer: the WRAPPER
 - `hetero-heartbeat` — provider / elapsed_s / model / idle_s / stream_bytes / events / assistant_events / killed — writer: the WRAPPER (stream mode, every 30s)
 - `hetero-leg-end` — round / provider / outcome: ok or degraded or malformed (+findings / model / elapsed_s / degraded) — writer: the WRAPPER
 - `reconcile` — round / fixed / rejected / escalated

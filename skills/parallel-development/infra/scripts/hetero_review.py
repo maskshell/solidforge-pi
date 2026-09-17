@@ -280,6 +280,36 @@ def _load_dotenv_file(path):
             os.environ.setdefault(k.strip(), v.strip().strip('"').strip("'"))
 
 
+VALID_THINKING_LEVELS = (
+    "off",
+    "minimal",
+    "low",
+    "medium",
+    "high",
+    "xhigh",
+    "max",
+)
+
+
+def _resolve_thinking_env():
+    """HETERO_THINKING — the SAME shared name csr's wrapper reads (one project
+    line pins BOTH skills' hetero thinking; deliberate cross-skill coupling).
+    REQUESTED-level semantics: pi clamps per model at session start; this
+    wrapper has NO progress sidecar, so the knob is unobservable here (csr
+    stamps it in hetero-leg-start). Wrapper-side fail-fast is load-bearing:
+    pi silently drops invalid values."""
+    raw = os.environ.get("HETERO_THINKING", "").strip()
+    if not raw:
+        return None
+    if raw not in VALID_THINKING_LEVELS:
+        sys.exit(
+            f"error: HETERO_THINKING={raw!r} is not one of "
+            f"{', '.join(VALID_THINKING_LEVELS)} (pi's exact enum; pi itself "
+            "would silently drop an invalid value)"
+        )
+    return raw
+
+
 def _load_dotenv():
     """Load <project>/.env.solidforge THEN <project>/.env into os.environ (setdefault —
     the shell always wins; between the two files, the FIRST loaded wins for a shared
@@ -432,7 +462,7 @@ def adversarial_prompt(diff_ref, blueprint_ref, prior_findings=None, round_no=0)
     )
 
 
-def _pi_argv(profile, model_override, prompt, allowed_tools):
+def _pi_argv(profile, model_override, prompt, allowed_tools, thinking=None):
     """Build the pi spawn argv. See PI-SUBSTRATE MANIFEST above (csr twin port).
 
     `--model` is composed from the profile's `_provider` + `model` fields as
@@ -481,6 +511,8 @@ def _pi_argv(profile, model_override, prompt, allowed_tools):
     ]
     if allowed_tools:
         argv += ["--tools", allowed_tools]
+    if thinking:
+        argv += ["--thinking", thinking]
     argv.append(prompt)
     return argv
 
@@ -955,6 +987,7 @@ def main():
     # invisible to args -> --profile silently fell back to the hardcoded "deepseek",
     # dropping every other configured provider. Shell still wins (setdefault).
     _load_dotenv()
+    thinking = _resolve_thinking_env()
     ap = argparse.ArgumentParser(
         description="different-family adversarial review wrapper (ADR #40)."
     )
@@ -1117,6 +1150,7 @@ def main():
                 args.model or _resolve_model_override(name),
                 prompt,
                 args.allowed_tools,
+                thinking=thinking,
             )
         # All caps ride the live stream (PI-SUBSTRATE MANIFEST): byte cap + the
         # wrapper-side budget/turns caps pi does not offer as CLI flags.

@@ -70,7 +70,7 @@ EVENT_REGISTRY = {
     },
     "hetero-leg-start": {
         "required": {"round": "int", "provider": "str"},
-        "optional": {},
+        "optional": {"thinking": "str"},
     },
     # Written by the WRAPPER (bypasses this validation — its helper appends
     # directly); declared here so `status` + the SKILL vocabulary stay complete.

@@ -449,6 +449,39 @@ def _load_dotenv_file(path):
             os.environ.setdefault(k.strip(), v.strip().strip('"').strip("'"))
 
 
+VALID_THINKING_LEVELS = (
+    "off",
+    "minimal",
+    "low",
+    "medium",
+    "high",
+    "xhigh",
+    "max",
+)
+
+
+def _resolve_thinking_env():
+    """HETERO_THINKING (shared csr+pd name; shell > .env.solidforge > .env via
+    _load_dotenv). REQUESTED-level semantics: pi CLAMPS per model at session
+    start (e.g. glm-5.3-flash supports only low/high/max — off/minimal run
+    low, medium runs high, xhigh runs max; qwen-bailian high runs xhigh).
+    The sidecar stamps what was REQUESTED; the clamp matrix is documented in
+    README. Wrapper-side fail-fast is load-bearing: pi's own handling of an
+    invalid value is a SILENT DROP (runs at model default, rc 0). Also note
+    precedence: an explicit --thinking suppresses any per-provider
+    MODEL=<id>:<level> suffix tuning."""
+    raw = os.environ.get("HETERO_THINKING", "").strip()
+    if not raw:
+        return None
+    if raw not in VALID_THINKING_LEVELS:
+        sys.exit(
+            f"error: HETERO_THINKING={raw!r} is not one of "
+            f"{', '.join(VALID_THINKING_LEVELS)} (pi's exact enum; pi itself "
+            "would silently drop an invalid value)"
+        )
+    return raw
+
+
 def _load_dotenv():
     """Load the INVOKING project's env files into os.environ (setdefault — shell always
     wins; between files the first-loaded wins for a shared key). Reads
@@ -631,7 +664,7 @@ def adversarial_prompt(artifact_ref, authority_ref, prior_findings=None, round_n
     )
 
 
-def _pi_argv(profile, model_override, prompt, allowed_tools):
+def _pi_argv(profile, model_override, prompt, allowed_tools, thinking=None):
     """Build the pi spawn argv. See PI-SUBSTRATE MANIFEST above.
 
     `--model` is composed from the profile's `_provider` + `model` fields as
@@ -685,6 +718,8 @@ def _pi_argv(profile, model_override, prompt, allowed_tools):
     ]
     if allowed_tools:
         argv += ["--tools", allowed_tools]
+    if thinking:
+        argv += ["--thinking", thinking]
     argv.append(prompt)
     return argv
 
@@ -1199,6 +1234,7 @@ def main():
     # "deepseek", dropping every other configured provider (e.g. HETERO_DOC_PROFILE
     # =deepseek,minimax ran only deepseek). Shell still wins (setdefault).
     _load_dotenv()
+    thinking = _resolve_thinking_env()
     ap = argparse.ArgumentParser(
         description="different-family doc-domain adversarial review wrapper (CSR-I3)."
     )
@@ -1376,6 +1412,7 @@ def main():
                 args.model or _resolve_model_override(name),
                 prompt,
                 args.allowed_tools,
+                thinking=thinking,
             )
         # All caps ride the live stream (PI-SUBSTRATE MANIFEST): byte cap + the
         # wrapper-side budget/turns caps pi does not offer as CLI flags.
@@ -1385,7 +1422,12 @@ def main():
             "budget_usd": args.budget_usd,
             "max_turns": args.max_turns,
         }
-        _progress_append("hetero-leg-start", round=round_index, provider=name)
+        _progress_append(
+            "hetero-leg-start",
+            round=round_index,
+            provider=name,
+            **({"thinking": thinking} if thinking else {}),
+        )
         # ADR #69 distilled execution stream: one file per (round, provider),
         # derived from the sidecar's dir; spawn marker (no --json-schema on
         # this substrate — the CC structured/unstructured mode label is gone).

@@ -140,6 +140,7 @@ def run():
     # --- check 1: argv guards -------------------------------------------
     profile = {"_provider": "zai-coding-cn", "model": "glm-5.3"}
     argv = mod._pi_argv(profile, "", "prompt", "read,grep,find,bash")
+    _PROFILE = profile
     argv_nomodel = mod._pi_argv(profile, "deepseek/deepseek-v4-pro[1m]", "prompt", None)
     ok1 = (
         argv[0] == "pi"
@@ -160,6 +161,46 @@ def run():
         ok1,
         f"argv={argv}",
         "restore the pi spawn surface in _pi_argv (PI-SUBSTRATE MANIFEST)",
+        findings,
+        coverage,
+    )
+
+    # --- check 1b: HETERO_THINKING knob (REQUESTED-level; shared csr+pd) --
+    os.environ.pop("HETERO_THINKING", None)
+    argv_plain = mod._pi_argv(_PROFILE, "", "p", None)
+    ok1b = "--thinking" not in argv_plain and mod._resolve_thinking_env() is None
+    argv_th = mod._pi_argv(_PROFILE, "", "p", None, thinking="xhigh")
+    ok1b = ok1b and argv_th[argv_th.index("--thinking") + 1] == "xhigh"
+    try:
+        os.environ["HETERO_THINKING"] = "bogus"
+        bad = subprocess.run(
+            [
+                sys.executable,
+                str(HETERO),
+                "--artifact",
+                "x",
+                "--profile",
+                "deepseek",
+                "--dry-run",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+        ok1b = (
+            ok1b
+            and bad.returncode != 0
+            and "HETERO_THINKING" in (bad.stderr + bad.stdout)
+        )
+    finally:
+        os.environ.pop("HETERO_THINKING", None)
+    _check(
+        "hetero-thinking-knob",
+        ok1b,
+        "absent/valid/invalid tri-state — unset=no flag, valid=--thinking, "
+        "invalid=fail-fast (pi would silently drop it)",
+        "HETERO_THINKING enum is pi's exact CLI enum; the wrapper-side exit "
+        "is the only loud path",
         findings,
         coverage,
     )

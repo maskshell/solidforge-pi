@@ -361,9 +361,42 @@ def check_provider_template_expansion():
     # _token_env names the CC-convention var; empty would mean auth.json route)
     os.environ["BIGMODEL_ANTHROPIC_AUTH_TOKEN"] = "sk-zai-unit"
     zai = h._load_profile("bigmodel")
-    assert zai["_provider"] == "zai-coding-cn" and zai["model"] == "glm-5.3", zai
+    assert zai["_provider"] == "zai-coding-cn" and zai["model"] == "glm-5.3-flash", zai
     argv = h._pi_argv(zai, "", "p", None)
-    assert argv[argv.index("--model") + 1] == "zai-coding-cn/glm-5.3", argv
+    assert argv[argv.index("--model") + 1] == "zai-coding-cn/glm-5.3-flash", argv
+
+    # HETERO_THINKING knob (REQUESTED-level; shared csr+pd name): unset -> no
+    # flag; valid -> --thinking <level>; invalid -> wrapper fail-fast (pi would
+    # SILENTLY DROP an invalid value — the wrapper's exit is the only loud path)
+    os.environ.pop("HETERO_THINKING", None)
+    argv = h._pi_argv(zai, "", "p", None)
+    assert "--thinking" not in argv, argv
+    argv = h._pi_argv(zai, "", "p", None, thinking="high")
+    assert argv[argv.index("--thinking") + 1] == "high", argv
+    os.environ["HETERO_THINKING"] = "bogus"
+    try:
+        r_bad = subprocess.run(
+            [
+                sys.executable,
+                HETERO,
+                "--diff",
+                "x",
+                "--base-ref",
+                "y",
+                "--profile",
+                "deepseek",
+                "--dry-run",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+        assert r_bad.returncode != 0 and "HETERO_THINKING" in (
+            r_bad.stderr + r_bad.stdout
+        )
+    finally:
+        os.environ.pop("HETERO_THINKING", None)
+    print("  _pi_argv + HETERO_THINKING (absent/valid/invalid): PASS")
     del os.environ["DEEPSEEK_ANTHROPIC_AUTH_TOKEN"]
     del os.environ["BIGMODEL_ANTHROPIC_AUTH_TOKEN"]
     print("  _load_profile (route template + alias + model composition): PASS")

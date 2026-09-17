@@ -56,6 +56,8 @@ Profiles are pi **catalog routes** (model facts catalog-inherited; the CC-era `[
 
 Put tokens in the target project's `.env.solidforge` (shell env wins; `arm-tools` provisions the `.env.solidforge.example` placeholder). Select legs via `HETERO_DOC_PROFILE` / `HETERO_PROFILE` (comma-list = multi-different-family). CC-era profile names (`bigmodel`, `minimax`, `qwen3`) keep working via aliases.
 
+**Thinking level**: the hetero legs run at each model's DEFAULT unless `HETERO_THINKING` is set (`off|minimal|low|medium|high|xhigh|max`; project channel `.env.solidforge`, session channel shell export — shared by both wrappers). REQUESTED-level semantics: pi clamps per model (glm-5.3-flash supports only low/high/max — `off`/`minimal` run low, `medium`→high, `xhigh`→max; qwen-bailian `high`→xhigh, `max`→medium); the sidecar stamps the REQUEST, the clamp is post-hoc computable from the resolved model. csr stamps it in `hetero-leg-start.thinking`; pd has no sidecar (unobservable there). Setting it also suppresses per-provider `<NAME>_MODEL=<id>:<level>` suffix tuning — the suffix is the per-provider tool, the env the fleet-wide one.
+
 **Budget/cost note**: routes with catalog pricing (deepseek, minimax-cn) feed real `usage.cost.total` into the wrapper-side budget breaker; zai-coding-cn and qwen-bailian report cost 0 (unknown to the catalog) — the budget cap is inert there, wall-clock/turns/bytes caps still apply.
 
 ## CI / non-interactive subprocesses
