@@ -22,13 +22,13 @@ permissions:
 
 env:
   # Same pin as npm-publish.yml (its release-gate clone). Bump both together.
-  PI_REF: v0.85.1
+  PI_REF: v0.86.1
   # Namespace-capable fork build (maskshell/pi). RETIRES when earendil-works/pi#8834
   # lands upstream — then point this at the official package and drop the fork.
   # npm alias channel (registry reachability in CI > GitHub release assets);
   # the fork's release-published automation publishes the alias — future bumps
   # pin the new latest (exact version, never a range).
-  NS_PIN: "pi-namespace-patch@0.85.1-namespace.3"
+  NS_PIN: "pi-namespace-patch@0.86.1-namespace.1"
 
 jobs:
   gates:
