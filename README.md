@@ -19,7 +19,7 @@ Requires `python3` on `$PATH` (all gate/policy scripts are Python stdlib-only CL
 **Optional but recommended — [pi-namespace-patch](https://www.npmjs.com/package/pi-namespace-patch)**: the namespaced invocation surface (`/skill:solidforge:<name>`, `/solidforge:arm-tools`, `solidforge:<agent>`) requires a pi build with `pi.namespace` support — not yet in official pi ([earendil-works/pi#8834](https://github.com/earendil-works/pi/issues/8834) tracked). Stock pi works: everything runs under the bare names (`/skill:<name>`, `/<name>`); the namespace only removes collision risk in crowded setups.
 
 ```bash
-npm install -g pi-namespace-patch   # fork channel, trusted publishing + provenance; pi --version → e.g. 1.0.2-namespace.1
+npm install -g pi-namespace-patch   # fork channel, trusted publishing + provenance; pi --version → e.g. 1.0.4-namespace.1
 ```
 
 Full note (channels, version-string schemes, pinned tarball alternative): [Arm a project → the namespace paragraph](#arm-a-project-layer-2).
@@ -46,7 +46,7 @@ Enabling the package does NOT mutate host-project build files. In a target proje
 /arm-tools                         # stock-pi fallback (no namespace: template name = filename)
 ```
 
-The namespace form requires a pi build with `pi.namespace` support — this package declares `"namespace": "solidforge"`. Install the patched build from npm (trusted publishing + provenance): `npm install -g pi-namespace-patch` (fork channel; `pi --version` reports a prerelease-form suffix, e.g. `1.0.2-namespace.1`). Pinned alternative (GitHub release tarball, build-metadata version form): `npm install -g https://github.com/maskshell/pi/releases/download/v1.0.2-namespace.1/earendil-works-pi-coding-agent-1.0.2-namespace.1.tgz`. Source patches + lifecycle rules: the [`namespace-patch` branch](https://github.com/maskshell/pi/tree/namespace-patch/patch) and [FORK.md](https://github.com/maskshell/pi/blob/main/FORK.md) of [maskshell/pi](https://github.com/maskshell/pi); proposal trail: [earendil-works/pi#8834](https://github.com/earendil-works/pi/issues/8834).
+The namespace form requires a pi build with `pi.namespace` support — this package declares `"namespace": "solidforge"`. Install the patched build from npm (trusted publishing + provenance): `npm install -g pi-namespace-patch` (fork channel; `pi --version` reports a prerelease-form suffix, e.g. `1.0.4-namespace.1`). Pinned alternative (GitHub release tarball, build-metadata version form): `npm install -g https://github.com/maskshell/pi/releases/download/v1.0.4-namespace.1/earendil-works-pi-coding-agent-1.0.4-namespace.1.tgz`. Source patches + lifecycle rules: the [`namespace-patch` branch](https://github.com/maskshell/pi/tree/namespace-patch/patch) and [FORK.md](https://github.com/maskshell/pi/blob/main/FORK.md) of [maskshell/pi](https://github.com/maskshell/pi); proposal trail: [earendil-works/pi#8834](https://github.com/earendil-works/pi/issues/8834).
 
 `arm.py` appends the L1 Constitution to the project's **AGENTS.md** (when present) or **CLAUDE.md** — pi loads either. Reversible: `arm.py --revert` (dry-run; `--apply` to execute).
 
